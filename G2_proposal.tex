@@ -1,0 +1,267 @@
+\documentclass[a4paper,11pt]{article} % Don't change this
+\usepackage{fullpage} % Don't change this
+
+\usepackage{titling} % Don't change this
+\pretitle{\vspace{-6em}\begin{center}\larger[2]\bf} % Don't change this
+\postauthor{\end{center}} % Don't change this
+\preauthor{\vspace{-2em}\begin{center}\smaller[1]} % Don't change this
+\postauthor{\end{center}\vspace{-5em}} % Don't change this
+
+\usepackage[shortlabels]{enumitem} % Don't change this
+\setlist{itemsep=0em,topsep=0.3em} % Don't change this
+
+%%% Some useful packages.
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage[hidelinks]{hyperref}
+\usepackage{relsize}
+\usepackage{cleveref}
+\crefname{figure}{Fig.}{Figs.}
+
+\usepackage[backend=bibtex,natbib=true,style=authoryear-icomp,maxnames=3,giveninits=true]{biblatex}
+\citetrackerfalse
+\bibliography{ref} % put bib entries in ref.bib
+
+\usepackage[linesnumbered]{algorithm2e}
+\usepackage{cleveref}
+\crefname{equation}{Equation.}{Equations.}
+\crefname{figure}{Figure}{Figures.}
+
+\usepackage{lipsum}
+\usepackage{wrapfig}
+\usepackage{tikz}
+
+%%% Add additional packages or macros below
+\usepackage{array}
+\usepackage{microtype}
+\usepackage[compact]{titlesec}
+\titlespacing*{\section}{0pt}{0.8ex plus .2ex}{0.3ex plus .1ex}
+\setlength{\abovedisplayskip}{4pt}
+\setlength{\belowdisplayskip}{4pt}
+\setlength{\abovedisplayshortskip}{2pt}
+\setlength{\belowdisplayshortskip}{2pt}
+% The title block is three centred environments whose \topsep glue can shrink.
+% If page 1 is a hair overfull, TeX shrinks that glue and the title collapses
+% onto the author line instead of moving a line to page 2. Remove the shrink.
+\raggedbottom
+\AtBeginDocument{\setlength{\topsep}{9pt plus 3pt}\setlength{\partopsep}{3pt plus 1pt}}
+
+% Draft aid: red bold TODO markers. Delete this macro's colour (or the macro
+% calls) before submission.
+\newcommand{\TODO}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+
+\newcommand{\Kh}{\widehat{K}}
+\newcommand{\Fnorm}[1]{\lVert #1 \rVert_F}
+\newcommand{\tgrok}{t_{\mathrm{grok}}}
+
+\begin{document}
+
+\title{Scale or Rotation? Decomposing Neural Tangent Kernel Movement During Grokking}
+\author{Group G2 \\
+Zain Al-Saffi (s4800836) $\cdot$
+Jasper Chong (s4883420) $\cdot$
+Aaron D'Mello (s4890257) \\
+Zac Kienzle (s4803349) $\cdot$ Samuel Rieger (s4904959)}
+
+\date{}
+\maketitle
+\TODO{Need to verify all citations by hand}
+\section{Topic}
+
+The task is modular addition. The input concatenates the
+one-hot codes of $a,b\in\{0,\dots,p-1\}$ and the target is the one-hot code of
+$(a+b)\bmod p$. A network $f(x;\theta)$
+trained on a fraction of the $p^2$ pairs \emph{groks} when its training loss
+falls early but its test loss stays at chance for orders of magnitude longer
+before falling abruptly \citep{power2022grokking}. The grokking time $\tgrok$ counts
+the training steps from when the training loss first falls below a fixed level
+$\tau_{\mathrm{train}}$ to when the test loss first falls below a fixed level
+$\tau_{\mathrm{test}}$. The neural tangent kernel (NTK)
+of $f$ is
+$\Theta_t(x,x')=\langle\nabla_\theta f(x;\theta_t),\nabla_\theta f(x';\theta_t)\rangle$,
+and $K_t$ is its empirical version on a fixed probe set of $n$ inputs.
+Training is \emph{lazy} when $\Theta_t$ stays at $\Theta_0$, so the network
+behaves as its linearisation, and \emph{rich} when $\Theta_t$ moves
+\citep{jacot2018ntk,chizat2019lazy}. The leading account of grokking is a
+lazy-to-rich transition: a linearised model memorises, but generalising needs
+the kernel to move \citep{kumar2024grokking}.
+
+Saying that the kernel moves bundles two claims. A
+kernel can change in overall \emph{scale}, with every eigenvalue rescaled and
+the eigenbasis fixed, or it can \emph{rotate}, so that the eigenbasis itself
+changes. Let $\Kh=K/\Fnorm{K}$ be the normalised kernel, and define the scale
+term $S_t=\log(\Fnorm{K_t}/\Fnorm{K_0})$ and the rotation term
+$R_t=1-\langle\Kh_t,\Kh_0\rangle_F$. The standard measure of kernel change
+mixes the two, since it decomposes as
+\begin{equation}
+  \Fnorm{K_t-K_0}^2\big/\Fnorm{K_0}^2 = e^{2S_t}+1-2e^{S_t}(1-R_t).
+  \label{eq:decomp}
+\end{equation}
+% : at $R_t=0$ it still reads
+% $(1-e^{S_t})^2$, and any exponent fitted to it is unidentified.
+
+The distinction matters because the theorem usually cited to link weight
+decay to kernel movement describes pure scaling. A network is $k$-homogeneous
+if scaling every parameter by $c$ scales its output by $c^k$; a bias-free ReLU
+MLP has $k$ equal to its depth. \citet[Thms.~1--2]{lewkowycz2020l2} show that
+an infinitely wide $k$-homogeneous network trained with MSE and $L_2$
+strength $\lambda$ has kernel $\Theta_t=e^{-2(k-1)\lambda t}\Theta_0$.
+% (as step size $\eta \rightarrow0$, $k\ge2$, conditional on the
+% Dyer--Gur-Ari conjecture): eigenvalues decay, eigenvectors static,
+In our terms $S_t=-2(k-1)\lambda t$ and $R_t\equiv0$: the kernel shrinks but
+never turns, so no features are learned. Yet
+\citet[App.~13, arXiv v3]{kumar2024grokking} invoke this theorem to argue that
+weight decay ends lazy training, and hence that $\tgrok\propto1/\lambda$, an argument
+they call speculative and do not test on the kernel. Rotation is also
+necessary: a model that stays in the kernel regime provably needs a constant
+fraction of the $p^2$ pairs \citep{mohamadi2024grok}, so at low training
+fractions the kernel must turn.
+
+\textbf{Research question.} What sets $\tgrok$? The candidates are kernel
+rotation, the scale of the kernel or the weights, and the weight-decay rate.
+Three 2026 accounts each back a different one (\S2), and none measures
+rotation. We measure all three on one grid and ask which $\tgrok$ tracks.
+
+Our hypothesis H is that rotation is the clock. Let $Y$ be the probe set's
+one-hot label matrix and $H=I-\tfrac1n\mathbf{1}\mathbf{1}^\top$ the centring
+matrix. The cosine $A_t$ between $HK_tH$ and $HYY^\top H$ is the
+centred alignment of \citet{cortes2012alignment}. Rescaling $K_t$ leaves it
+unchanged, so only rotation moves it. H says generalisation begins when $A_t$ crosses a
+threshold $A_*$, that $A_*$ is shared across $\alpha$, $\eta\lambda$, $N$ and
+$p$, and that $\tgrok$ is independent of $S_t$ given $A_t$.
+
+% \textbf{Hypothesis H (rotation clock).} Generalisation begins when task-relevant
+% rotation $A_t=\langle HK_tH,\,HYY^\top H\rangle_F$ --- centred alignment
+% \citep{cortes2012alignment}, invariant to $S_t$ by construction --- crosses a
+% threshold $A_*$; $A_*$ is approximately invariant across $\alpha$, $\eta\lambda$,
+% $N$ and $p$, and $\tgrok$ is conditionally independent of $S_t$ given $A_t$.
+
+% \textbf{Discriminating prediction.} In the exact evolution
+% $\dot\Theta_t=-2(k-1)\lambda\Theta_t+T_t+T_t^\top$ \citep[Eq.~S5]{lewkowycz2020l2}
+% all rotation is carried by $T_t$, which vanishes with width and carries no
+% explicit $\lambda$. Fitting $\log\tgrok=c+a\log N+b\log(\eta\lambda)$, our hypothesis predicts
+% $a>0,\ b\approx0$ (with $a=1$ if the $O(1/N)$ correction scaling holds); a
+% weight-decay clock predicts $a\approx0,\ b\approx-1$. We estimate $a,b$ rather
+% than assuming either.
+
+The prediction that separates H from its rivals comes from the exact kernel
+evolution $\dot\Theta_t=-2(k-1)\lambda\,\Theta_t+T_t+T_t^\top$
+\citep[Eq.~S5, arXiv v1]{lewkowycz2020l2}. The weight-decay term only rescales
+$\Theta_t$, so $A_t$ moves only through $T_t$.
+As $T_t$ vanishes at infinite width \citep{jacot2018ntk,lewkowycz2020l2},
+rotation is a finite-width effect and a wider network turns more slowly. Under
+H the target $A_*$ is fixed, so $\tgrok$ is a distance over a rate: it should
+grow with $N$ and stay flat in $\eta\lambda$. We fit $\log\tgrok=c+a\log N+b\log(\eta\lambda)$ on a crossed
+grid. Under H, $a>0$ and $b\approx0$; under a weight-decay clock, $a\approx0$
+and $b\approx-1$; two nonzero exponents mean two clocks, the slower one setting the time.
+
+\section{Significance}
+
+Three 2026 accounts name three different clocks.
+\citet{truong2026norm} intervene on the weight norm.
+Networks grok when the norm reaches a critical value
+$\lVert W\rVert_c\propto p^{0.38}$, and holding the norm at
+$\rho\lVert W\rVert_c$ makes $\tgrok$ grow exponentially in $\rho$, at a rate of
+about $7.5$ for an MLP and $15$ for unnormalised attention.
+\citet{truong2026logit} then shows that under cross-entropy this effect runs
+through the logit scale rather than the norm itself, but that this channel is
+absent under MSE, where about half of the effect is unexplained.
+\citet{kim2026clock} instead makes weight decay the clock, with
+$\tgrok\propto(1-\beta)/(\eta\lambda)$. All three are scale-like or
+optimiser-level quantities, so none can tell a rotating kernel from a decaying
+one; H supplies the missing variable. Our baseline uses MSE and vanilla
+gradient descent, where the logit-scale channel is absent, the theorem above
+applies as stated, and coupled $L_2$ regularisation coincides with decoupled
+weight decay.
+
+The NTK--grokking link, the laziness knob $\alpha$, eNTK spectral tracking,
+the norm delay law and norm mediation are all published. What is new here is
+decomposition \eqref{eq:decomp} used as a timing variable, the $(a,b)$ test
+that separates width-driven rotation from the $\lambda$-clock, and a rotation
+account of the norm law under MSE.
+
+\section{Feasibility}
+
+The baseline follows \citet[App.~8.3, arXiv v3]{kumar2024grokking} exactly, so
+Tier~0 can be checked against a published figure. It uses one hidden layer of
+width $N=100$, MSE loss, full-batch gradient descent at $\eta=100$, $p=23$, and
+$90\%$ of the $p^2$ pairs for training. One setting of the swept
+hyperparameters is a cell, and the baseline is one cell. A cross-entropy arm
+at the baseline cell links our constants to \citet{truong2026norm}, whose
+results use cross-entropy.
+
+Each checkpoint records the training and test MSE, the terms $S_t$, $R_t$ and
+$A_t$ on the centred kernel, the parameter movement, and $y^\top K^{-1}y$,
+which predicts when linearisation breaks. The empirical NTK
+on $n=256$ probe points, summed over logits, takes seconds.
+
+Three choices are fixed in advance. First, $\tgrok$ and its thresholds are
+pre-registered and sensitivity to $\tau$ is reported. A run has not grokked
+if its test loss is above $\tau_{\mathrm{test}}$ when training stops. The run
+is kept, and $\tgrok$ is recorded only as longer than the run, which is right
+censoring. Second, laziness is set by the centred,
+rescaled predictor $\tilde f=\alpha[f(x,\theta)-f(x,\theta_0)]$ with
+$\eta=\eta_0/\alpha^2$ \citep{chizat2019lazy}; since $\alpha$, initialisation
+scale and label rescaling are one knob, we sweep only $\alpha$. Third,
+weight decay is swept in $\eta\lambda$ below the stability bound
+$\eta\lambda<2$.
+
+The design has four arms. One is a $6\times6$ grid in
+$\alpha\times\eta\lambda$ at the baseline width. One is an $N\times\eta\lambda$
+factorial with $N\in\{50,100,400,1600\}$ and
+$\eta\lambda\in\{0,10^{-3},10^{-2},10^{-1}\}$ for the $(a,b)$ fit. One is a
+clamp arm with $\rho\in\{1,1.25,1.5,1.75,2\}$, and one is a generality arm with
+$p\in\{23,29,31\}$ and training fraction in $\{50,70,90\}\%$. Five seeds per
+cell, and ten on the clamp arm where the MSE effect is half-size, give about
+$350$ runs and roughly $20$ GPU-hours. \TODO{time one run in week~1 and resize;
+does $p=23$ grok cleanly? Colab/Kaggle or UQ Bunya?}
+
+The work falls into four tiers, each reportable on its own. Tier~0
+reproduces the published $\alpha$ sweep and is a hard gate in week~1, since
+later work depends on it. Tier~1 measures $S_t$, $R_t$, $A_t$
+and $\tgrok$ over the grid, tests whether $A_*$ is invariant, and exhibits a
+cell where kernel movement is large but $A_t$ is flat. Tier~2, the head claim,
+is the $(a,b)$ fit with bootstrap intervals and the residuals where a power law
+fails. Tier~3, a stretch goal, replicates the clamped-norm law under MSE and
+tests whether $A_*$ is invariant to $\rho$.
+\TODO{placeholder split} Zac Kienzle builds the infrastructure, Aaron D'Mello
+runs Tier~0, Jasper Chong writes the kernel metrics, Samuel Rieger runs the
+sweeps and fits, and Zain Al-Saffi does the theory and write-up.
+
+\clearpage
+\smaller
+\printbibliography
+
+\clearpage
+\section*{\textcolor{red}{Draft notes --- delete this page before submission}}
+\textcolor{red}{Body is two pages with about one line to spare under
+Tectonic 0.17; references are excluded, per the brief, and now start on their
+own page. All citations were checked against primary sources on 31~Aug 2026.
+Under Tectonic the 31~Aug text ran ten lines onto a third page, so the 4~Sep
+rewrite was trimmed to fit. The bib entries were rebuilt in \texttt{ref.bib} and
+rechecked against the arXiv abstract pages on 4~Sep 2026. In a later 4~Sep
+pass the run-in bold headings were removed from every paragraph except the
+research question, the research question was rewritten in full sentences, and
+a few phrases were shortened so the body still fits. On 6~Sep the grokking
+time was spelled out as a count of steps between two threshold crossings, and
+``cell'', ``has not grokked'' and ``right censoring'' were each defined in
+plain words at first use. To pay for those lines the research question was
+tightened (``the grokking time'' dropped after $\tgrok$, ``itself'' dropped,
+``rotation of the kernel'' became ``kernel rotation''), the two compute TODOs
+were merged into one, ``gradient-descent stability bound'' became ``stability
+bound'', and ``not dropped'' was folded into ``the run is kept''. Page~2 is
+now full with no line to spare.}
+\begin{enumerate}[1.]
+  \item \textcolor{red}{\textbf{What changed in this revision.} The hypothesis is now a \emph{threshold} claim ($A_*$ invariant, $\tgrok \perp S_t \mid A_t$) plus a \emph{rate-law} claim tested by estimating $(a,b)$ in $\log\tgrok = c + a\log N + b\log(\eta\lambda)$. That regression, not the old mediation test, is the head claim: it is the one experiment that separates the rotation clock, the scale clock and \citeauthor{kim2026clock}'s weight-decay clock, and it fails informatively (both exponents nonzero $\Rightarrow$ two clocks). Tier~3 was demoted to a stretch replication because \citet{truong2026logit} already ran a norm mediation test under cross-entropy.}
+  \item \textcolor{red}{\textbf{Verified numbers} in \citet{truong2026norm}: $\lVert W\rVert_c=\{42,48,55,61,67\}$ for $p=\{29,41,59,79,97\}$, $\lVert W\rVert_c\propto p^{0.38}$; $\tgrok\propto e^{\alpha\rho}$ with $\alpha\approx7.4$--$7.5$ (MLP) against ${\approx}15$ (unnormalised attention), $R^2>0.99$; ``the form of the delay law is cross-architectural while its rate is not''; LayerNorm removes the dependence. Their loss is cross-entropy --- hence our CE arm. \citet{truong2026logit}: logit-scale mediation $R^2=0.97$ under CE, channel absent under MSE, norm effect ${\approx}$ half size.}
+  \item \textcolor{red}{\textbf{Verified as stated:} Lewkowycz \& Gur-Ari Thm.~1 and Thm.~2 (eigenvalues decay, eigenvectors static; assumes MSE, $k\ge2$, gradient flow, infinite width, Dyer--Gur-Ari conjecture), Eq.~(S5) with $T_t$ from (S6) in arXiv v1 (these are (S8) and (S9) in v2, so the body cites the version); Kumar App.~8.3 config and App.~13 for weight decay (an earlier note said 14, but arXiv v3 and the ICLR camera-ready both number it 13, and App.~14 is momentum); Mohamadi et al.\ (ICML 2024, PMLR~235); Atanasov et al.; Gromov's quadratic-activation closed form; Cortes et al., JMLR~13, 795--828.  \textbf{Venue lines rechecked 4~Sep 2026:} Jacot (NeurIPS~2018), Chizat (NeurIPS~2019) and Lewkowycz (NeurIPS~2020) appear in the NeurIPS proceedings index; Nanda appears on OpenReview as ICLR~2023 (forum 9XFSbDPmdW); Power appears on the ICLR 2021 MATH-AI workshop page, while the arXiv posting is dated 2022. Kumar's ICLR~2024 venue rests on the camera-ready checked on 31~Aug.}
+  \item \textcolor{red}{\textbf{Open decisions.} Coordinator sign-off (scope email to Dr Nan Ye before 14 Sep); AI-use statement here or in the report; whether ``pre-registered'' means public (OSF) or fixed in the repo before sweeps run; whether the CE arm is one cell or a full $\alpha\times\eta\lambda$ replication; whether to keep the $p$ and training-fraction arms at all, given they buy generality rather than discrimination.}
+  \item \textcolor{red}{\textbf{Held for the 12-page report:} the derivation of \eqref{eq:decomp}; the tier table; uncentred-alignment and first-logit eNTK robustness variants; the censoring model; $y^\top K^{-1}y=\lVert w-w_0\rVert^2$ near the kernel limit; the confound demonstration figure. An abstract would cost about six lines here.}
+  \item \textcolor{red}{\textbf{Dropped from the body for space on 4~Sep 2026} (restore if lines are freed): ``and cannot tell them apart''; ``and so leaves $A_t$ unchanged; alignment moves only through $T_t$'' (now ``so $A_t$ moves only through $T_t$''); ``and the usual summary statistic does not separate the two''; ``each observes only a magnitude, which rescaling moves but rotation does not'' (the point is made in \S2); ``while LayerNorm removes the dependence entirely''; ``and the $(a,b)$ fit separates the three accounts''; ``Since $A_t$ is computable online and is not flat during memorisation, it is also a progress measure in the sense of \citet{nanda2023progress}''; ``The kernel evolution equation above is exact, so Tiers~1--2 stand regardless''; ``Runs take minutes on one GPU''; ``with $a=1$ if the finite-width correction is $O(1/N)$''; ``so the fits are not selection-biased''; ``where the published mediator does not exist''; ``The dataset is $(a+b)\bmod p$''; ``or $\lambda<0.02$ at $\eta=100$''; ``computed with \texttt{torch.func}''; the pilot-figure placeholder and its caption ``Baseline grokking with $S_t$ and $A_t$ overlaid'' (the figure was dropped on 4~Sep at the group's request). \textbf{Tier~4 moved here from the work plan:} droppable theory that bounds $\lVert T_t\rVert$ for the two-layer quadratic-activation network ($k=3$), whose grokked solution is closed-form \citep{gromov2023grokking}, giving an analytic $A_\infty$ and $\tgrok\sim A_\infty/\dot A$; the kernel evolution equation (S5/S8) is exact, so Tiers~1--2 stand regardless. In the second 4~Sep pass (flow and set-up) the pilot figure was removed at the group's request, ``Why this regime'' was merged into the end of the dispute paragraph and its clause ``so the distinction \citeauthor{kim2026clock} draws between coupled and decoupled weight decay does not arise'' was dropped, and the Novelty list lost ``the MLP-versus-attention comparison''. Restoring Tier~4 costs about three lines; \texttt{\textbackslash linespread\{0.97\}} would free roughly that many if the group prefers it to cutting text.}
+  \item \textcolor{red}{\textbf{Template.} Font size, page size and the ``don't change'' lines untouched; added \texttt{array}, \texttt{microtype} (character protrusion only under XeTeX), \texttt{titlesec} (tighter section spacing), tighter display skips, \texttt{\textbackslash raggedbottom} and shrink-free \texttt{\textbackslash topsep} (without this, a page-1 overrun of a few points shrinks the title block onto the author line instead of moving a line). Reverting lines~39--45 overflows by several lines. Submit as \emph{G2\_proposal\_\textless SubmitterName\textgreater.pdf}.}
+\end{enumerate}
+
+\end{document}
