@@ -1,0 +1,16 @@
+[project]
+name = "stat3007-grokking"
+version = "0.1.0"
+description = "Group G2 STAT3007 project on kernel scale and rotation during grokking."
+requires-python = ">=3.11"
+dependencies = [
+    "torch>=2.4",
+    "numpy>=1.26",
+    "matplotlib>=3.8",
+    "jupyter>=1.0",
+    "ipykernel>=6.29",
+    "nbconvert>=7.16",
+]
+
+[tool.uv]
+package = false

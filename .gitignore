@@ -219,3 +219,6 @@ __marimo__/
 
 # macOS
 .DS_Store
+
+# Saved probe kernels from the experiment runs are large and can be regenerated.
+repoduced-code/results/*_kernels.npz
