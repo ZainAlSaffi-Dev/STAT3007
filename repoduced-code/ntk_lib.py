@@ -1,6 +1,4 @@
 """
-Shared code for the grokking experiments in the G2 project.
-
 This module collects the training loop, the grokking time, and the plot
 helpers that the notebooks in this folder use. The dataset, the standard
 parameterisation model, the empirical kernel, the raw scale and rotation
@@ -21,15 +19,11 @@ possible, the section or equation.
 - Cortes, Mohri, and Rostamizadeh (2012), Journal of Machine Learning
   Research 13, pages 795 to 828. Lemma 1 gives the centred kernel matrix
   H K H with H = I - (1/n) 1 1^T.
-
-The proposal states that the scale term, the rotation term, and the
-alignment are all computed on the centred kernel. RepoducedCode.py computes
-the scale and rotation terms on the raw kernel. Both versions are recorded
-here so they can be compared.
 """
 
 import copy
 import json
+import math
 import time
 from pathlib import Path
 
@@ -105,8 +99,34 @@ class MeanFieldMLP(nn.Module):
         return z @ self.W2.T / self.hidden_dim
 
 
+class NTKMLP(nn.Module):
+    """One hidden layer network in NTK parameterisation, as stated in the report.
+
+    f(x) = (1 / sqrt(N)) sum_i a_i phi(w_i . x / sqrt(D)) with a_i and w_ij
+    drawn from a normal distribution of standard deviation init_scale. This is
+    the parameterisation of Jacot, Gabriel, and Hongler (2018). There are no
+    biases, so the network is 2-homogeneous. It differs from MeanFieldMLP by
+    a factor of sqrt(N) on the output and sqrt(D) on the hidden preactivation.
+    """
+
+    def __init__(self, input_dim, hidden_dim, output_dim, activation="relu", init_scale=1.0):
+        super().__init__()
+        self.input_dim = input_dim
+        self.hidden_dim = hidden_dim
+        self.activation = activation
+        self.W1 = nn.Parameter(init_scale * torch.randn(hidden_dim, input_dim))
+        self.W2 = nn.Parameter(init_scale * torch.randn(output_dim, hidden_dim))
+
+    def forward(self, x):
+        h = x @ self.W1.T / math.sqrt(self.input_dim)
+        z = torch.relu(h) if self.activation == "relu" else h * h
+        return z @ self.W2.T / math.sqrt(self.hidden_dim)
+
+
 def build_model(parameterisation, input_dim, hidden_dim, output_dim, activation="relu", init_scale=1.0):
     """Return a fresh model. The caller sets the seed before calling this."""
+    if parameterisation == "ntk":
+        return NTKMLP(input_dim, hidden_dim, output_dim, activation, init_scale)
     if parameterisation == "standard":
         model = ModularMLP(input_dim, hidden_dim, output_dim)
         if init_scale != 1.0:
@@ -164,6 +184,17 @@ def centre_kernel(K):
     return H @ K @ H
 
 
+def uncentred_alignment(K, y):
+    """The alignment without centring, sum(y^T K y) / (||K||_F ||y y^T||_F), summed over the label columns.
+
+    This is the form printed in Kumar et al. (2024), Section 5, up to their
+    choice of evaluating it on the test set at initialisation only. It is
+    recorded for comparability; the centred version is primary.
+    """
+    YY = y @ y.T
+    return (torch.sum(K * YY) / (torch.linalg.norm(K, ord="fro") * torch.linalg.norm(YY, ord="fro"))).item()
+
+
 def compute_centred_scale_and_rotation(K_0, K_t):
     """The scale and rotation terms of the proposal computed on the centred kernels.
 
@@ -182,10 +213,10 @@ def compute_centred_scale_and_rotation(K_0, K_t):
 DEFAULTS = dict(parameterisation="mean_field", p=23, hidden_dim=100, alpha=1.0,
                 eta_0=100.0, eta_kappa=0.0, steps=60000, eval_interval=250,
                 probe_size=256, seed=0, data_seed=42, train_fraction=0.9,
-                activation="relu", init_scale=1.0, kernel_save_interval=5000)
+                activation="relu", init_scale=1.0, kernel_save_interval=5000, probe="train")
 
 HISTORY_KEYS = ["step", "train_loss", "test_loss", "train_acc", "test_acc",
-                "S_t", "R_t", "S_c", "R_c", "A_t", "param_dist", "weight_norm",
+                "S_t", "R_t", "S_c", "R_c", "A_t", "A_u", "param_dist", "weight_norm",
                 "yKy", "K_norm"]
 
 
@@ -216,8 +247,11 @@ def train_run(name, verbose=True, **overrides):
         p=p, train_fraction=cfg["train_fraction"], seed=cfg["data_seed"])
     X_train, y_train, X_test, y_test = [t.to(DEVICE) for t in (X_train, y_train, X_test, y_test)]
 
-    probe_size = min(cfg["probe_size"], X_train.shape[0])
-    x_probe, y_probe = X_train[:probe_size], y_train[:probe_size]
+    # The probe set is fixed for the run. "train" takes the first probe_size training pairs, as in the
+    # script; "test" takes test pairs, which is one of the robustness variants the report lists.
+    source_X, source_y = (X_test, y_test) if cfg["probe"] == "test" else (X_train, y_train)
+    probe_size = min(cfg["probe_size"], source_X.shape[0])
+    x_probe, y_probe = source_X[:probe_size], source_y[:probe_size]
 
     torch.manual_seed(cfg["seed"])
     model = build_model(cfg["parameterisation"], 2 * p, cfg["hidden_dim"], p,
@@ -255,13 +289,14 @@ def train_run(name, verbose=True, **overrides):
         S_t, R_t = compute_scale_and_rotation(K_0, K_t)
         S_c, R_c = compute_centred_scale_and_rotation(K_0, K_t)
         A_t = compute_task_alignment(K_t, y_probe)
+        A_u = uncentred_alignment(K_t, y_probe)
         K_norm = torch.linalg.norm(K_t, ord="fro").item()
         if K_norm > 0:
             yKy = torch.sum(y_probe * (torch.linalg.pinv(K_t, rtol=1e-6) @ y_probe)).item()
         else:
             yKy = float("nan")
         for k, v in zip(HISTORY_KEYS, [step, train_loss, test_loss, train_acc, test_acc,
-                                       S_t, R_t, S_c, R_c, A_t, param_dist, weight_norm,
+                                       S_t, R_t, S_c, R_c, A_t, A_u, param_dist, weight_norm,
                                        yKy, K_norm]):
             history[k].append(v)
         if step % cfg["kernel_save_interval"] == 0:
@@ -298,7 +333,7 @@ def run_or_load(name, rerun=False, verbose=True, **overrides):
     path = RESULTS / f"{name}.json"
     if path.exists() and not rerun:
         run = json.loads(path.read_text())
-        saved = {k: v for k, v in run["config"].items() if k != "name"}
+        saved = {**{"probe": "train"}, **{k: v for k, v in run["config"].items() if k != "name"}}
         wanted = {**DEFAULTS, **overrides}
         if saved == wanted and "R_c" in run["history"]:
             if verbose:
@@ -381,6 +416,25 @@ def _last_step(ax):
     return max((line.get_xdata()[-1] for line in ax.get_lines() if len(line.get_xdata())), default=None)
 
 
+def tidy_axes(ax):
+    """Make the tick labels readable.
+
+    Log axes get ticks at 1, 2 and 5 times each power of ten with plain
+    number labels, so a decade shows more than one number. Linear axes whose
+    range runs into the thousands get labels with a thousands separator.
+    """
+    from matplotlib.ticker import LogLocator, FuncFormatter, NullFormatter
+    for axis, scale in [(ax.xaxis, ax.get_xscale()), (ax.yaxis, ax.get_yscale())]:
+        if scale == "log":
+            axis.set_major_locator(LogLocator(base=10, subs=(1.0, 2.0, 5.0), numticks=12))
+            axis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
+            axis.set_minor_formatter(NullFormatter())
+        elif scale == "linear":
+            lo, hi = axis.get_view_interval()
+            if max(abs(lo), abs(hi)) >= 1000:
+                axis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:,.0f}"))
+
+
 def log_step_axis(ax):
     """Log step axis that keeps step zero. The linear region covers 0 to 100.
 
@@ -430,9 +484,17 @@ def plot_losses(run, g=None, log_x=True, title=None):
             log_step_axis(ax)
         if g is not None:
             mark_crossings(ax, g)
+        tidy_axes(ax)
     fig.suptitle(title or run["config"]["name"])
     fig.tight_layout()
     return fig
+
+
+YLABELS = {"train_loss": "mean squared error", "test_loss": "mean squared error", "train_acc": "accuracy",
+           "test_acc": "accuracy", "weight_norm": "weight norm", "S_c": "log of kernel norm ratio",
+           "S_t": "log of kernel norm ratio", "R_c": "one minus cosine to initial kernel",
+           "R_t": "one minus cosine to initial kernel", "A_t": "centred alignment",
+           "param_dist": "relative parameter movement", "yKy": "y' K^+ y", "K_norm": "kernel norm"}
 
 
 def plot_series(runs, keys, labels, colours, titles, log_y=(), legend_panel=0, suptitle=None,
@@ -464,14 +526,261 @@ def plot_series(runs, keys, labels, colours, titles, log_y=(), legend_panel=0, s
                             markeredgecolor="white", markeredgewidth=1)
         ax.set_title(title, loc="left", fontsize=10)
         ax.set_xlabel("step")
+        ax.set_ylabel(YLABELS.get(key, key))
         if key in log_y:
             ax.set_yscale("log")
         if log_x:
             log_step_axis(ax)
         else:
             linear_step_axis(ax)
+        tidy_axes(ax)
     axes[legend_panel].legend()
     if suptitle:
         fig.suptitle(suptitle)
+    fig.tight_layout()
+    return fig
+
+
+# =====================================================================
+# Tier grid: naming, loading and per-cell summaries
+# =====================================================================
+def cell_name(N, alpha, ek, seed):
+    """Name of a grid cell. All grid runs are NTK parameterisation at base rate 100."""
+    return f"ntk_N{N}_a{alpha:g}_wd{ek:g}_s{seed}"
+
+
+def load_cell(N, alpha, ek, seed, steps, eval_interval, verbose=False, probe="train"):
+    """Load a grid cell from results/, training it first if it is missing."""
+    suffix = "" if probe == "train" else f"_probe{probe}"
+    return run_or_load(cell_name(N, alpha, ek, seed) + suffix, verbose=verbose, parameterisation="ntk", hidden_dim=N,
+                       alpha=alpha, eta_0=100.0, eta_kappa=ek, seed=seed, steps=steps,
+                       eval_interval=eval_interval, kernel_save_interval=steps, probe=probe)
+
+
+def first_step_at_least(run, key, level):
+    """First recorded step at which the history value reaches level, or None."""
+    h = run["history"]
+    idx = np.where(np.asarray(h[key]) >= level)[0]
+    return int(h["step"][idx[0]]) if len(idx) else None
+
+
+def accuracy_crossings(run, test_level=0.95):
+    """Crossings defined on accuracy: train accuracy 1 and test accuracy test_level.
+
+    Returns the same keys as grokking_time so the two definitions can be
+    swapped. A run whose test accuracy never reaches the level is censored
+    and its grokking time is the lower bound given by the run length.
+    """
+    t_train = first_step_at_least(run, "train_acc", 1.0)
+    t_test = first_step_at_least(run, "test_acc", test_level)
+    last = int(run["history"]["step"][-1])
+    if t_train is None:
+        return dict(t_train=None, t_test=t_test, t_grok=None, censored=True, last_step=last)
+    if t_test is None:
+        return dict(t_train=t_train, t_test=None, t_grok=last - t_train, censored=True, last_step=last)
+    return dict(t_train=t_train, t_test=t_test, t_grok=t_test - t_train, censored=False, last_step=last)
+
+
+def relative_movement(run, step):
+    """The usual kernel movement statistic ||K_t - K_0||_F / ||K_0||_F at a step.
+
+    It is recovered from the recorded centred scale and rotation terms
+    through Equation 1 of the proposal.
+    """
+    S, R = value_at_step(run, "S_c", step), value_at_step(run, "R_c", step)
+    return float(np.sqrt(max(np.exp(2 * S) + 1 - 2 * np.exp(S) * (1 - R), 0.0)))
+
+
+def summarise_cell(run, definition="accuracy", tau=1e-2, test_level=0.95):
+    """One row of numbers for a cell: the crossings and the kernel terms at the test crossing.
+
+    definition is "accuracy" for the accuracy crossings, with the test
+    crossing at test accuracy test_level, or "loss" for the loss thresholds
+    tau on both losses. Kernel terms at the crossing are None when the test
+    crossing is censored.
+    """
+    g = accuracy_crossings(run, test_level) if definition == "accuracy" else grokking_time(run, tau, tau)
+    h = run["history"]
+    t = g["t_test"]
+    row = dict(t_train=g["t_train"], t_test=t, t_grok=g["t_grok"], censored=g["censored"],
+               last_step=g["last_step"], A_peak=float(max(h["A_t"])), A_peak_step=peak_step(run, "A_t"),
+               norm_growth=h["weight_norm"][-1] / run["init_weight_norm"],
+               A_at_test=None, S_at_test=None, R_at_test=None, D_at_test=None)
+    if t is not None:
+        row.update(A_at_test=value_at_step(run, "A_t", t), S_at_test=value_at_step(run, "S_c", t),
+                   R_at_test=value_at_step(run, "R_c", t), D_at_test=relative_movement(run, t))
+    return row
+
+
+def fmt(x, digits=4):
+    """Format a number for a table, with None shown as a dash."""
+    if x is None:
+        return "-"
+    if isinstance(x, (int, np.integer)):
+        return str(x)
+    return f"{x:.{digits}f}"
+
+
+# =====================================================================
+# Censored regression for the head claim
+# =====================================================================
+def censored_log_fit(X, t, censored, n_boot=300, seed=0):
+    """Fit log t = X beta + noise by maximum likelihood with right censoring.
+
+    X is a design matrix with an intercept column, t the grokking times and
+    censored a boolean array. A censored time enters through the probability
+    that the true value exceeds it, which is the Tobit model the report names.
+    The noise is normal on the log scale. Confidence intervals come from a
+    bootstrap over cells. Returns the coefficients, their 95 percent
+    intervals, and the fitted log standard deviation.
+    """
+    from scipy.optimize import minimize
+    from scipy.stats import norm
+
+    X = np.asarray(X, float)
+    y = np.log(np.asarray(t, float))
+    c = np.asarray(censored, bool)
+
+    def nll(params, Xf, yf, cf):
+        beta, sigma = params[:-1], np.exp(params[-1])
+        mu = Xf @ beta
+        return -(norm.logpdf(yf[~cf], mu[~cf], sigma).sum() + norm.logsf(yf[cf], mu[cf], sigma).sum())
+
+    def fit(Xf, yf, cf):
+        beta0 = np.linalg.lstsq(Xf, yf, rcond=None)[0]
+        res = minimize(lambda p: nll(p, Xf, yf, cf), np.r_[beta0, 0.0], method="BFGS")
+        return res.x
+
+    est = fit(X, y, c)
+    rng = np.random.default_rng(seed)
+    boots = []
+    n = len(y)
+    for _ in range(n_boot):
+        idx = rng.integers(0, n, n)
+        if np.linalg.matrix_rank(X[idx]) < X.shape[1]:
+            continue
+        boots.append(fit(X[idx], y[idx], c[idx]))
+    boots = np.array(boots)
+    lo, hi = np.percentile(boots, [2.5, 97.5], axis=0)
+    return dict(coef=est[:-1], lo=lo[:-1], hi=hi[:-1], log_sigma=est[-1], n_boot=len(boots))
+
+
+def plot_definitions(run, tau=1e-2, test_level=0.95, title=None):
+    """Show the two grokking-time definitions on one run, side by side.
+
+    The left panel draws the training and test losses with the threshold
+    tau and marks where each first falls below it. The right panel draws the
+    two accuracies with the levels 1 and test_level and marks where each
+    first reaches them. On each panel the gap between the memorisation event
+    and the generalisation event is shaded; that gap is the grokking time
+    under that definition. A missing marker means the event did not happen
+    within the run, and the gap is then drawn open to the end of the run.
+    """
+    h = run["history"]
+    steps = np.asarray(h["step"])
+    loss = grokking_time(run, tau, tau)
+    acc = accuracy_crossings(run, test_level)
+    fig, axes = plt.subplots(1, 2, figsize=(11, 3.8))
+
+    def panel(ax, g, keys, levels, ylabel, log_y):
+        for key, colour, label in zip(keys, [BLUE, ORANGE], ["train", "test"]):
+            ax.plot(steps, h[key], color=colour, label=label)
+        for level in levels:
+            ax.axhline(level, color=GRAY, lw=1, ls="-.")
+        t0, t1 = g["t_train"], g["t_test"]
+        if t0 is not None:
+            ax.axvline(t0, color=BLUE, lw=1, ls=":")
+            ax.plot([t0], [value_at_step(run, keys[0], t0)], "o", ms=8, markerfacecolor="white", markeredgecolor=BLUE,
+                    markeredgewidth=1.6, label="memorisation event")
+        if t1 is not None:
+            ax.axvline(t1, color=ORANGE, lw=1, ls=":")
+            ax.plot([t1], [value_at_step(run, keys[1], t1)], "o", color=ORANGE, ms=8, markeredgecolor="white",
+                    label="generalisation event")
+        if t0 is not None:
+            end = t1 if t1 is not None else steps[-1]
+            ax.axvspan(t0, end, color=AQUA, alpha=0.15,
+                       label="grokking time" if t1 is not None else "grokking time, open ended")
+        if log_y:
+            ax.set_yscale("log")
+        ax.set_xlabel("step")
+        ax.set_ylabel(ylabel)
+        ax.legend(fontsize=8, loc="best")
+        tidy_axes(ax)
+
+    panel(axes[0], loss, ["train_loss", "test_loss"], [tau], "mean squared error", True)
+    axes[0].set_title(f"loss definition: both losses crossing {tau:g}", loc="left", fontsize=10)
+    panel(axes[1], acc, ["train_acc", "test_acc"], [1.0, test_level], "accuracy", False)
+    axes[1].set_title(f"accuracy definition: train accuracy 1, test accuracy {test_level:g}", loc="left", fontsize=10)
+    axes[1].set_ylim(0, 1.05)
+    fig.suptitle(title or f"How the grokking time is measured on one run, {run['config']['name']}")
+    fig.tight_layout()
+
+    def word(t):
+        return "never within the run" if t is None else f"step {t}"
+    print(f"Loss definition: memorisation {word(loss['t_train'])}, generalisation {word(loss['t_test'])}, "
+          f"grokking time {format_time(loss)} steps.")
+    print(f"Accuracy definition: memorisation {word(acc['t_train'])}, generalisation {word(acc['t_test'])}, "
+          f"grokking time {format_time(acc)} steps.")
+    return fig
+
+
+def plot_sensitivity(run, taus=(5e-2, 3e-2, 2e-2, 1e-2, 5e-3, 3e-3, 1e-3), title=None):
+    """Grokking time under the loss definition over a grid of thresholds, as a heat map.
+
+    Rows are the training-loss threshold and columns the test-loss threshold.
+    A measured positive grokking time is coloured on a log scale and
+    labelled. A negative or zero value, where the test loss crossed no later
+    than the training loss, is shown in light grey with its label. A cell
+    whose test loss never crosses is a lower bound and is shown in darker
+    grey with hatching and a greater-than sign. A cell whose training loss
+    never crosses has no grokking time and is blank.
+    """
+    from matplotlib.colors import LogNorm
+    taus = list(taus)
+    n = len(taus)
+    values = np.full((n, n), np.nan)
+    notes = {}
+    for i, tau_tr in enumerate(taus):
+        for j, tau_te in enumerate(taus):
+            g = grokking_time(run, tau_tr, tau_te)
+            if g["t_grok"] is None:
+                notes[(i, j)] = ("none", "no train\ncrossing")
+            elif g["censored"]:
+                notes[(i, j)] = ("censored", format_time(g))
+            elif g["t_grok"] <= 0:
+                notes[(i, j)] = ("nonpositive", str(g["t_grok"]))
+            else:
+                values[i, j] = g["t_grok"]
+    fig, ax = plt.subplots(figsize=(1.1 * n + 2, 0.75 * n + 1.5))
+    vmin, vmax = np.nanmin(values), np.nanmax(values)
+    image = ax.imshow(values, cmap="Blues", norm=LogNorm(vmin=vmin, vmax=vmax))
+    for (i, j), (kind, label) in notes.items():
+        if kind == "none":
+            ax.text(j, i, label, ha="center", va="center", fontsize=7, color=GRAY)
+            continue
+        face = "#d9d8d3" if kind == "nonpositive" else "#b5b4ae"
+        ax.add_patch(plt.Rectangle((j - 0.5, i - 0.5), 1, 1, facecolor=face, edgecolor="white",
+                                   hatch="///" if kind == "censored" else None, lw=0.5))
+        ax.text(j, i, label, ha="center", va="center", fontsize=8, color="black")
+    for i in range(n):
+        for j in range(n):
+            if not np.isnan(values[i, j]):
+                dark = np.log(values[i, j] / vmin) > 0.55 * np.log(vmax / vmin)
+                ax.text(j, i, f"{values[i, j]:.0f}", ha="center", va="center", fontsize=8,
+                        color="white" if dark else "black")
+    ax.set_xticks(range(n)); ax.set_xticklabels([f"{t:g}" for t in taus])
+    ax.set_yticks(range(n)); ax.set_yticklabels([f"{t:g}" for t in taus])
+    ax.set_xlabel("test-loss threshold"); ax.set_ylabel("training-loss threshold")
+    ax.grid(False)
+    cbar = fig.colorbar(image, ax=ax, fraction=0.04, pad=0.02)
+    cbar.set_label("measured grokking time, steps")
+    from matplotlib.ticker import LogLocator, FuncFormatter, NullFormatter
+    cbar.ax.yaxis.set_major_locator(LogLocator(base=10, subs=(1.0, 2.0, 5.0), numticks=10))
+    cbar.ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:,.0f}"))
+    cbar.ax.yaxis.set_minor_formatter(NullFormatter())
+    ax.plot([], [], "s", color="#b5b4ae", label="lower bound, test loss never crossed")
+    ax.plot([], [], "s", color="#d9d8d3", label="zero or negative, test crossed first")
+    ax.legend(loc="upper left", bbox_to_anchor=(0, -0.12), fontsize=8, ncol=2)
+    ax.set_title(title or "Loss-based grokking time against the two thresholds", loc="left", fontsize=10)
     fig.tight_layout()
     return fig
