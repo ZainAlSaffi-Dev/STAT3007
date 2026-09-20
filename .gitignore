@@ -219,3 +219,6 @@ __marimo__/
 
 # macOS
 .DS_Store
+
+# Rendered animation video. Large, and rebuildable from the scenes.
+animations/out/mp4/

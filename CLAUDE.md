@@ -47,6 +47,20 @@ Prefer prose over fragments. A list is fine when the items are truly parallel, b
 
 This rule applies to chat replies, code comments, docstrings, commit messages, the report, and the LaTeX source.
 
+### Punctuation and sentence shape
+
+Do not use an em dash or an en dash as punctuation. Where one of them would have gone, use a full stop, a semicolon, or a colon, and prefer the full stop. In LaTeX this means no `---` and no `--` in running prose. A hyphen inside a compound word is fine. So is an en dash inside a page range or a numbered range in a citation, such as `795--828`.
+
+Do not write the antithesis "it is not X, it is Y", or its short form "not X but Y". Say what the thing is. If the contrast carries information of its own, give it its own sentence.
+
+Keep sentences short. One point per sentence. A sentence with three clauses is usually two sentences.
+
+The list of words to avoid in Rule 2 also covers "seamless", "dramatically", "robustly", "fundamental", "key", "deep", "simply", and "of course". Two exceptions apply because they are technical terms in this project. The word "rich" is allowed when it names the feature-learning regime, and the word "lazy" is allowed when it names the kernel regime.
+
+These rules apply everywhere Rule 2 applies. They also apply to any text rendered inside a figure or an animation, including axis labels and captions.
+
+The files in `docs/` were written before this rule and contain `---` in several places. Do not sweep them. Replace `---` on a line that you are editing for another reason.
+
 ## Rule 3. Cross-check anything taken from a source paper
 
 This project reproduces published work and then extends it. When you implement or describe something that comes from one of the source papers, open that paper and check that what you wrote matches it.
