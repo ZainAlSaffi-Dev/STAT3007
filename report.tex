@@ -1,0 +1,624 @@
+\documentclass[a4paper,11pt]{article} % Don't change this
+\usepackage{fullpage} % Don't change this
+
+\usepackage{titling} % Don't change this
+\pretitle{\vspace{-6em}\begin{center}\larger[2]\bf} % Don't change this
+\postauthor{\end{center}} % Don't change this
+\preauthor{\vspace{-2em}\begin{center}\smaller[1]} % Don't change this
+\postauthor{\end{center}\vspace{-5em}} % Don't change this
+
+\usepackage[shortlabels]{enumitem} % Don't change this 
+\setlist{itemsep=0em,topsep=0.3em} % Don't change this
+
+%%% Some useful packages.
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage[hidelinks]{hyperref}
+\usepackage{relsize}
+\usepackage{cleveref}
+\crefname{figure}{Fig.}{Figs.}
+
+\usepackage[backend=bibtex,natbib=true,style=authoryear-icomp,maxnames=3,giveninits=true]{biblatex}
+\citetrackerfalse
+\bibliography{ref} % put bib entries in ref.bib
+
+\usepackage[linesnumbered]{algorithm2e}
+\usepackage{cleveref}
+\crefname{equation}{Equation.}{Equations.}
+\crefname{figure}{Figure}{Figures.}
+
+\usepackage{lipsum}
+\usepackage{wrapfig}
+\usepackage{tikz}
+
+%%% Add additional packages or macros below
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{microtype}
+
+% Draft aid: red bold TODO markers. Delete this macro's colour (or the macro
+% calls) before submission.
+\newcommand{\TODO}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+
+\newcommand{\Kh}{\widehat{K}}
+\newcommand{\Kt}{\widetilde{K}}
+\newcommand{\Fnorm}[1]{\lVert #1 \rVert_F}
+\newcommand{\tgrok}{t_{\mathrm{grok}}}
+\newcommand{\Astar}{A_{*}}
+
+\begin{document}
+
+\title{Scale or Shape? Decomposing NTK Movement During Grokking}
+\author{Group G2 \\
+Zain Al-Saffi (s4800836) $\cdot$
+Jasper Chong (s4883420) $\cdot$
+Aaron D'Mello (s4890257) \\
+Zac Kienzle (s4803349) $\cdot$ Samuel Rieger (s4904959)}
+
+\date{}
+\maketitle
+
+% =====================================================================
+% SCAFFOLD NOTE (delete before submission)
+% Every bullet below is lifted from final_proposal.tex / the G2 context
+% doc and is here as a writing prompt, not as final prose. Replace each
+% itemize with paragraphs. Limits: 12 pages body (excl. refs/appendices),
+% 5 pages appendices. Do not change font or page size.
+% =====================================================================
+
+\begin{abstract}
+	\TODO{write last, $\approx$150 words, in prose}
+	Skeleton:
+	\begin{itemize}
+		\item Grokking is usually explained as a lazy-to-rich transition, evidenced
+			by relative kernel movement $\Fnorm{K_t-K_0}/\Fnorm{K_0}$.
+		\item That statistic is not identifiable: it mixes a change in kernel
+			\emph{scale} with a change in kernel \emph{shape} (\cref{eq:decomp}).
+		\item We split it into $S_t$ (scale), $R_t$ (shape) and $A_t$ (centred
+			alignment to the labels) and use them as timing variables on modular
+			addition.
+		\item Head result: the fit $\log\tgrok = c + a\log N + b\log(\eta\lambda)$,
+			which separates a shape clock ($a>0$, $b\approx0$) from a weight-decay
+			clock ($a\approx0$, $b\approx-1$). \TODO{our $(a,b)$ with CIs}
+		\item Secondary: o (or not) of the alignment threshold $\Astar$;
+			a worked cell where kernel movement is large but $A_t$ is flat.
+	\end{itemize}
+\end{abstract}
+
+\section{Introduction}
+
+% Target: ~1.5 pages. Order: phenomenon -> NTK/lazy-rich -> the conflation
+% -> research question -> hypothesis -> contributions.
+
+\paragraph{The phenomenon.}
+\begin{itemize}
+	\item Grokking: training loss falls early, test loss stays at chance for
+		orders of magnitude longer, then falls abruptly \citep{power2022grokking}.
+	\item $\tgrok$ = number of training steps from the training loss first
+		crossing $\tau_{\mathrm{train}}$ to the test loss first crossing
+		$\tau_{\mathrm{test}}$.
+	\item Task: modular addition. Input concatenates one-hot codes of
+		$a,b\in\{0,\dots,p-1\}$ (dimension $2p$); target is the one-hot code of
+		$(a+b)\bmod p$; $p^2$ pairs in total.
+	\item Why this task: small enough for full-batch GD (clean kernel analysis);
+		the generalising solution is known (Fourier ``clock''
+		\citep{nanda2023progress}; closed form for quadratic activation
+		\citep{gromov2023grokking}).
+\end{itemize}
+
+\paragraph{NTK, lazy and rich.}
+\begin{itemize}
+	\item $\Theta_t(x,x')=\langle\nabla_\theta f(x;\theta_t),\nabla_\theta
+		f(x';\theta_t)\rangle$; $K_t$ is the empirical version on a fixed probe set
+		of $n$ inputs.
+	\item Lazy: $\Theta_t$ stays at $\Theta_0$, network behaves as its
+		linearisation \citep{jacot2018ntk}. Rich: $\Theta_t$ moves
+		\citep{chizat2019lazy}.
+	\item One account of grokking is a lazy-to-rich transition: a linearised
+		model memorises, but generalising needs the kernel to move
+		\citep{kumar2024grokking,mohamadi2024grok}.
+\end{itemize}
+
+\paragraph{The conflation (the core observation).}
+\begin{itemize}
+	\item ``The kernel moves'' bundles two claims: a change in \emph{scale}
+		(every eigenvalue rescaled, eigenbasis fixed) and a change in \emph{shape}
+		(the eigenbasis itself turns).
+	\item Let $\Kh=K/\Fnorm{K}$, $S_t=\log(\Fnorm{K_t}/\Fnorm{K_0})$ and
+		$R_t=1-\langle\Kh_t,\Kh_0\rangle_F$. The standard statistic decomposes as
+		\begin{equation}
+			\Fnorm{K_t-K_0}^2\big/\Fnorm{K_0}^2 = e^{2S_t}+1-2e^{S_t}(1-R_t).
+			\label{eq:decomp}
+		\end{equation}
+	\item Two limits make the problem concrete: at $R_t=0$ it reads
+		$(1-e^{S_t})^2$ --- a kernel whose eigenvectors never move can still report
+		arbitrarily large ``movement'' by shrinking; at $S_t=0$ it reads $2R_t$.
+	\item Consequence: any exponent fitted to $D=\Fnorm{K_t-K_0}/\Fnorm{K_0}$ is
+		unidentified. (Derivation in \cref{sec:appendix}, not asserted in the body.)
+	\item Why this is not pedantry: the theorem usually cited to link weight decay
+		to kernel movement describes \emph{pure scaling}. A $k$-homogeneous network
+		(scaling all parameters by $c$ scales the output by $c^k$; a bias-free ReLU
+		MLP has $k$ = depth) at infinite width, MSE, $L_2$ strength $\lambda$, has
+		$\Theta_t=e^{-2(k-1)\lambda t}\Theta_0$
+		\citep[Thms.~1--2]{lewkowycz2020l2}, i.e. $S_t=-2(k-1)\lambda t$ and
+		$R_t\equiv0$: no features learned. Yet
+		\citet[App.~13, arXiv v3]{kumar2024grokking} invoke it to argue weight decay
+		ends lazy training and $\tgrok\propto1/\lambda$ --- an argument they call
+		speculative and do not test on the kernel.
+\end{itemize}
+
+\paragraph{Research question and hypothesis.}
+\begin{itemize}
+	\item \textbf{RQ.} What sets $\tgrok$? Candidates: kernel shape, kernel or
+		weight scale, the weight-decay rate. Three 2026 accounts each back a
+		different one (\cref{sec:related}); none measures shape change. We measure
+		all three on one grid and ask which $\tgrok$ tracks.
+	\item \textbf{H (shape clock).} With $Y$ the probe set's one-hot label matrix
+		and $H=I-\tfrac1n\mathbf{1}\mathbf{1}^\top$, let $A_t$ be the cosine between
+		$HK_tH$ and $HYY^\top H$ --- centred alignment \citep{cortes2012alignment},
+		invariant to rescaling of $K_t$ by construction. H says: generalisation
+		begins when $A_t$ crosses a threshold $\Astar$; $\Astar$ is shared across
+		$\alpha$, $\eta\lambda$, $N$ and $p$; and $\tgrok$ is independent of $S_t$
+		given $A_t$.
+	\item \textbf{Discriminating prediction.} From the exact evolution
+		$\dot\Theta_t=-2(k-1)\lambda\,\Theta_t+T_t+T_t^\top$
+		\citep[Eq.~S5, arXiv v1]{lewkowycz2020l2}: the weight-decay term only
+		rescales $\Theta_t$, so $A_t$ moves only through $T_t$. $T_t$ vanishes at
+		infinite width and carries no explicit $\lambda$, so shape change is a
+		finite-width effect and wider networks reshape more slowly. Fit
+		$\log\tgrok=c+a\log N+b\log(\eta\lambda)$: H predicts $a>0$, $b\approx0$
+		($a=1$ if the $O(1/N)$ correction scaling holds); a weight-decay clock
+		predicts $a\approx0$, $b\approx-1$; two nonzero exponents mean two clocks
+		and the slower one sets the time. We estimate $(a,b)$, we do not assume them.
+\end{itemize}
+
+\paragraph{Contributions.} \TODO{state honestly; overclaiming costs more under
+\emph{correctness} than it gains under \emph{novelty}}
+\begin{itemize}
+	\item Already published elsewhere: the NTK--grokking link, the laziness knob
+		$\alpha$, eNTK spectral tracking, the norm delay law, norm mediation.
+	\item Ours: (i) decomposition~\eqref{eq:decomp} used as a \emph{timing}
+		variable; (ii) the $(a,b)$ test separating width-driven reshaping from the
+		$\lambda$-clock; (iii) a shape-based account of the norm law under MSE.
+	\item Practical stake: if timing is set by kernel shape, then a quantity
+		measurable during the apparently-flat phase predicts capability onset before
+		any loss-based metric --- an early-warning signal for delayed generalisation.
+\end{itemize}
+
+\section{Related Work}
+\label{sec:related}
+
+% Target: ~1.5 pages. Group thematically, not paper-by-paper.
+
+\paragraph{Grokking phenomenology.}
+\begin{itemize}
+	\item \citet{power2022grokking}: the original delayed-generalisation
+		observation on small algorithmic datasets.
+	\item \citet{nanda2023progress}: what the network actually learns (Fourier
+		multiplication), and the progress-measure framing --- note $A_t$ is a
+		progress measure in this sense, computable online and not flat during
+		memorisation.
+	\item \citet{liu2023omnigrok}: grokking beyond algorithmic data; weight-norm
+		framing. \TODO{decide whether to keep --- used for context only}
+\end{itemize}
+
+\paragraph{Lazy vs.\ rich training.}
+\begin{itemize}
+	\item \citet{jacot2018ntk}: NTK, infinite-width limit, $\Theta_t\equiv\Theta_0$.
+	\item \citet{chizat2019lazy}: laziness is controlled by output scale, not
+		width alone; the $\alpha$ knob with $\eta=\eta_0/\alpha^2$.
+	\item \citet{kumar2024grokking}: grokking \emph{is} the lazy-to-rich
+		transition; conditions (misaligned $\Theta_0$ top eigenvectors, dataset big
+		enough to generalise but not so big that train tracks test, lazy start).
+		Their evidence for ``the kernel changed'' is exactly the unidentified
+		statistic $D$.
+	\item \citet{atanasov2022silent}: silent alignment --- eigenstructure can move
+		while the kernel is still small, scale grows afterwards. So the temporal
+		ordering of $S$ and $A$ is an empirical question, not definitional.
+\end{itemize}
+
+\begin{itemize}
+	\item \citet[\S5]{kumar2024grokking} \emph{do} measure kernel--target
+		alignment, $y^\top K_0y/(\Fnorm{K}\lVert y\rVert^2)$, citing
+		\citet{kornblith2019cka} --- but at initialisation only, as a static screen
+		for whether $\Theta_0$ is badly enough matched to the task for grokking to
+		be possible (one of their three preconditions).
+	\item It is never plotted against training step. The only time-resolved
+		alignment object in the paper is the misalignment \emph{error} term in the
+		loss decomposition of their analytic polynomial model, not a measurement on
+		the modular-addition network.
+	\item Hence no threshold crossing exists in their design and $\Astar$ is not a
+		question they can pose --- it is open, not settled. Our $A_t$ is the same
+		family of statistic evaluated \emph{along the trajectory} and used as a
+		timing variable.
+	\item Two definitional gaps when our numbers sit beside theirs:
+		(i) no centring matrix --- with mean-centred labels the numerators agree,
+		since $\langle HKH,yy^\top\rangle_F=(Hy)^\top K(Hy)$, but their denominator
+		is $\Fnorm{K}$ rather than $\Fnorm{HKH}$, so the two differ by
+		$\Fnorm{K}/\Fnorm{HKH}$, and one-hot targets (column means $1/p$) are not
+		centred anyway; (ii) they evaluate $K_0$, we evaluate $K_t$.
+	\item So we report the uncentred variant throughout for like-for-like Tier~0
+		comparison, and keep centred $A_t$ \citep{cortes2012alignment} primary
+		because it is invariant to the constant component that otherwise dominates.
+	\item \TODO{verify the printed form of their CKA against the PDF --- the name
+		(CKA, after \citeauthor{kornblith2019cka}, which is centred) and the printed
+		formula (which is not) appear to disagree; do not rest the comparison on a
+		misreading}
+\end{itemize}
+
+\paragraph{Theory constraining what the kernel can do.}
+\begin{itemize}
+	\item \citet{lewkowycz2020l2}: Thms.~1--2 (eigenvalues decay, eigenvectors
+		static) and the exact Eq.~S5/S6 (S8/S9 in v2) --- the technical spine.
+		Assumptions: MSE, $k\ge2$, gradient flow, infinite width, Dyer--Gur-Ari
+		conjecture.
+	\item \citet{mohamadi2024grok}: no permutation-equivariant model in the kernel
+		regime achieves small population error on modular addition without a
+		constant fraction of the $p^2$ pairs --- so on this task shape change is
+		\emph{necessary}; scale motion provably cannot deliver generalisation.
+	\item \citet{gromov2023grokking}: closed-form grokked weights for the
+		two-layer quadratic-activation network. Needed for Tier~4 only.
+	\item \citet{tian2025emergence}: scaling laws of feature emergence.
+		\TODO{one line, or cut}
+\end{itemize}
+
+\paragraph{The 2026 dispute: three clocks.}
+\begin{itemize}
+	\item \citet{truong2026norm}: weight norm \emph{causally} sets the timescale.
+		Clamping $\lVert W\rVert$ at $\rho\lVert W\rVert_c$ gives
+		$\tgrok\propto e^{a\rho}$ with $a\approx7.5$ (MLP) vs $\approx15$
+		(unnormalised attention), $R^2>0.99$; $\lVert W\rVert_c\propto p^{0.38}$
+		($\lVert W\rVert_c=\{42,48,55,61,67\}$ at $p=\{29,41,59,79,97\}$);
+		LayerNorm removes the dependence. Loss is cross-entropy.
+	\item \citet{truong2026logit}: under CE the norm effect runs through
+		\emph{logit scale}, not the norm ($R^2=0.97$); the channel is absent under
+		MSE, where about half the effect is unexplained.
+	\item \citet{kim2026clock}: weight decay is the clock,
+		$\tgrok\propto(1-\beta)/(\eta\lambda)$ with heavy-ball momentum $\beta$.
+	\item \textbf{The gap.} Every observable in the dispute is scale-like or
+		optimiser-level, so none can tell a reshaped kernel from a decaying one.
+		H supplies the missing variable $A_t$. Our regime (MSE + vanilla GD) is the
+		one where the logit channel is absent, Thm.~2 applies verbatim, and coupled
+		$L_2$ coincides with decoupled weight decay, so Kim's coupled/decoupled
+		distinction collapses.
+	\item \citet{cortes2012alignment}: centred kernel alignment, i.e. our $A_t$.
+
+\end{itemize}
+
+\section{Methods}
+\label{sec:methods}
+
+% Target: ~3 pages. This is where mathematical maturity shows: derive the
+% identity, do not assert it; state estimator choices and the pre-registered
+% t_grok definition precisely enough to reproduce.
+
+\subsection{Task, architecture and baseline}
+\begin{itemize}
+	\item Baseline follows \citet[App.~8.3, arXiv v3]{kumar2024grokking} so that
+		Tier~0 is checkable against a published figure.
+	\item One hidden layer, width $N=100$; input $2p$ concatenated one-hots,
+		output $p$; MSE loss (accuracy is threshold-gameable on this task);
+		full-batch vanilla GD at $\eta=100$; $p=23$; $90\%$ of the $p^2$ pairs for
+		training; no weight decay in the baseline (swept separately).
+	
+	\item Table~\TODO{ref}: full config in one table (reproducibility is a graded
+		criterion; synthetic data, one script, fixed seeds).
+\end{itemize}
+
+\paragraph{Parameterisation.}
+\begin{itemize}
+	\item Both Tier~0 and Tier~2 use the NTK parameterisation
+		$f(x;\theta)=\tfrac{1}{\sqrt N}\sum_{i=1}^{N}a_i\,
+		\phi(\tfrac{1}{\sqrt D}w_i^\top x)$, $a_i,w_{ij}\sim\mathcal N(0,1)$,
+		$D=2p$, no biases $\Rightarrow$ $2$-homogeneous, so $k=2$ in
+		\citet{lewkowycz2020l2}.
+	\item $\alpha$ sits on top of this via $\tilde f=\alpha[f(x;\theta)-f(x;\theta_0)]$,
+		$\eta=\eta_0/\alpha^2$: output scale and width stay separate controls.
+	\item Why it is forced: under $1/\sqrt N$, $T_t$ is the only shape channel and
+		the leading finite-width correction is $O(1/N)$ (Dyer--Gur-Ari), which is
+		what makes $a=1$ a sharp prediction rather than a fitted slope.
+	\item Under mean-field / $\mu$P ($1/N$ prefactor) feature learning is $O(1)$ at
+		every width by construction: $N$ does not control laziness,
+		$\hat a\approx0$ follows trivially, and the estimate says nothing about a
+		shape clock. Reporting $\hat a$ without fixing the parameterisation is
+		uninterpretable.
+\end{itemize}
+
+\paragraph{Consequence for Tier~0 (flag, do not bury).}
+\begin{itemize}
+	\item \citet[App.~8.3]{kumar2024grokking} give width, loss, optimiser, $\eta$,
+		$p$ and train fraction, but \emph{not} the parameterisation, activation or
+		initialisation scale; no code accompanies the paper.
+	\item Their analytic model \citep[Eq.~3]{kumar2024grokking} is mean-field,
+		$f=\tfrac{\alpha}{N}\sum_i\phi(w_i\cdot x)$ --- so the modular-addition
+		network may not share ours.
+	\item We therefore reproduce their $\alpha$ sweep \emph{under our
+		parameterisation} and gate on the ordering and approximate magnitude of
+		$\tgrok$ across $\alpha$, not on step counts, which the unstated
+		initialisation scale alone would break.
+	\item \TODO{report whether Tier~0 reproduces under NTK parameterisation. If it
+		reproduces only under the mean-field prefactor, say so and state which
+		parameterisation each tier uses --- a Tier~0 holding in one and a Tier~2
+		requiring the other is a discontinuity to report, not to smooth over}
+\end{itemize}
+
+\subsection{The laziness and weight-decay knobs}
+\begin{itemize}
+	\item Laziness: centred, rescaled predictor
+		$\tilde f=\alpha[f(x;\theta)-f(x;\theta_0)]$ with $\eta=\eta_0/\alpha^2$
+		\citep{chizat2019lazy,kumar2024grokking}. Both parts are mandatory: centring
+		removes the initial function, the $\eta_0/\alpha^2$ rescaling keeps early
+		dynamics comparable across $\alpha$. Large $\alpha$ $\Rightarrow$ lazy.
+	\item $\alpha$, initialisation scale and label rescaling are one knob, so we
+		sweep only $\alpha$.
+	\item Weight decay is always reported as the dimensionless $\eta\lambda$ ---
+		the combination the theory's timescale $t_*\propto(\eta\lambda)^{-1}$ is
+		expressed in. Discrete GD gives $w\leftarrow(1-\eta\lambda)w-\eta\nabla L$,
+		so stability needs $\eta\lambda<2$ ($\lambda<0.02$ at $\eta=100$).
+\end{itemize}
+
+\subsection{Kernel metrics}
+\begin{itemize}
+	\item Fixed probe set of $n=256$ input pairs, drawn once, containing both
+		train and test pairs, frozen across all runs and seeds. Report metrics on
+		train and test halves separately as well as pooled.
+	\item eNTK via \texttt{torch.func} (\texttt{jacrev} + \texttt{vmap}),
+		sum-over-logits kernel (gradient of $\sum_c f_c$), $256\times256$ per
+		checkpoint, seconds to compute. First-logit variant as a robustness check.
+	\item All of $S,R,A$ computed on the centred kernel $\Kt=HKH$; uncentred $A$
+		also reported for comparability with \citet{kumar2024grokking}.
+	\item Definitions (\TODO{as a small table}): $S_t=\log(\Fnorm{\Kt_t}/\Fnorm{\Kt_0})$;
+		$R_t=1-\langle\widehat{\Kt}_t,\widehat{\Kt}_0\rangle_F$;
+		$A_t=\langle\Kt_t,\widetilde G\rangle/(\Fnorm{\Kt_t}\Fnorm{\widetilde G})$
+		with $\widetilde G=HYY^\top H$.
+	\item Also logged each checkpoint: train/test MSE, $\lVert w-w_0\rVert/\lVert
+		w_0\rVert$, $\lVert W\rVert$, and $y^\top K^{-1}y$ (equal to
+		$\lVert w-w_0\rVert^2$ near the kernel limit, so its divergence predicts
+		when linearisation must break).
+	\item Checkpoint on a \emph{log-spaced} step grid: grokking spans 3--5 orders
+		of magnitude in $t$, so linear checkpointing spends the budget at the wrong
+		end.
+	\item Sanity check before trusting $A_t$: $A_0$ stable across seeds.
+\end{itemize}
+
+\subsection{Defining $\tgrok$}
+\begin{itemize}
+	\item $\tgrok$ = step gap between the training loss crossing
+		$\tau_{\mathrm{train}}$ and the test loss crossing $\tau_{\mathrm{test}}$.
+	\item Thresholds pre-registered (fixed before any sweep ran; \TODO{state
+		values and where they were frozen --- repo commit hash / OSF}) with a
+		sensitivity analysis over at least three values each.
+	\item A run whose test loss is still above $\tau_{\mathrm{test}}$ at the step
+		budget has \emph{not grokked}. It is kept, and $\tgrok$ is recorded only as
+		greater than the run length: right censoring. Dropping such runs would select
+		exactly the cells that confirm any timing hypothesis.
+	\item Estimation by censored regression (Tobit, or Cox on $\log\tgrok$), not
+		least squares on the survivors.
+\end{itemize}
+
+\subsection{Theory: where shape change can come from}
+\begin{itemize}
+	\item Exact evolution $\dot\Theta_t=-2(k-1)\lambda\,\Theta_t+T_t+T_t^\top$
+		\citep[Eq.~S5]{lewkowycz2020l2}; $T_t$ is the third-derivative term of
+		Eq.~S6. First term is pure scale, so all shape change is carried by $T_t$,
+		which vanishes with width and carries no explicit $\lambda$.
+	\item Under H, $\Astar$ is a fixed target, so $\tgrok$ is a distance over a
+		rate: it should grow with $N$ and stay flat in $\eta\lambda$.
+	\item Caveat to state plainly: the $e^{-2(k-1)\lambda t}$ solution assumes
+		gradient flow, while we use $\eta=100$ discrete GD. Eq.~S5 itself is
+		discrete-agnostic; the closed-form solution is not.
+\end{itemize}
+
+\subsection{Scope: four reportable tiers (five with the theory tier)}
+% Each tier is independently reportable; the project cannot end with nothing.
+\begin{itemize}
+	\item \textbf{0} (hard gate, week~1): reproduce the published $\alpha$ sweep
+		at the stated hyperparameters. Everything downstream is uninterpretable
+		without it.
+	\item \textbf{1}: measure $S_t,R_t,A_t,\tgrok$ over the $\alpha\times\eta\lambda$
+		grid; test whether $\Astar$ is invariant; exhibit a cell where kernel
+		movement is large but $A_t$ is flat. Sufficient for a complete report alone.
+	\item \textbf{2} (head claim): the $(a,b)$ fit with bootstrap intervals, plus
+		the residuals where a power law fails.
+	\item \textbf{3} (stretch): replicate the clamped-norm law under MSE; test
+		whether $\Astar$ is invariant to $\rho$.
+	\item \textbf{4} (theory, droppable): bound $\lVert T_t\rVert$ for the
+		two-layer quadratic-activation network (making $k=3$), whose grokked
+		solution is closed-form \citep{gromov2023grokking}, giving analytic
+		$A_\infty$ and $\tgrok\sim A_\infty/\dot A$; Eq.~S5 is exact, so Tiers~1--2
+		stand regardless.
+\end{itemize}
+
+\section{Experiments}
+\label{sec:experiments}
+
+% Target: ~4 pages. One figure per claim, seed error bars on everything.
+% Brief warns against galleries of training curves and per-algorithm tables.
+
+\TODO{Subject to change (particularly tier 0 alpha sweep differs to match kumar paper)}
+\subsection{Design and budget}
+\begin{itemize}
+	\item Arms (\TODO{single table}): Tier~0 repro, $\alpha\in\{0.1,0.3,1,3,10,30\}$,
+		6 cells $\times$ 5 seeds; Tier~1 grid, $\alpha\times\eta\lambda$ with
+		$\eta\lambda\in\{0,10^{-3},3\!\times\!10^{-3},10^{-2},3\!\times\!10^{-2},10^{-1}\}$,
+		36 cells $\times$ 5; Tier~2 factorial, $N\in\{50,100,400,1600\}\times
+		\eta\lambda\in\{0,10^{-3},10^{-2},10^{-1}\}$, 16 cells $\times$ 5; Tier~3
+		clamp, $\rho\in\{1,1.25,1.5,1.75,2\}$, 5 cells $\times$ 10; generality,
+		$p\in\{23,29,31\}\times$ train fraction $\in\{50,70,90\}\%$; CE arm at the
+		baseline cell.
+	\item $\approx$380 runs, $\approx$20 GPU-hours. \TODO{report actual hardware
+		and wall-clock}
+	\item Ten seeds on the clamp arm because the MSE effect is about half-size
+		\citep{truong2026logit}; CIs, not point estimates.
+	\item CE arm exists to link our constants to \citet{truong2026norm}, whose
+		results are under cross-entropy.
+\end{itemize}
+
+\paragraph{Estimating $b$, and the $\eta\lambda=0$ cell.}
+\begin{itemize}
+	\item $\log\tgrok=c+a\log N+b\log(\eta\lambda)$ is undefined at
+		$\eta\lambda=0$, so the no-decay column cannot enter the fit. With
+		$\eta\lambda\in\{0,10^{-3},10^{-2},10^{-1}\}$ that leaves \emph{three}
+		levels over two decades to estimate the coefficient carrying the competing
+		hypothesis.
+	\item Consequence if unfixed: the interval on $\hat b$ will likely admit both
+		$0$ and $-1$, and the head claim fails to discriminate for want of design,
+		not for want of an effect.
+	\item Fix (i): refine the decay axis to
+		$\eta\lambda\in\{10^{-3},3\!\times\!10^{-3},10^{-2},3\!\times\!10^{-2},10^{-1}\}$,
+		paying for it by dropping one width --- $N$ already spans $1.5$ decades and
+		is not the contested axis.
+	\item Fix (ii): report $\eta\lambda=0$ separately rather than forcing it into
+		the log fit with an arbitrary offset.
+	\item That column is then the most informative single cell: a weight-decay
+		clock $\tgrok\propto(1-\beta)/(\eta\lambda)$ \citep{kim2026clock} predicts
+		$\tgrok\to\infty$ as $\eta\lambda\to0$, yet the Tier~0 baseline
+		\citep[App.~8.3]{kumar2024grokking} groks at finite time with no weight
+		decay at all.
+	\item Make it quantitative with the reciprocal form
+		\begin{equation}
+			1/\tgrok = c_0 + c_1(\eta\lambda) + c_2\log N,
+			\label{eq:recip}
+		\end{equation}
+		which admits $\eta\lambda=0$ as the intercept and so uses every cell. A pure
+		weight-decay clock requires $c_0=0$; nonzero $c_0$ bounds how much of the
+		timing weight decay can account for, independently of $\hat b$.
+	\item Report \eqref{eq:recip} \emph{alongside} the log fit, not instead of it:
+		they answer different questions and disagreement between them is
+		diagnostic. \TODO{$\hat c_0$ with CI; state whether it excludes zero}
+\end{itemize}
+
+\subsection{Tier 0: reproduction}
+\begin{itemize}
+	\item \TODO{figure: our $\alpha$ sweep next to \citet{kumar2024grokking}
+		App.~8.3}
+	\item State agreement/disagreement quantitatively; if $p=23$ at $90\%$ does
+		not grok cleanly (only 529 pairs), say so and report the fallback used.
+\end{itemize}
+
+\TODO{Note that we use accuracy rather than loss for grokking detection}
+
+\subsection{The confound, demonstrated (H0)}
+\begin{itemize}
+	\item \TODO{figure: two cells with near-equal $D=\Fnorm{K_t-K_0}/\Fnorm{K_0}$
+		but opposite mechanism --- one where $A$ climbs, one where $A$ is flat while
+		$S$ collapses under weight decay}
+	\item This is the one contribution that cannot fail; it follows from
+		\eqref{eq:decomp} and costs nothing extra to produce.
+\end{itemize}
+
+\subsection{Tier 1: is there a threshold $\Astar$? (H1, H2)}
+\begin{itemize}
+	\item H1 test: for every cell record $A$ at the moment of the test-loss fall;
+		report the coefficient of variation of $\Astar$ across cells with bootstrap
+		CIs over seeds. \TODO{numbers}
+	\item Kill criterion: $\Astar$ varying by more than a factor of $\approx2$
+		across cells means no universal threshold --- report as a negative result;
+		it still says alignment is not a sufficient statistic for timing.
+	\item H2 test: censored regression of $\log\tgrok$ on an alignment-crossing
+		time and a scale summary; H2 predicts the alignment term absorbs the scale
+		term. Report partial correlations with bootstrap CIs. Kill criterion: a
+		scale term that stays significant with $A$ in the model.
+	\item \TODO{figure: $S_t$, $R_t$, $A_t$ and the two losses on one log-$t$ axis
+		for a representative cell}
+\end{itemize}
+
+\subsection{Tier 2: the $(a,b)$ fit (head claim, H3)}
+\begin{itemize}
+	\item Fit $\log\tgrok=c+a\log N+b\log(\eta\lambda)$ on the crossed grid with
+		bootstrap intervals; include the interaction term.
+	\item Predictions to compare against: shape clock $a>0,b\approx0$
+		($a=1$ under $O(1/N)$); weight-decay clock $a\approx0,b\approx-1$
+		\citep{kim2026clock}; both nonzero $\Rightarrow$ two clocks, slower one
+		operative.
+	\item Direction check: wider $\Rightarrow$ lazier $\Rightarrow$ slower to
+		reshape $\Rightarrow$ longer $\tgrok$. A negative $\hat a$ signals a
+		parameterisation error, not a result.
+	\item Report residuals where the power law fails. \TODO{$\hat a,\hat b$, CIs,
+		figure}
+\end{itemize}
+
+\subsection{Tier 3: clamped norm under MSE}
+\begin{itemize}
+	\item Replicate $\tgrok\propto e^{a\rho}$ \citep{truong2026norm} under MSE;
+		compare the fitted rate to their $\approx7.5$ (MLP, CE).
+	\item Test whether $\Astar$ is invariant to $\rho$. \TODO{numbers or
+		``not run''}
+\end{itemize}
+
+\subsection{Generality and robustness}
+\begin{itemize}
+	\item $p\in\{23,29,31\}$ and train fractions $\{50,70,90\}\%$: does $\Astar$
+		survive? \TODO{cut first if compute is tight --- buys generality, not
+		discrimination}
+	\item Robustness: uncentred alignment, first-logit eNTK, $\tau$ sensitivity,
+		train/test halves of the probe set.
+\end{itemize}
+
+\section{Conclusion}
+
+\begin{itemize}
+	\item What the decomposition buys: \TODO{one paragraph, tied to whichever of
+		H1--H3 survived}
+	\item Limitations to state explicitly: one task (modular addition), one
+		architecture family (two-layer MLP), gradient-flow theory applied to
+		large-$\eta$ discrete GD, alignment is one of several plausible timing
+		variables, $\tgrok$ depends on threshold choices (mitigated by the
+		sensitivity analysis), censoring model assumptions.
+	\item Reproducibility: synthetic data, one script, fixed seeds, config in one
+		table, code zip submitted. Say this explicitly.
+	\item Future work: \TODO{e.g. attention architectures, CE replication at full
+		grid, Tier~4 theory if not completed}
+\end{itemize}
+
+\section*{Contribution}
+
+\TODO{confirm against what was actually done before submission}
+
+
+\section*{Acknowledgement}
+
+\begin{itemize}
+	\item \TODO{AI-use statement --- required somewhere by the brief; decide
+		proposal footnote vs.\ here}
+	\item \TODO{compute resources (Colab/Kaggle/Bunya) if applicable}
+\end{itemize}
+
+\section*{Appendix A.}
+\label{sec:appendix}
+
+\TODO{Decide what to put here}
+% At most 5 pages. Key messages stay in the main text; everything here must be
+% referenced from it.
+\begin{itemize}
+	\item A.1 Derivation of \eqref{eq:decomp} in full: expand
+		$\Fnorm{K_t-K_0}^2=\Fnorm{K_t}^2-2\langle K_t,K_0\rangle+\Fnorm{K_0}^2$ and
+		substitute $\langle K_t,K_0\rangle=\Fnorm{K_t}\Fnorm{K_0}(1-R_t)$.
+	\item A.2 Full configuration table and the pre-registered threshold values.
+	\item A.3 Censoring model and the estimator used, with diagnostics.
+	\item A.4 Robustness: uncentred alignment, first-logit eNTK, $\tau$
+		sensitivity grids.
+	\item A.5 $y^\top K^{-1}y=\lVert w-w_0\rVert^2$ near the kernel limit, and its
+		use as a linearisation-breakdown predictor.
+	\item A.6 Tier~4 theory: bound on $\lVert T_t\rVert$ for the quadratic-activation
+		net, analytic $A_\infty$, and the resulting $\tgrok\sim A_\infty/\dot A$
+		estimate. \TODO{include only if completed}
+	\item A.7 Additional figures not needed for the main claims.
+\end{itemize}
+
+\smaller
+\printbibliography
+
+\newpage
+Indicate whether all your group members consent for your report to be used as a
+teaching resource by including one of the statement below.
+
+\begin{center}
+\emph{We give consent for this to be used as a teaching resource.}\\
+\emph{We DO NOT give consent for this to be used as a teaching resource.}
+\end{center}
+
+\end{document}
