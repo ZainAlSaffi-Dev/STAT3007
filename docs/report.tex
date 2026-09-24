@@ -366,8 +366,18 @@ Zac Kienzle (s4803349) $\cdot$ Samuel Rieger (s4904959)}
 		train and test pairs, frozen across all runs and seeds. Report metrics on
 		train and test halves separately as well as pooled.
 	\item eNTK via \texttt{torch.func} (\texttt{jacrev} + \texttt{vmap}),
-		sum-over-logits kernel (gradient of $\sum_c f_c$), $256\times256$ per
-		checkpoint, seconds to compute. First-logit variant as a robustness check.
+		$256\times256$ per checkpoint, seconds to compute. The sum-over-logits
+		kernel adds the kernels of the $p$ outputs,
+		\[
+			K_t(x,x')=\sum_{c=1}^{p}\big\langle\nabla_\theta f_c(x;\theta_t),
+			\nabla_\theta f_c(x';\theta_t)\big\rangle .
+		\]
+		This is the trace of the $p\times p$ matrix-valued
+		NTK of \citet{jacot2018ntk}. The kernel of the summed output $\sum_c f_c$
+		would also add the cross terms with $c\neq c'$. The two agree in the
+		infinite-width limit at initialisation \citep[Theorem~1, arXiv
+		v4]{jacot2018ntk}. At finite width they differ. The first-logit kernel is a
+		robustness check.
 	\item All of $S,R,A$ computed on the centred kernel $\Kt=HKH$; uncentred $A$
 		also reported for comparability with \citet{kumar2024grokking}.
 	\item Definitions (\TODO{as a small table}): $S_t=\log(\Fnorm{\Kt_t}/\Fnorm{\Kt_0})$;
