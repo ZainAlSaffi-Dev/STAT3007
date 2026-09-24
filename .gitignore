@@ -222,3 +222,6 @@ __marimo__/
 
 # Rendered animation video. Large, and rebuildable from the scenes.
 animations/out/mp4/
+
+# Saved probe kernels from the experiment runs are large and can be regenerated.
+repoduced-code/results/*_kernels.npz
