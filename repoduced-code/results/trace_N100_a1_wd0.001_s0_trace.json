@@ -1,0 +1,438 @@
+{
+ "run": "trace_N100_a1_wd0.001_s0",
+ "run_json": "trace_N100_a1_wd0.001_s0.json",
+ "cell": {
+  "alpha": 1.0,
+  "eta_kappa": 0.001,
+  "steps": 30000,
+  "width": 100,
+  "seed": 0,
+  "checkpoints": 175
+ },
+ "conventions": {
+  "notation": "H = I - (1/n) 1 1^T. <A, B> is the Frobenius inner product. K_t is the raw probe kernel and Kc_t = H K_t H. k_t = Kc_t / ||Kc_t||_F is the unit centred kernel. Y is the one-hot probe labels, G = H Y Y^T H and g = G / ||G||_F. g_perp is the part of g orthogonal to k_0, scaled to unit length. d_t = k_t - k_0 is the change of the unit kernel.",
+  "kernel": "The sum-over-logits kernel of RepoducedCode.compute_entk in mode trace. K_ij is the sum over the p outputs of the inner product of the parameter gradients of that output at probe points i and j.",
+  "centring": "Every term, share and eigenvector uses the centred kernel H K H, following Cortes, Mohri and Rostamizadeh (2012), Lemma 1, and the report's Kernel metrics section.",
+  "probe": "The first 256 training pairs, as ntk_lib.train_run takes them with probe set to train.",
+  "precision": "torch computes the kernel in float32. Everything derived from it here is computed in float64 from that float32 kernel.",
+  "top_k": 88,
+  "eigenvalue_order": "Descending.",
+  "matching": "A linear assignment on minus the absolute overlaps with the previous checkpoint's top 88 eigenvectors, by scipy.optimize.linear_sum_assignment. An assigned overlap below 0.5 marks a new arrival.",
+  "sign": "Fixed by continuity, so that each matched eigenvector has a positive inner product with its predecessor. A vector with no predecessor has its largest entry in absolute value made positive.",
+  "label_subspace": "The column space of H Y. It has dimension p - 1.",
+  "subspaces": "The centred functions on the probe points of (a + b) mod p, (a - b) mod p, a, and b, in that order. Each has dimension p - 1.",
+  "checkpoints": "Step 0, every 250 steps, and 60 log-spaced steps from 1 to the run length, rounded to integers. Rounding merges some of the smallest ones."
+ },
+ "checks": {
+  "S against the history field S_c": 1.6675496010095693e-06,
+  "R against the history field R_c": 4.134215322304513e-06,
+  "A against the history field A_t": 4.5629142723380145e-06,
+  "A_uncentred against the history field A_u": 3.0735569650497396e-07,
+  "D^2 against exp2S_term + 1 - cross_term": 5.134781488891349e-16,
+  "the three shares against a sum of one": 2.220446049250313e-16,
+  "share_k0 against R / 2": 1.3877787807814457e-16,
+  "share_gperp against gamma^2 (1 - R / 2)": 8.673617379884035e-18,
+  "A against the aim identity": 1.6653345369377348e-16
+ },
+ "arrays": {
+  "step": {
+   "shape": [
+    175
+   ],
+   "dtype": "int64",
+   "meaning": "The checkpoint steps.",
+   "formula": "See conventions.checkpoints.",
+   "source": "docs/report.tex, Kernel metrics section, for the log-spaced grid"
+  },
+  "W1": {
+   "shape": [
+    175,
+    100,
+    46
+   ],
+   "dtype": "float32",
+   "meaning": "The hidden layer weights, shape (N, 2p).",
+   "formula": "h = x W1^T / sqrt(2p)",
+   "source": "ntk_lib.NTKMLP"
+  },
+  "W2": {
+   "shape": [
+    175,
+    23,
+    100
+   ],
+   "dtype": "float32",
+   "meaning": "The output weights, shape (p, N).",
+   "formula": "f = relu(h) W2^T / sqrt(N)",
+   "source": "ntk_lib.NTKMLP"
+  },
+  "K": {
+   "shape": [
+    175,
+    256,
+    256
+   ],
+   "dtype": "float32",
+   "meaning": "The raw probe kernel, in float32 as torch computed it.",
+   "formula": "See conventions.kernel.",
+   "source": "RepoducedCode.compute_entk through ntk_lib.entk"
+  },
+  "f_probe": {
+   "shape": [
+    175,
+    256,
+    23
+   ],
+   "dtype": "float32",
+   "meaning": "The centred and rescaled predictor on the probe set.",
+   "formula": "alpha (f_t(x) - f_0(x))",
+   "source": "ntk_lib.train_run, which follows Kumar et al. (2024), Appendix 8.1, Equation 7"
+  },
+  "train_loss": {
+   "shape": [
+    175
+   ],
+   "dtype": "float64",
+   "meaning": "Training loss.",
+   "formula": "Copied from the history row at the checkpoint.",
+   "source": "ntk_lib.train_run"
+  },
+  "test_loss": {
+   "shape": [
+    175
+   ],
+   "dtype": "float64",
+   "meaning": "Test loss.",
+   "formula": "Copied from the history row at the checkpoint.",
+   "source": "ntk_lib.train_run"
+  },
+  "train_acc": {
+   "shape": [
+    175
+   ],
+   "dtype": "float64",
+   "meaning": "Training accuracy.",
+   "formula": "Copied from the history row at the checkpoint.",
+   "source": "ntk_lib.train_run"
+  },
+  "test_acc": {
+   "shape": [
+    175
+   ],
+   "dtype": "float64",
+   "meaning": "Test accuracy.",
+   "formula": "Copied from the history row at the checkpoint.",
+   "source": "ntk_lib.train_run"
+  },
+  "param_dist": {
+   "shape": [
+    175
+   ],
+   "dtype": "float64",
+   "meaning": "Relative parameter movement ||w_t - w_0|| / ||w_0||.",
+   "formula": "Copied from the history row at the checkpoint.",
+   "source": "ntk_lib.train_run"
+  },
+  "weight_norm": {
+   "shape": [
+    175
+   ],
+   "dtype": "float64",
+   "meaning": "Norm of all the parameters.",
+   "formula": "Copied from the history row at the checkpoint.",
+   "source": "ntk_lib.train_run"
+  },
+  "yKy": {
+   "shape": [
+    175
+   ],
+   "dtype": "float64",
+   "meaning": "y^T K^+ y on the probe set, summed over the label columns.",
+   "formula": "Copied from the history row at the checkpoint.",
+   "source": "ntk_lib.train_run"
+  },
+  "K_norm_centred": {
+   "shape": [
+    175
+   ],
+   "dtype": "float64",
+   "meaning": "The Frobenius norm of the centred kernel.",
+   "formula": "||Kc_t||_F",
+   "source": "Cortes, Mohri and Rostamizadeh (2012), Lemma 1, for H K H"
+  },
+  "inner_K0": {
+   "shape": [
+    175
+   ],
+   "dtype": "float64",
+   "meaning": "Inner product of the centred kernel with the centred kernel at step 0.",
+   "formula": "<Kc_t, Kc_0>",
+   "source": "docs/zain_tierx_plan.md, Section 6"
+  },
+  "inner_G": {
+   "shape": [
+    175
+   ],
+   "dtype": "float64",
+   "meaning": "Inner product of the centred kernel with the centred target Gram matrix.",
+   "formula": "<Kc_t, G>",
+   "source": "docs/zain_tierx_plan.md, Section 6"
+  },
+  "S": {
+   "shape": [
+    175
+   ],
+   "dtype": "float64",
+   "meaning": "The scale term on the centred kernel. It matches the history field S_c.",
+   "formula": "log(||Kc_t||_F / ||Kc_0||_F)",
+   "source": "docs/report.tex, Kernel metrics section"
+  },
+  "R": {
+   "shape": [
+    175
+   ],
+   "dtype": "float64",
+   "meaning": "The rotation term on the centred kernel. It matches the history field R_c.",
+   "formula": "1 - <k_t, k_0>",
+   "source": "docs/report.tex, Kernel metrics section"
+  },
+  "A": {
+   "shape": [
+    175
+   ],
+   "dtype": "float64",
+   "meaning": "The centred alignment. It matches the history field A_t.",
+   "formula": "<Kc_t, G> / (||Kc_t||_F ||G||_F)",
+   "source": "Cortes, Mohri and Rostamizadeh (2012), Definition 4; docs/report.tex, Kernel metrics section"
+  },
+  "A_uncentred": {
+   "shape": [
+    175
+   ],
+   "dtype": "float64",
+   "meaning": "The alignment without centring. It matches the history field A_u.",
+   "formula": "<K_t, Y Y^T> / (||K_t||_F ||Y Y^T||_F)",
+   "source": "ntk_lib.uncentred_alignment"
+  },
+  "D": {
+   "shape": [
+    175
+   ],
+   "dtype": "float64",
+   "meaning": "The movement statistic on the centred kernel.",
+   "formula": "||Kc_t - Kc_0||_F / ||Kc_0||_F",
+   "source": "docs/report.tex, Equation eq:decomp, applied to the centred kernel"
+  },
+  "exp2S_term": {
+   "shape": [
+    175
+   ],
+   "dtype": "float64",
+   "meaning": "The first piece of Equation eq:decomp. D^2 = exp2S_term + 1 - cross_term.",
+   "formula": "e^(2 S)",
+   "source": "docs/report.tex, Equation eq:decomp, the group's own algebra"
+  },
+  "cross_term": {
+   "shape": [
+    175
+   ],
+   "dtype": "float64",
+   "meaning": "The last piece of Equation eq:decomp.",
+   "formula": "2 e^S (1 - R)",
+   "source": "docs/report.tex, Equation eq:decomp, the group's own algebra"
+  },
+  "gamma": {
+   "shape": [
+    175
+   ],
+   "dtype": "float64",
+   "meaning": "The aim, the cosine between the part of k_t orthogonal to k_0 and g_perp. NaN at step 0, where the kernel has not moved.",
+   "formula": "<v_t, g_perp> / ||v_t||_F with v_t = k_t - <k_t, k_0> k_0",
+   "source": "term_dependence.py docstring, the group's own algebra"
+  },
+  "share_k0": {
+   "shape": [
+    175
+   ],
+   "dtype": "float64",
+   "meaning": "The share of ||d_t||^2 along k_0. NaN at step 0.",
+   "formula": "<d_t, k_0>^2 / ||d_t||^2, which equals R / 2",
+   "source": "docs/zain_tierx_plan.md, E3"
+  },
+  "share_gperp": {
+   "shape": [
+    175
+   ],
+   "dtype": "float64",
+   "meaning": "The share of ||d_t||^2 along g_perp. NaN at step 0.",
+   "formula": "<d_t, g_perp>^2 / ||d_t||^2, which equals gamma^2 (1 - R / 2)",
+   "source": "docs/zain_tierx_plan.md, E3"
+  },
+  "share_residual": {
+   "shape": [
+    175
+   ],
+   "dtype": "float64",
+   "meaning": "The share of ||d_t||^2 orthogonal to both k_0 and g_perp. The three shares sum to one. NaN at step 0.",
+   "formula": "||d_t - <d_t, k_0> k_0 - <d_t, g_perp> g_perp||^2 / ||d_t||^2, which equals (1 - gamma^2) (1 - R / 2)",
+   "source": "docs/zain_tierx_plan.md, E3"
+  },
+  "eigvals": {
+   "shape": [
+    175,
+    256
+   ],
+   "dtype": "float64",
+   "meaning": "All eigenvalues of the centred kernel, largest first.",
+   "formula": "eigenvalues of Kc_t",
+   "source": "docs/zain_tierx_plan.md, E4"
+  },
+  "eigvecs_topk": {
+   "shape": [
+    175,
+    256,
+    88
+   ],
+   "dtype": "float32",
+   "meaning": "The eigenvectors of the top_k largest eigenvalues, as columns in eigenvalue order at each checkpoint, with signs fixed as conventions.sign says.",
+   "formula": "eigenvectors of Kc_t",
+   "source": "docs/zain_tierx_plan.md, E4"
+  },
+  "match_index": {
+   "shape": [
+    175,
+    88
+   ],
+   "dtype": "int64",
+   "meaning": "The column at the previous checkpoint that each column continues. Minus one for a new arrival and at step 0.",
+   "formula": "See conventions.matching.",
+   "source": "docs/zain_tierx_plan.md, E4"
+  },
+  "overlap_prev": {
+   "shape": [
+    175,
+    88
+   ],
+   "dtype": "float64",
+   "meaning": "The absolute inner product with the assigned column at the previous checkpoint. It is kept for new arrivals too, where it is below the threshold. NaN at step 0.",
+   "formula": "|<u_t, u_(t-1)>|",
+   "source": "docs/zain_tierx_plan.md, E4"
+  },
+  "origin_index": {
+   "shape": [
+    175,
+    88
+   ],
+   "dtype": "int64",
+   "meaning": "The column at step 0 that the chain of matches leads back to. Minus one if the chain passes through a new arrival. This array is an addition to the plan.",
+   "formula": "match_index followed back to step 0",
+   "source": "docs/zain_tierx_plan.md, E4"
+  },
+  "overlap_zero": {
+   "shape": [
+    175,
+    88
+   ],
+   "dtype": "float64",
+   "meaning": "The absolute inner product with the step 0 column that origin_index names. NaN where origin_index is minus one.",
+   "formula": "|<u_t, u_0>|",
+   "source": "docs/zain_tierx_plan.md, E4"
+  },
+  "principal_angles_zero": {
+   "shape": [
+    175,
+    88
+   ],
+   "dtype": "float64",
+   "meaning": "Principal angles in radians between the span of the top eigenvectors and the same span at step 0, smallest first.",
+   "formula": "arccos of the singular values of V_t^T V_0",
+   "source": "docs/zain_tierx_plan.md, E4"
+  },
+  "principal_angles_label": {
+   "shape": [
+    175,
+    22
+   ],
+   "dtype": "float64",
+   "meaning": "Principal angles in radians between the span of the top eigenvectors and the label subspace, smallest first.",
+   "formula": "arccos of the singular values of V_t^T Q with Q a basis of H Y",
+   "source": "docs/zain_tierx_plan.md, E4"
+  },
+  "subspace_energy": {
+   "shape": [
+    175,
+    88,
+    4
+   ],
+   "dtype": "float64",
+   "meaning": "For each top eigenvector, the share of its squared length in each of the four subspaces of conventions.subspaces. The projection is by least squares, because the probe set is a subset of the pairs and the indicator functions are not orthogonal on it. The four shares need not sum to one.",
+   "formula": "||Q_s^T u||^2 with Q_s an orthonormal basis of subspace s",
+   "source": "docs/zain_tierx_plan.md, E3 and E4"
+  },
+  "torus_K_unit": {
+   "shape": [
+    175,
+    23,
+    23
+   ],
+   "dtype": "float64",
+   "meaning": "The torus average of the unit centred kernel.",
+   "formula": "Torus(k_t)",
+   "source": "animations/common/kernels.Torus"
+  },
+  "torus_change": {
+   "shape": [
+    175,
+    23,
+    23
+   ],
+   "dtype": "float64",
+   "meaning": "The torus average of the change of the unit centred kernel since step 0.",
+   "formula": "Torus(d_t)",
+   "source": "animations/common/kernels.Torus"
+  },
+  "torus_residual": {
+   "shape": [
+    175,
+    23,
+    23
+   ],
+   "dtype": "float64",
+   "meaning": "The torus average of the part of d_t that share_residual measures. It is not divided by its length.",
+   "formula": "Torus(d_t - <d_t, k_0> k_0 - <d_t, g_perp> g_perp)",
+   "source": "animations/common/kernels.Torus"
+  },
+  "probe_a": {
+   "shape": [
+    256
+   ],
+   "dtype": "int64",
+   "meaning": "The first number a of each probe pair. Stored once.",
+   "formula": "-",
+   "source": "kernel_snapshots.probe_pairs"
+  },
+  "probe_b": {
+   "shape": [
+    256
+   ],
+   "dtype": "int64",
+   "meaning": "The second number b of each probe pair. The label of probe point i is (a_i + b_i) mod p. Stored once.",
+   "formula": "-",
+   "source": "kernel_snapshots.probe_pairs"
+  },
+  "G_norm": {
+   "shape": [],
+   "dtype": "float64",
+   "meaning": "The norm of the centred target Gram matrix. Stored once.",
+   "formula": "||G||_F",
+   "source": "docs/report.tex, Kernel metrics section"
+  },
+  "A_0": {
+   "shape": [],
+   "dtype": "float64",
+   "meaning": "The centred alignment at step 0. Stored once.",
+   "formula": "A at step 0",
+   "source": "docs/report.tex, Kernel metrics section"
+  }
+ }
+}

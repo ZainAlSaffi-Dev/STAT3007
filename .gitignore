@@ -229,3 +229,5 @@ animations/out/logs/
 
 # Saved probe kernels from the experiment runs are large and can be regenerated.
 repoduced-code/results/*_kernels.npz
+# The per-checkpoint traces from ntk_trace.py are large and can be regenerated. Their schema JSON is committed.
+repoduced-code/results/*_trace.npz
