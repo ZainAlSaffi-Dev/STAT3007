@@ -213,14 +213,38 @@ def compute_centred_scale_and_rotation(K_0, K_t):
 DEFAULTS = dict(parameterisation="mean_field", p=23, hidden_dim=100, alpha=1.0,
                 eta_0=100.0, eta_kappa=0.0, steps=60000, eval_interval=250,
                 probe_size=256, seed=0, data_seed=42, train_fraction=0.9,
-                activation="relu", init_scale=1.0, kernel_save_interval=5000, probe="train")
+                activation="relu", init_scale=1.0, kernel_save_interval=5000, probe="train",
+                checkpoint_steps=None)
+
+# Configuration keys added after some runs were saved. A saved run that lacks
+# one of them was trained with its default value.
+LATER_KEYS = ("probe", "checkpoint_steps")
 
 HISTORY_KEYS = ["step", "train_loss", "test_loss", "train_acc", "test_acc",
                 "S_t", "R_t", "S_c", "R_c", "A_t", "A_u", "param_dist", "weight_norm",
                 "yKy", "K_norm"]
 
 
-def train_run(name, verbose=True, **overrides):
+def normalise_checkpoints(cfg):
+    """Return the configuration with checkpoint_steps as a sorted list of distinct integers.
+
+    Step 0 is always a checkpoint, so it is added if missing. The list form
+    is what train_run saves, so run_or_load can compare a requested list
+    with a saved one whatever sequence type the caller passed. None, the
+    default, is returned unchanged and means every eval_interval steps.
+    """
+    given = cfg["checkpoint_steps"]
+    if given is None:
+        return cfg
+    if any(s != int(s) for s in given):
+        raise ValueError("checkpoint steps must be whole numbers")
+    steps = sorted({0, *(int(s) for s in given)})
+    if steps[0] < 0 or steps[-1] > cfg["steps"]:
+        raise ValueError(f"checkpoint steps must lie between 0 and the run length {cfg['steps']}")
+    return {**cfg, "checkpoint_steps": steps}
+
+
+def train_run(name, verbose=True, on_checkpoint=None, **overrides):
     """Train one run and return a dictionary with the configuration and history.
 
     The predictor is the centred and rescaled function of Kumar et al.
@@ -235,11 +259,22 @@ def train_run(name, verbose=True, **overrides):
     weight norm, y^T K^+ y on the probe set, and the kernel norm. The probe
     kernel itself is saved every kernel_save_interval steps to a compressed
     file next to the JSON so later analyses can use it.
+
+    The checkpoints are every eval_interval steps. If checkpoint_steps is
+    given, they are exactly those steps instead, with step 0 added. Either
+    way the kernel is saved only at checkpoints that are multiples of
+    kernel_save_interval.
+
+    If on_checkpoint is given, it is called at every checkpoint as
+    on_checkpoint(step, model, K_t, row). K_t is the probe kernel and row is
+    a dictionary of the history values just recorded. Training continues
+    from the same model afterwards, so the callback must not change it. The
+    callback is not part of the configuration and is not saved.
     """
     unknown = set(overrides) - set(DEFAULTS)
     if unknown:
         raise TypeError(f"unknown configuration keys: {sorted(unknown)}")
-    cfg = {**DEFAULTS, **overrides}
+    cfg = normalise_checkpoints({**DEFAULTS, **overrides})
     config = dict(name=name, **cfg)
     p, alpha = cfg["p"], cfg["alpha"]
 
@@ -302,7 +337,16 @@ def train_run(name, verbose=True, **overrides):
         if step % cfg["kernel_save_interval"] == 0:
             saved_steps.append(step)
             saved_kernels.append(K_t.cpu().numpy().astype(np.float32))
+        if on_checkpoint is not None:
+            on_checkpoint(step, model, K_t, {k: history[k][-1] for k in HISTORY_KEYS})
         model.train()
+
+    checkpoints = None if cfg["checkpoint_steps"] is None else set(cfg["checkpoint_steps"])
+
+    def is_checkpoint(step):
+        if checkpoints is None:
+            return step % cfg["eval_interval"] == 0
+        return step in checkpoints
 
     t0 = time.time()
     evaluate(0)
@@ -311,7 +355,7 @@ def train_run(name, verbose=True, **overrides):
         loss = loss_fn(predict(X_train), y_train)
         loss.backward()
         optimizer.step()
-        if step % cfg["eval_interval"] == 0:
+        if is_checkpoint(step):
             evaluate(step)
             if verbose and step % (cfg["eval_interval"] * 40) == 0:
                 h = history
@@ -328,20 +372,27 @@ def train_run(name, verbose=True, **overrides):
     return run
 
 
-def run_or_load(name, rerun=False, verbose=True, **overrides):
-    """Load a saved run if its configuration matches, otherwise train it."""
+def run_or_load(name, rerun=False, verbose=True, on_checkpoint=None, **overrides):
+    """Load a saved run if its configuration matches, otherwise train it.
+
+    A saved run that lacks a key in LATER_KEYS is compared as if it had the
+    default value of that key. on_checkpoint is passed to train_run, so it
+    is called only when the run is trained. Loading a saved run does not
+    call it.
+    """
     path = RESULTS / f"{name}.json"
     if path.exists() and not rerun:
         run = json.loads(path.read_text())
-        saved = {**{"probe": "train"}, **{k: v for k, v in run["config"].items() if k != "name"}}
-        wanted = {**DEFAULTS, **overrides}
+        saved = {**{k: DEFAULTS[k] for k in LATER_KEYS},
+                 **{k: v for k, v in run["config"].items() if k != "name"}}
+        wanted = normalise_checkpoints({**DEFAULTS, **overrides})
         if saved == wanted and "R_c" in run["history"]:
             if verbose:
                 print(f"{name}: loaded from results/{name}.json")
             return run
         if verbose:
             print(f"{name}: saved run does not match, training again")
-    return train_run(name, verbose=verbose, **overrides)
+    return train_run(name, verbose=verbose, on_checkpoint=on_checkpoint, **overrides)
 
 
 def load_kernels(name):
