@@ -37,6 +37,12 @@ What the runs show. The script prints three things.
    alone cannot separate them.
 3. The three terms and the aim at the generalisation event of every run that
    has one. The event is test accuracy 1, the level the Tier 1 notebook uses.
+   A plane fit of the alignment on scale and rotation at the event follows,
+   with a bootstrap interval over runs.
+
+Part 2 prints three shares per run, as experiment E1 of docs/zain_tierx_plan.md
+asks: scale on rotation, alignment on rotation, and alignment on the square
+root of rotation.
 
 ntk_lib.py is on the sam branch, as for kernel_snapshots.py.
 
@@ -116,37 +122,105 @@ def grid_runs():
 
 
 def r_squared(x, y):
-    """Share of the variance of y that a least-squares line in x explains."""
+    """Share of the variance of y that a least-squares line in x explains.
+
+    It is NaN when x or y is constant up to float64 rounding, because a line
+    fitted to rounding noise means nothing. The synthetic paths of the plan's
+    control are like that. The variance in a trained run is many orders of
+    magnitude larger.
+    """
+    x, y = np.asarray(x, float), np.asarray(y, float)
+    if np.var(x) <= 1e-24 or np.var(y) <= 1e-24:
+        return float("nan")
     X = np.c_[np.ones(len(x)), x]
     residual = y - X @ np.linalg.lstsq(X, y, rcond=None)[0]
     return 1 - residual.var() / y.var()
 
 
-def lockstep(runs):
-    print("\n2. Scale against rotation along each run: R squared of S_t on R_t")
-    by_decay = {}
-    for run in runs.values():
-        c, h = run["config"], run["history"]
-        by_decay.setdefault(c["eta_kappa"], []).append(
-            (c["alpha"], c["seed"], r_squared(np.asarray(h["R_c"]), np.asarray(h["S_c"]))))
-    print(f"  {'eta kappa':>9} {'runs':>4} {'min':>6} {'median':>6} {'max':>6}")
-    for ek in sorted(by_decay):
-        v = np.array([r for _, _, r in by_decay[ek]])
-        print(f"  {ek:>9g} {len(v):>4} {v.min():6.3f} {np.median(v):6.3f} {v.max():6.3f}")
+SHARES = [("S_t on R_t", "S_c", "R_c"), ("A_t on R_t", "A_t", "R_c"), ("A_t on sqrt(R_t)", "A_t", "sqrt R_c")]
 
 
-def at_event(runs):
-    print(f"\n3. The terms at the generalisation event, test accuracy {TEST_ACC_LEVEL:g}")
+def along_run(runs):
+    """Return one row per run with the three shares of experiment E1 in the plan.
+
+    Each share is the R squared of a least-squares line along the run: scale
+    on rotation, alignment on rotation, and alignment on the square root of
+    rotation. The square root is the form the identity in the module
+    docstring gives for small R_t. R_t is clipped at zero first, because the
+    float32 history records values of about -3e-6 at step 0.
+    """
     rows = []
-    for run in runs.values():
+    for name, run in runs.items():
+        c, h = run["config"], run["history"]
+        series = {"S_c": np.asarray(h["S_c"]), "R_c": np.asarray(h["R_c"]), "A_t": np.asarray(h["A_t"]),
+                  "sqrt R_c": np.sqrt(np.clip(h["R_c"], 0, None))}
+        row = dict(name=name, alpha=c["alpha"], eta_kappa=c["eta_kappa"], seed=c["seed"])
+        for label, y, x in SHARES:
+            row[label] = r_squared(series[x], series[y])
+        rows.append(row)
+    return rows
+
+
+def lockstep(runs):
+    """Print the three shares of along_run as one table per share, by decay level, and return the rows."""
+    rows = along_run(runs)
+    for label, _, _ in SHARES:
+        print(f"\n2. Along each run: R squared of {label}")
+        print(f"  {'eta kappa':>9} {'runs':>4} {'min':>6} {'median':>6} {'max':>6}")
+        for ek in sorted({r["eta_kappa"] for r in rows}):
+            v = np.array([r[label] for r in rows if r["eta_kappa"] == ek])
+            print(f"  {ek:>9g} {len(v):>4} {v.min():6.3f} {np.median(v):6.3f} {v.max():6.3f}")
+    return rows
+
+
+def event_rows(runs):
+    """Return one row per run that generalises, with the terms and the aim at the generalisation event.
+
+    The event is the first checkpoint at test accuracy TEST_ACC_LEVEL, as in
+    the Tier 1 notebook. A_0 is the run's own alignment at step 0.
+    """
+    rows = []
+    for name, run in runs.items():
         c, h = run["config"], run["history"]
         t = L.accuracy_crossings(run, TEST_ACC_LEVEL)["t_test"]
         if t is None:
             continue
         i = int(np.where(np.asarray(h["step"]) <= t)[0][-1])
         gamma = aim(h["R_c"], h["A_t"], h["A_t"][0])
-        rows.append((c["alpha"], c["eta_kappa"], h["S_c"][i], h["R_c"][i], h["A_t"][i], gamma[i]))
-    v = np.array(rows)
+        rows.append(dict(name=name, alpha=c["alpha"], eta_kappa=c["eta_kappa"], seed=c["seed"], step=t,
+                         S=h["S_c"][i], R=h["R_c"][i], A=h["A_t"][i], gamma=gamma[i], A_0=h["A_t"][0]))
+    return rows
+
+
+def plane_fit(y, X, n_boot=2000, seed=0):
+    """R squared of a least-squares fit of y on the columns of X with an intercept, and a bootstrap interval.
+
+    The bootstrap resamples runs with replacement. Returns the R squared,
+    the 2.5 and 97.5 percentiles over resamples, the coefficients with the
+    intercept first, and the resampled values.
+    """
+    y, X = np.asarray(y, float), np.c_[np.ones(len(y)), np.asarray(X, float)]
+
+    def fit(yy, XX):
+        beta = np.linalg.lstsq(XX, yy, rcond=None)[0]
+        return 1 - np.var(yy - XX @ beta) / np.var(yy), beta
+
+    r2, beta = fit(y, X)
+    rng = np.random.default_rng(seed)
+    boot = []
+    for _ in range(n_boot):
+        i = rng.integers(0, len(y), len(y))
+        if np.var(y[i]) > 0 and np.linalg.matrix_rank(X[i]) == X.shape[1]:
+            boot.append(fit(y[i], X[i])[0])
+    boot = np.array(boot)
+    return dict(r2=r2, lo=np.percentile(boot, 2.5), hi=np.percentile(boot, 97.5), coef=beta, boot=boot)
+
+
+def at_event(runs):
+    """Print the terms at the generalisation event, their correlations and the mean aim, and return the rows."""
+    print(f"\n3. The terms at the generalisation event, test accuracy {TEST_ACC_LEVEL:g}")
+    rows = event_rows(runs)
+    v = np.array([[r["alpha"], r["eta_kappa"], r["S"], r["R"], r["A"], r["gamma"]] for r in rows])
     print(f"  {len(v)} of {len(runs)} runs have an event.")
     print(f"  {'term':>9} {'mean':>7} {'min':>7} {'max':>7} {'max/min':>7} {'sd/mean':>7}")
     for k, name in zip(range(2, 6), ["S_t", "R_t", "A_t", "gamma_t"]):
@@ -161,6 +235,10 @@ def at_event(runs):
     for a in sorted(set(v[:, 0])):
         cells = [(ek, v[(v[:, 0] == a) & (v[:, 1] == ek), 5]) for ek in sorted(set(v[v[:, 0] == a, 1]))]
         print("   alpha " + f"{a:g}: " + ", ".join(f"{ek:g} -> {g.mean():.3f} ({len(g)})" for ek, g in cells))
+    fit = plane_fit(v[:, 4], v[:, 2:4])
+    print(f"  Plane fit of A_t on S_t and R_t with an intercept: R squared {fit['r2']:.3f}, "
+          f"95 percent bootstrap interval {fit['lo']:.3f} to {fit['hi']:.3f}")
+    return rows
 
 
 if __name__ == "__main__":

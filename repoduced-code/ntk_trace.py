@@ -78,6 +78,12 @@ TOP_K = 88
 # An eigenvector whose assigned overlap with the previous checkpoint is below
 # this value is treated as a new arrival.
 NEW_ARRIVAL = 0.5
+# A change of the unit kernel with squared Frobenius norm below this is float64
+# rounding of a kernel that has not turned, so the aim and the shares are left
+# undefined. The synthetic control of the plan found the need for it: a purely
+# rescaled kernel changes its unit kernel by about 1e-16. In a trained run the
+# smallest real change, at step 1, has a squared norm near 2e-5.
+UNMOVED = 1e-24
 SUBSPACES = ("sum", "difference", "a", "b")
 
 # The seven traced cells as (alpha, eta kappa, steps). Section 4 of the plan
@@ -184,11 +190,10 @@ class Tracer:
         self.rows = []
         self.model_0 = None
 
-    def start(self, step, model, Kc, norm):
+    def start(self, step, Kc, norm):
         """Keep what every later checkpoint is measured against."""
         if step != 0:
             raise ValueError(f"the first checkpoint must be step 0, not {step}")
-        self.model_0 = copy.deepcopy(model)
         self.K0c, self.norm_0 = Kc, norm
         self.k_0 = Kc / norm
         g = self.G / self.G_norm
@@ -196,6 +201,23 @@ class Tracer:
         self.g_perp = g_perp / np.linalg.norm(g_perp)
         self.A_0 = inner(Kc, self.G) / (norm * self.G_norm)
         self.V_prev = self.V_0 = self.origin_prev = None
+
+    def split(self, K):
+        """Centre a raw probe kernel and split the change of its unit kernel.
+
+        The change k_t - k_0 is split into its part along k_0, its part along
+        g_perp, and the residual orthogonal to both, as experiment E3 of the
+        plan asks. It needs the step 0 kernel, which the first call of measure
+        keeps.
+        """
+        Kc = kernels.centre(np.asarray(K, dtype=np.float64))
+        norm = np.linalg.norm(Kc)
+        k_t = Kc / norm
+        change = k_t - self.k_0
+        along_k0, along_g = inner(change, self.k_0), inner(change, self.g_perp)
+        residual = change - along_k0 * self.k_0 - along_g * self.g_perp
+        return dict(Kc=Kc, norm=norm, k_t=k_t, change=change, along_k0=along_k0, along_g=along_g,
+                    residual=residual)
 
     def match(self, V):
         """Match the top eigenvectors to the previous checkpoint and fix their signs.
@@ -223,29 +245,33 @@ class Tracer:
                 V[:, j] = -V[:, j]
         return V, match, overlap_prev
 
-    def __call__(self, step, model, K_t, row):
-        K = K_t.detach().cpu().numpy().astype(np.float32)
-        K64 = K.astype(np.float64)
-        Kc = kernels.centre(K64)
-        norm = np.linalg.norm(Kc)
-        if self.model_0 is None:
-            self.start(step, model, Kc, norm)
-        k_t, k_0, g_perp = Kc / norm, self.k_0, self.g_perp
+    def measure(self, step, K):
+        """Return every field of the trace that depends on the probe kernel alone.
+
+        K is the raw probe kernel. The first call must be step 0 and keeps
+        the reference kernel. Later calls also advance the eigenvector
+        matching, so they must come in checkpoint order. The synthetic control
+        of the plan calls this directly on kernels that no network made.
+        """
+        K64 = np.asarray(K, dtype=np.float64)
+        if not hasattr(self, "k_0"):
+            Kc = kernels.centre(K64)
+            self.start(step, Kc, np.linalg.norm(Kc))
+        parts = self.split(K64)
+        Kc, norm, k_t = parts["Kc"], parts["norm"], parts["k_t"]
+        change, residual = parts["change"], parts["residual"]
 
         # The three terms, and the pieces of Equation eq:decomp on the centred kernel.
         S = np.log(norm / self.norm_0)
-        R = 1.0 - inner(k_t, k_0)
+        R = 1.0 - inner(k_t, self.k_0)
         A = inner(Kc, self.G) / (norm * self.G_norm)
 
-        # The change of the unit kernel, split along k_0, along g_perp, and the rest.
-        change = k_t - k_0
-        along_k0, along_g = inner(change, k_0), inner(change, g_perp)
-        residual = change - along_k0 * k_0 - along_g * g_perp
         length2 = inner(change, change)
-        if length2 > 0:
-            shares = (along_k0 ** 2 / length2, along_g ** 2 / length2, inner(residual, residual) / length2)
-            v = k_t - inner(k_t, k_0) * k_0
-            gamma = inner(v, g_perp) / np.linalg.norm(v)
+        if length2 > UNMOVED:
+            shares = (parts["along_k0"] ** 2 / length2, parts["along_g"] ** 2 / length2,
+                      inner(residual, residual) / length2)
+            v = k_t - inner(k_t, self.k_0) * self.k_0
+            gamma = inner(v, self.g_perp) / np.linalg.norm(v)
         else:
             shares, gamma = (np.nan, np.nan, np.nan), np.nan
 
@@ -262,16 +288,7 @@ class Tracer:
         overlap_zero[traced] = np.abs(np.sum(V[:, traced] * self.V_0[:, origin[traced]], axis=0))
         self.V_prev, self.origin_prev = V, origin
 
-        with torch.no_grad():
-            f_probe = self.alpha * (model(self.x_probe) - self.model_0(self.x_probe))
-
-        self.rows.append(dict(
-            step=step,
-            # The parameters change in place during training, so they are copied.
-            W1=model.W1.detach().cpu().numpy().copy(), W2=model.W2.detach().cpu().numpy().copy(),
-            K=K, f_probe=f_probe.cpu().numpy().astype(np.float32),
-            **{key: row[key] for key in ("train_loss", "test_loss", "train_acc", "test_acc",
-                                         "param_dist", "weight_norm", "yKy")},
+        return dict(
             K_norm_centred=norm, inner_K0=inner(Kc, self.K0c), inner_G=inner(Kc, self.G),
             S=S, R=R, A=A, A_uncentred=inner(K64, self.YY) / (np.linalg.norm(K64) * np.linalg.norm(self.YY)),
             D=np.linalg.norm(Kc - self.K0c) / self.norm_0,
@@ -283,6 +300,23 @@ class Tracer:
             principal_angles_label=principal_angles(V, self.label_basis),
             subspace_energy=np.stack([np.sum((Q.T @ V) ** 2, axis=0) for Q in self.subspace_bases], axis=1),
             torus_K_unit=self.torus(k_t), torus_change=self.torus(change), torus_residual=self.torus(residual),
+        )
+
+    def __call__(self, step, model, K_t, row):
+        K = K_t.detach().cpu().numpy().astype(np.float32)
+        if self.model_0 is None:
+            self.model_0 = copy.deepcopy(model)
+        fields = self.measure(step, K)
+        with torch.no_grad():
+            f_probe = self.alpha * (model(self.x_probe) - self.model_0(self.x_probe))
+        self.rows.append(dict(
+            step=step,
+            # The parameters change in place during training, so they are copied.
+            W1=model.W1.detach().cpu().numpy().copy(), W2=model.W2.detach().cpu().numpy().copy(),
+            K=K, f_probe=f_probe.cpu().numpy().astype(np.float32),
+            **{key: row[key] for key in ("train_loss", "test_loss", "train_acc", "test_acc",
+                                         "param_dist", "weight_norm", "yKy")},
+            **fields,
         ))
 
     def arrays(self):
@@ -384,15 +418,15 @@ ARRAYS = dict(
     cross_term=dict(meaning="The last piece of Equation eq:decomp.", formula="2 e^S (1 - R)",
                     source="docs/report.tex, Equation eq:decomp, the group's own algebra"),
     gamma=dict(meaning="The aim, the cosine between the part of k_t orthogonal to k_0 and g_perp. "
-                       "NaN at step 0, where the kernel has not moved.",
+                       "NaN where the kernel has not turned beyond float64 rounding, which in a trained run is step 0 only.",
                formula="<v_t, g_perp> / ||v_t||_F with v_t = k_t - <k_t, k_0> k_0",
                source="term_dependence.py docstring, the group's own algebra"),
-    share_k0=dict(meaning="The share of ||d_t||^2 along k_0. NaN at step 0.",
+    share_k0=dict(meaning="The share of ||d_t||^2 along k_0. NaN where gamma is NaN.",
                   formula="<d_t, k_0>^2 / ||d_t||^2, which equals R / 2", source=PLAN + ", E3"),
-    share_gperp=dict(meaning="The share of ||d_t||^2 along g_perp. NaN at step 0.",
+    share_gperp=dict(meaning="The share of ||d_t||^2 along g_perp. NaN where gamma is NaN.",
                      formula="<d_t, g_perp>^2 / ||d_t||^2, which equals gamma^2 (1 - R / 2)", source=PLAN + ", E3"),
     share_residual=dict(meaning="The share of ||d_t||^2 orthogonal to both k_0 and g_perp. The three shares "
-                                "sum to one. NaN at step 0.",
+                                "sum to one. NaN where gamma is NaN.",
                         formula="||d_t - <d_t, k_0> k_0 - <d_t, g_perp> g_perp||^2 / ||d_t||^2, which equals "
                                 "(1 - gamma^2) (1 - R / 2)", source=PLAN + ", E3"),
     eigvals=dict(meaning="All eigenvalues of the centred kernel, largest first.", formula="eigenvalues of Kc_t",

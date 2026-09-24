@@ -246,7 +246,7 @@
     175
    ],
    "dtype": "float64",
-   "meaning": "The aim, the cosine between the part of k_t orthogonal to k_0 and g_perp. NaN at step 0, where the kernel has not moved.",
+   "meaning": "The aim, the cosine between the part of k_t orthogonal to k_0 and g_perp. NaN where the kernel has not turned beyond float64 rounding, which in a trained run is step 0 only.",
    "formula": "<v_t, g_perp> / ||v_t||_F with v_t = k_t - <k_t, k_0> k_0",
    "source": "term_dependence.py docstring, the group's own algebra"
   },
@@ -255,7 +255,7 @@
     175
    ],
    "dtype": "float64",
-   "meaning": "The share of ||d_t||^2 along k_0. NaN at step 0.",
+   "meaning": "The share of ||d_t||^2 along k_0. NaN where gamma is NaN.",
    "formula": "<d_t, k_0>^2 / ||d_t||^2, which equals R / 2",
    "source": "docs/zain_tierx_plan.md, E3"
   },
@@ -264,7 +264,7 @@
     175
    ],
    "dtype": "float64",
-   "meaning": "The share of ||d_t||^2 along g_perp. NaN at step 0.",
+   "meaning": "The share of ||d_t||^2 along g_perp. NaN where gamma is NaN.",
    "formula": "<d_t, g_perp>^2 / ||d_t||^2, which equals gamma^2 (1 - R / 2)",
    "source": "docs/zain_tierx_plan.md, E3"
   },
@@ -273,7 +273,7 @@
     175
    ],
    "dtype": "float64",
-   "meaning": "The share of ||d_t||^2 orthogonal to both k_0 and g_perp. The three shares sum to one. NaN at step 0.",
+   "meaning": "The share of ||d_t||^2 orthogonal to both k_0 and g_perp. The three shares sum to one. NaN where gamma is NaN.",
    "formula": "||d_t - <d_t, k_0> k_0 - <d_t, g_perp> g_perp||^2 / ||d_t||^2, which equals (1 - gamma^2) (1 - R / 2)",
    "source": "docs/zain_tierx_plan.md, E3"
   },

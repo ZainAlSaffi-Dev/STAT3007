@@ -379,6 +379,19 @@ says what the figure shows and what would falsify the claim it supports. Section
 Steps 1 and 2 were done on 24 September 2026. Step 1 is commit cadebfe. Step 2 is the
 commit that adds `ntk_trace.py`. Each step is committed on its own before the next starts.
 
+Step 4 was started on 24 September 2026, before step 3, so that the team could see the
+study. `repoduced-code/zain_tierx.ipynb` has all eight sections of Section 8 on the grid
+and on the three alpha 1 traces, and an appendix on the kernel and probe changes. When
+step 3 has made the four other traces, add them to `TRACED` in the notebook and run it
+again. Its Section 8 quotes numbers, so read the outputs and update the prose.
+
+The notebook found two things that change this plan. First, E3 did not go as expected: the
+residual turn lies mostly in the blocks of functions of a alone and of b alone, and only 1
+to 3 percent of it lies in the difference block. Second, the synthetic control of E5 found
+that the tracer turned rounding noise into an aim on a purely rescaled kernel.
+`ntk_trace.UNMOVED` now treats a change with squared norm below 1e-24 as no change, and the
+saved traces came out identical.
+
 1. Add `checkpoint_steps` and `on_checkpoint` to `ntk_lib.train_run` and `run_or_load`.
    Open `tier0_reproduction.ipynb` and `tier1_alignment_threshold.ipynb` and confirm every
    saved run loads without retraining.
