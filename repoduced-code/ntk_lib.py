@@ -216,13 +216,57 @@ DEFAULTS = dict(parameterisation="mean_field", p=23, hidden_dim=100, alpha=1.0,
                 activation="relu", init_scale=1.0, kernel_save_interval=5000, probe="train",
                 checkpoint_steps=None)
 
-# Configuration keys added after some runs were saved. A saved run that lacks
-# one of them was trained with its default value.
-LATER_KEYS = ("probe", "checkpoint_steps")
+# Configuration keys added after some runs were saved, with the value those
+# runs were trained with. A saved run that lacks one of them is compared as if
+# it had that value.
+LEGACY_VALUES = dict(probe="train", checkpoint_steps=None)
+
+# The centred terms and the two alignments on the training part and on the
+# test part of the probe. A part with fewer than two pairs gives NaN.
+PART_KEYS = [f"{term}_{part}" for part in ("train", "test") for term in ("S_c", "R_c", "A_t", "A_u")]
 
 HISTORY_KEYS = ["step", "train_loss", "test_loss", "train_acc", "test_acc",
                 "S_t", "R_t", "S_c", "R_c", "A_t", "A_u", "param_dist", "weight_norm",
-                "yKy", "K_norm"]
+                "yKy", "K_norm"] + PART_KEYS
+
+
+def select_probe(X_train, y_train, X_test, y_test, probe, probe_size):
+    """Return the probe inputs, the probe labels, and a mask that is True at the test pairs.
+
+    "mixed" is the probe of the report's Kernel metrics section. It takes
+    test pairs, up to half of probe_size, and fills the rest with training
+    pairs, training pairs first. At p = 23 and a training fraction of 0.9
+    there are only 53 test pairs, so the probe holds all 53 and 203 training
+    pairs. "train" takes the first probe_size training pairs. Every run saved
+    before 24 September 2026 used it. "test" takes the first probe_size test
+    pairs. The first pairs of each set are a random draw, because the split
+    is a random permutation fixed by data_seed, and they are the same for
+    every run with the same data_seed.
+    """
+    if probe == "train":
+        n_train, n_test = min(probe_size, len(X_train)), 0
+    elif probe == "test":
+        n_train, n_test = 0, min(probe_size, len(X_test))
+    elif probe == "mixed":
+        n_test = min(probe_size // 2, len(X_test))
+        n_train = min(probe_size - n_test, len(X_train))
+    else:
+        raise ValueError(f"unknown probe {probe!r}")
+    x = torch.cat([X_train[:n_train], X_test[:n_test]])
+    y = torch.cat([y_train[:n_train], y_test[:n_test]])
+    is_test = torch.cat([torch.zeros(n_train, dtype=torch.bool, device=x.device),
+                         torch.ones(n_test, dtype=torch.bool, device=x.device)])
+    return x, y, is_test
+
+
+def probe_pairs(cfg):
+    """Return the probe pairs (a, b) of a configuration and the mask of test pairs, as numpy arrays."""
+    p = cfg["p"]
+    (X_train, y_train), (X_test, y_test) = make_modular_addition_dataset(
+        p=p, train_fraction=cfg["train_fraction"], seed=cfg["data_seed"])
+    x, _, is_test = select_probe(X_train, y_train, X_test, y_test, cfg["probe"], cfg["probe_size"])
+    x = x.numpy()
+    return x[:, :p].argmax(1), x[:, p:].argmax(1), is_test.numpy()
 
 
 def normalise_checkpoints(cfg):
@@ -256,7 +300,9 @@ def train_run(name, verbose=True, on_checkpoint=None, **overrides):
     At each checkpoint the history records the losses, the accuracies, the
     raw scale and rotation terms S_t and R_t, the centred versions S_c and
     R_c, the centred alignment A_t, the relative parameter movement, the
-    weight norm, y^T K^+ y on the probe set, and the kernel norm. The probe
+    weight norm, y^T K^+ y on the probe set, and the kernel norm. It also
+    records S_c, R_c, A_t and A_u on the training part and on the test part
+    of the probe, as the report's Kernel metrics section asks. The probe
     kernel itself is saved every kernel_save_interval steps to a compressed
     file next to the JSON so later analyses can use it.
 
@@ -282,11 +328,10 @@ def train_run(name, verbose=True, on_checkpoint=None, **overrides):
         p=p, train_fraction=cfg["train_fraction"], seed=cfg["data_seed"])
     X_train, y_train, X_test, y_test = [t.to(DEVICE) for t in (X_train, y_train, X_test, y_test)]
 
-    # The probe set is fixed for the run. "train" takes the first probe_size training pairs, as in the
-    # script; "test" takes test pairs, which is one of the robustness variants the report lists.
-    source_X, source_y = (X_test, y_test) if cfg["probe"] == "test" else (X_train, y_train)
-    probe_size = min(cfg["probe_size"], source_X.shape[0])
-    x_probe, y_probe = source_X[:probe_size], source_y[:probe_size]
+    # The probe set is fixed for the run. select_probe says which pairs each choice of probe takes.
+    x_probe, y_probe, probe_is_test = select_probe(X_train, y_train, X_test, y_test,
+                                                   cfg["probe"], cfg["probe_size"])
+    parts = [~probe_is_test, probe_is_test]
 
     torch.manual_seed(cfg["seed"])
     model = build_model(cfg["parameterisation"], 2 * p, cfg["hidden_dim"], p,
@@ -330,9 +375,18 @@ def train_run(name, verbose=True, on_checkpoint=None, **overrides):
             yKy = torch.sum(y_probe * (torch.linalg.pinv(K_t, rtol=1e-6) @ y_probe)).item()
         else:
             yKy = float("nan")
+        # The same terms on the training part and on the test part of the probe, in the order of PART_KEYS.
+        part_terms = []
+        for mask in parts:
+            if int(mask.sum()) < 2:
+                part_terms += [float("nan")] * 4
+                continue
+            K_p, K_p0, y_p = K_t[mask][:, mask], K_0[mask][:, mask], y_probe[mask]
+            part_terms += [*compute_centred_scale_and_rotation(K_p0, K_p),
+                           compute_task_alignment(K_p, y_p), uncentred_alignment(K_p, y_p)]
         for k, v in zip(HISTORY_KEYS, [step, train_loss, test_loss, train_acc, test_acc,
                                        S_t, R_t, S_c, R_c, A_t, A_u, param_dist, weight_norm,
-                                       yKy, K_norm]):
+                                       yKy, K_norm, *part_terms]):
             history[k].append(v)
         if step % cfg["kernel_save_interval"] == 0:
             saved_steps.append(step)
@@ -375,16 +429,15 @@ def train_run(name, verbose=True, on_checkpoint=None, **overrides):
 def run_or_load(name, rerun=False, verbose=True, on_checkpoint=None, **overrides):
     """Load a saved run if its configuration matches, otherwise train it.
 
-    A saved run that lacks a key in LATER_KEYS is compared as if it had the
-    default value of that key. on_checkpoint is passed to train_run, so it
-    is called only when the run is trained. Loading a saved run does not
-    call it.
+    A saved run that lacks a key in LEGACY_VALUES is compared as if it had
+    the value given there, which is the value it was trained with.
+    on_checkpoint is passed to train_run, so it is called only when the run
+    is trained. Loading a saved run does not call it.
     """
     path = RESULTS / f"{name}.json"
     if path.exists() and not rerun:
         run = json.loads(path.read_text())
-        saved = {**{k: DEFAULTS[k] for k in LATER_KEYS},
-                 **{k: v for k, v in run["config"].items() if k != "name"}}
+        saved = {**LEGACY_VALUES, **{k: v for k, v in run["config"].items() if k != "name"}}
         wanted = normalise_checkpoints({**DEFAULTS, **overrides})
         if saved == wanted and "R_c" in run["history"]:
             if verbose:
@@ -600,9 +653,14 @@ def cell_name(N, alpha, ek, seed):
     return f"ntk_N{N}_a{alpha:g}_wd{ek:g}_s{seed}"
 
 
-def load_cell(N, alpha, ek, seed, steps, eval_interval, verbose=False, probe="train"):
-    """Load a grid cell from results/, training it first if it is missing."""
-    suffix = "" if probe == "train" else f"_probe{probe}"
+def load_cell(N, alpha, ek, seed, steps, eval_interval, verbose=False, probe="mixed"):
+    """Load a grid cell from results/, training it first if it is missing.
+
+    The default probe is the mixed probe of the report's Kernel metrics
+    section, and select_probe describes it. A cell with another probe has
+    the probe in its name, such as ntk_N100_a1_wd0_s0_probetest.
+    """
+    suffix = "" if probe == "mixed" else f"_probe{probe}"
     return run_or_load(cell_name(N, alpha, ek, seed) + suffix, verbose=verbose, parameterisation="ntk", hidden_dim=N,
                        alpha=alpha, eta_0=100.0, eta_kappa=ek, seed=seed, steps=steps,
                        eval_interval=eval_interval, kernel_save_interval=steps, probe=probe)

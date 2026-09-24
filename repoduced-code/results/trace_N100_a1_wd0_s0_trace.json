@@ -13,7 +13,7 @@
   "notation": "H = I - (1/n) 1 1^T. <A, B> is the Frobenius inner product. K_t is the raw probe kernel and Kc_t = H K_t H. k_t = Kc_t / ||Kc_t||_F is the unit centred kernel. Y is the one-hot probe labels, G = H Y Y^T H and g = G / ||G||_F. g_perp is the part of g orthogonal to k_0, scaled to unit length. d_t = k_t - k_0 is the change of the unit kernel.",
   "kernel": "The sum-over-logits kernel of RepoducedCode.compute_entk in mode trace. K_ij is the sum over the p outputs of the inner product of the parameter gradients of that output at probe points i and j.",
   "centring": "Every term, share and eigenvector uses the centred kernel H K H, following Cortes, Mohri and Rostamizadeh (2012), Lemma 1, and the report's Kernel metrics section.",
-  "probe": "The first 256 training pairs, as ntk_lib.train_run takes them with probe set to train.",
+  "probe": "The mixed probe of the report's Kernel metrics section, as ntk_lib.select_probe takes it. At p = 23 and a training fraction of 0.9 it holds 203 training pairs followed by all 53 test pairs.",
   "precision": "torch computes the kernel in float32. Everything derived from it here is computed in float64 from that float32 kernel.",
   "top_k": 88,
   "eigenvalue_order": "Descending.",
@@ -24,14 +24,14 @@
   "checkpoints": "Step 0, every 250 steps, and 60 log-spaced steps from 1 to the run length, rounded to integers. Rounding merges some of the smallest ones."
  },
  "checks": {
-  "S against the history field S_c": 1.6042721973034274e-06,
-  "R against the history field R_c": 3.6264517891959613e-06,
-  "A against the history field A_t": 4.224216868381481e-06,
-  "A_uncentred against the history field A_u": 3.7212193487734524e-07,
-  "D^2 against exp2S_term + 1 - cross_term": 1.2434497875801753e-14,
-  "the three shares against a sum of one": 4.440892098500626e-16,
-  "share_k0 against R / 2": 1.5959455978986625e-16,
-  "share_gperp against gamma^2 (1 - R / 2)": 6.938893903907228e-18,
+  "S against the history field S_c": 1.3861701571027396e-06,
+  "R against the history field R_c": 3.147430271521756e-06,
+  "A against the history field A_t": 6.91772528482737e-07,
+  "A_uncentred against the history field A_u": 3.432864857655371e-07,
+  "D^2 against exp2S_term + 1 - cross_term": 1.4210854715202004e-14,
+  "the three shares against a sum of one": 3.3306690738754696e-16,
+  "share_k0 against R / 2": 2.220446049250313e-16,
+  "share_gperp against gamma^2 (1 - R / 2)": 4.336808689942018e-18,
   "A against the aim identity": 1.6653345369377348e-16
  },
  "arrays": {
@@ -409,7 +409,7 @@
    "dtype": "int64",
    "meaning": "The first number a of each probe pair. Stored once.",
    "formula": "-",
-   "source": "kernel_snapshots.probe_pairs"
+   "source": "ntk_lib.probe_pairs"
   },
   "probe_b": {
    "shape": [
@@ -418,7 +418,16 @@
    "dtype": "int64",
    "meaning": "The second number b of each probe pair. The label of probe point i is (a_i + b_i) mod p. Stored once.",
    "formula": "-",
-   "source": "kernel_snapshots.probe_pairs"
+   "source": "ntk_lib.probe_pairs"
+  },
+  "probe_is_test": {
+   "shape": [
+    256
+   ],
+   "dtype": "bool",
+   "meaning": "True at the probe pairs that are test pairs. Stored once.",
+   "formula": "-",
+   "source": "ntk_lib.probe_pairs"
   },
   "G_norm": {
    "shape": [],

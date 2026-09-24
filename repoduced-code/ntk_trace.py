@@ -69,10 +69,11 @@ WIDTH, SEED, BASE_RATE = 100, 0, 100.0
 INTERVAL, N_LOG = 250, 60
 # The number of top eigenvectors that are matched and compared. In the alpha 1
 # traces of 24 September 2026, the leading 2(p - 1) = 44 eigenvectors of the
-# centred kernel were functions of a alone and of b alone, followed by a clear
-# gap. During training the functions of the sum and of the difference rose out
-# of the bulk to indices 44 to about 99. So k = 4(p - 1) = 88 holds both. The
-# plan first chose 32, which cut the first block in the middle.
+# centred kernel were functions of a alone and of b alone. The largest
+# relative gap in the spectrum came right after them. During training the
+# functions of the sum and of the difference rose out of the bulk to indices
+# 44 to 87. So k = 4(p - 1) = 88 holds both. The plan first chose 32, which cut
+# the first block in the middle.
 TOP_K = 88
 # An eigenvector whose assigned overlap with the previous checkpoint is below
 # this value is treated as a new arrival.
@@ -117,7 +118,7 @@ def run_config(alpha, eta_kappa, steps):
     """
     return dict(parameterisation="ntk", hidden_dim=WIDTH, alpha=alpha, eta_0=BASE_RATE,
                 eta_kappa=eta_kappa, seed=SEED, steps=steps, eval_interval=INTERVAL,
-                kernel_save_interval=steps, checkpoint_steps=checkpoint_grid(steps))
+                kernel_save_interval=steps, checkpoint_steps=checkpoint_grid(steps), probe="mixed")
 
 
 # =====================================================================
@@ -160,7 +161,7 @@ class Tracer:
     def __init__(self, cfg, k=TOP_K):
         p = cfg["p"]
         self.p, self.k, self.alpha = p, k, cfg["alpha"]
-        self.probe_a, self.probe_b = KS.probe_pairs(cfg)
+        self.probe_a, self.probe_b, self.probe_is_test = L.probe_pairs(cfg)
         n = len(self.probe_a)
         # The probe inputs are the one-hot codes of the probe pairs, the same
         # rows that train_run takes from the dataset.
@@ -287,7 +288,8 @@ class Tracer:
     def arrays(self):
         """Return the trace as a dictionary of arrays, with a leading checkpoint axis where one applies."""
         out = {name: np.stack([np.asarray(r[name]) for r in self.rows]) for name in self.rows[0]}
-        out.update(probe_a=self.probe_a, probe_b=self.probe_b, G_norm=np.array(self.G_norm),
+        out.update(probe_a=self.probe_a, probe_b=self.probe_b, probe_is_test=self.probe_is_test,
+                   G_norm=np.array(self.G_norm),
                    A_0=np.array(self.A_0))
         return out
 
@@ -309,7 +311,8 @@ CONVENTIONS = dict(
             "output at probe points i and j."),
     centring=("Every term, share and eigenvector uses the centred kernel H K H, following Cortes, Mohri and "
               "Rostamizadeh (2012), Lemma 1, and the report's Kernel metrics section."),
-    probe="The first 256 training pairs, as ntk_lib.train_run takes them with probe set to train.",
+    probe=("The mixed probe of the report's Kernel metrics section, as ntk_lib.select_probe takes it. At p = 23 "
+           "and a training fraction of 0.9 it holds 203 training pairs followed by all 53 test pairs."),
     precision=("torch computes the kernel in float32. Everything derived from it here is computed in float64 "
                "from that float32 kernel."),
     top_k=TOP_K,
@@ -334,9 +337,11 @@ ARRAYS = dict(
     step=dict(meaning="The checkpoint steps.", formula="See conventions.checkpoints.",
               source=REPORT_METRICS + ", for the log-spaced grid"),
     probe_a=dict(meaning="The first number a of each probe pair. Stored once.", formula="-",
-                 source="kernel_snapshots.probe_pairs"),
+                 source="ntk_lib.probe_pairs"),
     probe_b=dict(meaning="The second number b of each probe pair. The label of probe point i is "
-                         "(a_i + b_i) mod p. Stored once.", formula="-", source="kernel_snapshots.probe_pairs"),
+                         "(a_i + b_i) mod p. Stored once.", formula="-", source="ntk_lib.probe_pairs"),
+    probe_is_test=dict(meaning="True at the probe pairs that are test pairs. Stored once.", formula="-",
+                       source="ntk_lib.probe_pairs"),
     W1=dict(meaning="The hidden layer weights, shape (N, 2p).", formula="h = x W1^T / sqrt(2p)",
             source="ntk_lib.NTKMLP"),
     W2=dict(meaning="The output weights, shape (p, N).", formula="f = relu(h) W2^T / sqrt(N)",
@@ -521,10 +526,13 @@ def compare_with_saved(run, alpha, eta_kappa):
     float32 sums inside the kernel computation, which can round differently on
     another machine. y^T K^+ y magnifies that rounding through the
     pseudo-inverse. Each kernel difference is therefore printed as a fraction
-    of the largest absolute value of that field in the saved run.
+    of the largest absolute value of that field in the saved run. The kernel
+    fields are compared only when the saved run used the same probe. The
+    dense runs keep the probe of training pairs, so for them only the
+    training fields are compared.
 
-    Returns a dictionary with the two largest differences for each saved run
-    that exists.
+    Returns a dictionary with the largest differences for each saved run
+    that exists. The kernel entry is None when the probes differ.
     """
     mine = run["history"]
     index = {s: i for i, s in enumerate(mine["step"])}
@@ -535,10 +543,14 @@ def compare_with_saved(run, alpha, eta_kappa):
         if not path.exists():
             print(f"  no saved {kind} run {name} to compare with")
             continue
-        saved = json.loads(path.read_text())["history"]
+        saved_run = json.loads(path.read_text())
+        saved = saved_run["history"]
+        same_probe = {**L.LEGACY_VALUES, **saved_run["config"]}["probe"] == run["config"]["probe"]
         shared = [(index[s], j) for j, s in enumerate(saved["step"]) if s in index]
         training, kernel = {}, {}
         for key in [k for k in L.HISTORY_KEYS[1:] if k in saved]:
+            if key not in TRAINING_FIELDS and not same_probe:
+                continue
             pairs = np.array([(mine[key][i], saved[key][j]) for i, j in shared], dtype=float)
             both = ~np.isnan(pairs).any(axis=1)
             diff = float(np.max(np.abs(pairs[both, 0] - pairs[both, 1]))) if both.any() else 0.0
@@ -546,11 +558,15 @@ def compare_with_saved(run, alpha, eta_kappa):
                 training[key] = diff
             else:
                 kernel[key] = diff / max(float(np.nanmax(np.abs(saved[key]))), 1e-30)
-        worst = max(kernel, key=kernel.get)
-        found[kind] = dict(training=max(training.values()), kernel=kernel[worst])
-        print(f"  {kind} run {name}: {len(shared)} shared checkpoints. Training fields: largest difference "
-              f"{found[kind]['training']:.1e}. Kernel fields: largest difference {kernel[worst]:.1e} of the "
-              f"field's largest value, in {worst}.")
+        found[kind] = dict(training=max(training.values()), kernel=max(kernel.values()) if kernel else None)
+        text = (f"  {kind} run {name}: {len(shared)} shared checkpoints. Training fields: largest difference "
+                f"{found[kind]['training']:.1e}.")
+        if kernel:
+            worst = max(kernel, key=kernel.get)
+            text += f" Kernel fields: largest difference {kernel[worst]:.1e} of the field's largest value, in {worst}."
+        else:
+            text += " Kernel fields not compared, because the saved run uses another probe."
+        print(text)
     return found
 
 

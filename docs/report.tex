@@ -362,9 +362,12 @@ Zac Kienzle (s4803349) $\cdot$ Samuel Rieger (s4904959)}
 
 \subsection{Kernel metrics}
 \begin{itemize}
-	\item Fixed probe set of $n=256$ input pairs, drawn once, containing both
-		train and test pairs, frozen across all runs and seeds. Report metrics on
-		train and test halves separately as well as pooled.
+	\item Fixed probe set of $n=256$ input pairs, drawn once and frozen across
+		all runs and seeds. It holds test pairs, up to half of the probe, and
+		training pairs for the rest. At $p=23$ with a $90\%$ training fraction
+		only 53 test pairs exist, so the probe holds all 53 of them and 203
+		training pairs. Metrics are reported on the training part and on the test
+		part separately, as well as pooled.
 	\item eNTK via \texttt{torch.func} (\texttt{jacrev} + \texttt{vmap}),
 		$256\times256$ per checkpoint, seconds to compute. The sum-over-logits
 		kernel adds the kernels of the $p$ outputs,
@@ -379,7 +382,9 @@ Zac Kienzle (s4803349) $\cdot$ Samuel Rieger (s4904959)}
 		v4]{jacot2018ntk}. At finite width they differ. The first-logit kernel is a
 		robustness check.
 	\item All of $S,R,A$ computed on the centred kernel $\Kt=HKH$; uncentred $A$
-		also reported for comparability with \citet{kumar2024grokking}.
+		also reported for comparability with \citet{kumar2024grokking}. They
+		evaluate it on the test set \citep[Section~5, arXiv v3]{kumar2024grokking},
+		so the comparison uses the test part of the probe.
 	\item Definitions (\TODO{as a small table}): $S_t=\log(\Fnorm{\Kt_t}/\Fnorm{\Kt_0})$;
 		$R_t=1-\langle\widehat{\Kt}_t,\widehat{\Kt}_0\rangle_F$;
 		$A_t=\langle\Kt_t,\widetilde G\rangle/(\Fnorm{\Kt_t}\Fnorm{\widetilde G})$
@@ -562,7 +567,7 @@ Zac Kienzle (s4803349) $\cdot$ Samuel Rieger (s4904959)}
 		survive? \TODO{cut first if compute is tight --- buys generality, not
 		discrimination}
 	\item Robustness: uncentred alignment, first-logit eNTK, $\tau$ sensitivity,
-		train/test halves of the probe set.
+		and the training and test parts of the probe set.
 \end{itemize}
 
 \section{Conclusion}

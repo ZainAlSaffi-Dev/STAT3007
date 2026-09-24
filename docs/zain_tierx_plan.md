@@ -51,16 +51,21 @@ The script checks the identity on the three dense runs and finds the largest dif
 between the aim computed from the saved kernels and the aim computed from the recorded
 terms to be below 1e-5 over 120 checkpoints each.
 
+The numbers below are from the grid after it was trained again with the mixed probe of
+Section 11. The numbers from the training probe are given in brackets. None of the
+conclusions changed.
+
 Along a run, the share of the variance of the scale term that a straight line in the
-rotation term explains has median 0.993 over the 20 grid runs without decay, 0.834 over
-the nine runs at eta lambda 1e-4, and 0.045 in the one run at eta lambda 1e-3. So scale
-and rotation move in lockstep only when there is no decay.
+rotation term explains has median 0.993 over the 20 grid runs without decay (0.993), 0.850
+over the nine runs at eta lambda 1e-4 (0.834), and 0.036 in the one run at eta lambda 1e-3
+(0.045). So scale and rotation move in lockstep only when there is no decay.
 
 At the generalisation event, which the Tier 1 notebook takes as test accuracy 1, 45 of the
 63 grid runs have an event. Over those runs the correlations are 0.54 between scale and
-rotation, 0.11 between rotation and alignment, and minus 0.34 between scale and alignment.
-Alignment and aim correlate at 0.98. The aim at the event lies between 0.05 and 0.18 and
-rises with decay within each alpha.
+rotation (0.54), 0.07 between rotation and alignment (0.11), and minus 0.31 between scale
+and alignment (minus 0.34). Alignment and aim correlate at 0.99 (0.98). The aim at the
+event lies between 0.045 and 0.161 (0.05 and 0.18) and rises with decay within each
+alpha.
 
 ## 3. The question, made precise
 
@@ -109,8 +114,9 @@ tier x, and Section 5 describes the experiment.
 ## 4. The runs
 
 Seven runs are traced with the logger of Section 6. All are NTK parameterisation, width
-100, base learning rate 100, seed 0, data seed 42, train fraction 0.9, probe set of the
-first 256 training pairs, as `ntk_lib.load_cell` fixes for the grid.
+100, base learning rate 100, seed 0, data seed 42, train fraction 0.9, and the mixed probe
+of 203 training pairs and all 53 test pairs, as `ntk_lib.load_cell` fixes for the grid.
+Section 11 says why the probe changed.
 
 | Run | alpha | eta lambda | steps | Why |
 | --- | --- | --- | --- | --- |
@@ -132,12 +138,14 @@ trace holds more than the kernel. Their new histories must agree with the saved 
 and dense runs at every shared checkpoint, as `ntk_trace.compare_with_saved` prints. If
 they do not, stop and find out why before anything else is built on them.
 
-Result on 24 September 2026. The three traced histories agree exactly with the dense runs
-in every field over 121 shared checkpoints. A teammate committed the grid runs from another
-machine. Against them, the fields that depend only on the weights agree exactly over 61
-shared checkpoints. The kernel fields differ by at most 1e-5 of their largest value. The
-largest difference is in y^T K^+ y, whose pseudo-inverse magnifies the float32 rounding of
-the kernel.
+Result on 24 September 2026. A teammate first computed the grid runs on another machine,
+with the training probe. Against those, the fields that depend only on the weights agreed
+exactly over 61 shared checkpoints, and the kernel fields differed by at most 1e-5 of their
+largest value. The largest difference was in y^T K^+ y, whose pseudo-inverse magnifies the
+float32 rounding of the kernel. After the probe changed, the grid was trained again on this
+machine, and the three traced histories now agree exactly with it in every field. The
+dense runs keep the training probe, so only their training fields can be compared, and
+those agree exactly over 121 shared checkpoints.
 
 Naming: the traced runs are called `trace_N100_a{alpha}_wd{eta lambda}_s0`, built by
 `ntk_trace.run_name`. The trace files sit next to the run JSON. The first version of this
@@ -187,10 +195,10 @@ other arm.
 
 Eigen-decompose the centred kernel at every checkpoint, eigenvalues in descending order.
 Keep the top k = 88 = 4(p - 1) eigenvectors. The first choice was 32. The alpha 1 traces
-showed that the leading 44 eigenvectors are functions of a alone and of b alone, followed
-by a clear gap. They also showed that the functions of the sum and of the difference rise
-out of the bulk to indices 44 to about 99 during training. A cut at 32 fell inside the
-first block and never saw the second. Match each eigenvector at a checkpoint to one at the
+showed that the leading 44 eigenvectors are functions of a alone and of b alone, and that
+the largest relative gap in the spectrum comes right after them. They also showed that the
+functions of the sum and of the difference rise out of the bulk to indices 44 to 87 during
+training. A cut at 32 fell inside the first block and never saw the second. Match each eigenvector at a checkpoint to one at the
 previous checkpoint by the overlap matrix of absolute inner products and a linear
 assignment (`scipy.optimize.linear_sum_assignment` on minus the overlap). Fix the sign of
 each matched vector so that the inner product with its predecessor is positive. Record the
@@ -202,18 +210,19 @@ eigenvectors over training in a form the deck can draw. An eigenvector whose bes
 with the previous checkpoint is below 0.5 is a new arrival and is marked with match index
 minus one.
 
-What the alpha 1 traces showed about these conventions on 24 September 2026. The sign rule
+What the alpha 1 traces with the mixed probe showed about these conventions on 24 September
+2026. The sign rule
 works, and no matched pair has a negative inner product. From one checkpoint to the next
 the matching is stable. The median assigned overlap is 0.96 to 0.99. New arrivals occur
 only at indices 44 and above, where the sum and difference directions enter. Over a whole
 run the chain of matches drifts. Inside the block of functions of a and of b, neighbouring
 eigenvalues are 1 to 3 percent apart and the vectors mix slowly. At step 30,000 a vector
-that traces back to step 0 has a median overlap of 0.15 to 0.18 with its origin, over
+that traces back to step 0 has a median overlap of 0.17 to 0.18 with its origin, over
 the three runs. So the
 identity of a single eigenvector means something only over short spans. For longer spans,
 use the principal angles and the energy shares. The array `origin_index` records the chain,
 and `overlap_zero` shows how far it has drifted. The label angles do move with k = 88. At
-step 0, 2 of the 22 angles are below 45 degrees. At step 30,000, 20 to 22 of them are.
+step 0, 1 of the 22 angles is below 45 degrees. At step 30,000, 18 to 22 of them are.
 
 ### E5. A synthetic control
 
@@ -397,3 +406,34 @@ commit that adds `ntk_trace.py`. Each step is committed on its own before the ne
   aim identity in `term_dependence.py`: the group's own algebra.
 - The kernel closed form of E6: the group's own derivation from the definition in
   `RepoducedCode.compute_entk`.
+
+## 11. Where the report and the code disagreed, 24 September 2026
+
+The code should match `docs/report.tex`. Where they differ, the source papers decide
+which one is wrong. The report is still a skeleton, so a design line in it may be a draft.
+Four differences were found while step 2 was done.
+
+1. The kernel. The Methods line called it the gradient of the summed output. The
+   report's Introduction, the proposal and `compute_entk` use the sum over outputs of the
+   per-output kernels. That is the trace of the matrix-valued NTK of Jacot, Gabriel and
+   Hongler (2018). Their Theorem 1 (arXiv v4) makes the two agree only in the
+   infinite-width limit at initialisation. On the traced runs the two differ a lot once
+   training starts. The report line was wrong and was corrected in commit c507abb.
+2. The probe set. The report asks for train and test pairs in the probe, with metrics on
+   each part and pooled. The code used the first 256 training pairs. No paper settles
+   this. Kumar et al. (2024) evaluate their alignment on the test set (Section 5, arXiv
+   v3), which supports the report. The code now follows the report. The mixed probe of
+   `ntk_lib.select_probe` holds 203 training pairs and all 53 test pairs, and the history
+   gains the terms on each part. The 63 grid runs that used the training probe were
+   trained again. The weights follow the same path, so only the kernel fields changed.
+   The dense runs keep the training probe because the scenes were built on them. The
+   traced runs use the mixed probe.
+3. The checkpoint grid. The report asks for a log-spaced grid. The grid runs check every
+   500 steps. The report line is a draft, so the grid runs were left as they are. The
+   traced runs carry the log-spaced grid.
+4. The grokking time. The report and the proposal pre-register it on loss thresholds,
+   whose values the report still marks as to do. The Tier 0 notebook makes the accuracy
+   definition primary, because the test loss settles between 0.01 and 0.03 and rarely
+   crosses 0.01. The Tier 1 notebook uses accuracy only. Kumar et al. (2024, Section 16,
+   arXiv v3) call the loss and accuracy definitions of grokking equivalent. Changing a
+   pre-registered definition is a decision for the group, so nothing was changed.

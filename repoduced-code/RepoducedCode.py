@@ -166,10 +166,10 @@ def compute_entk(model, params, x_probe, mode="trace"):
     the gradient of sum_c f_c, is a different kernel, because it also has
     the cross terms between outputs. The two agree in the infinite-width
     limit at initialisation, by their Theorem 1 (arXiv:1806.07572v4), and
-    differ at finite width. On the traced alpha 1 runs of 24 September 2026
-    the summed-output kernel gave a scale term of -0.20 against +0.66 here
-    at step 30,000 with eta kappa 0.0003. The report's Kernel metrics
-    section defines the kernel as this trace.
+    differ at finite width. On the traced alpha 1 run with eta kappa 0.0003
+    and the mixed probe, on 24 September 2026, the summed-output kernel gave
+    a scale term of -0.19 against +0.66 here at step 30,000. The report's
+    Kernel metrics section defines the kernel as this trace.
     """
     # Define a single-sample forward pass taking parameter dictionary explicitly
     def fnet_single(p_dict, x_single):

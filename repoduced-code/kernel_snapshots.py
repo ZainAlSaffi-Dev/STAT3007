@@ -7,11 +7,15 @@ saves the kernel at every checkpoint, which is every 250 steps. The animations
 load the files through animations/common/data.py.
 
 The configuration is the one ntk_lib.load_cell uses for the grid. It is NTK
-parameterisation, width 100, base rate 100, seed 0 and data seed 42. Only the
-run length, the checkpoint interval and the kernel interval differ. The
-history at a checkpoint that both runs share should therefore match the saved
-grid run, and the script prints the largest difference so that this can be
-checked.
+parameterisation, width 100, base rate 100, seed 0 and data seed 42. The run
+length, the checkpoint interval and the kernel interval differ. So does the
+probe. The dense runs keep the probe of the first 256 training pairs, which
+every run used before 24 September 2026, because the scenes were built on
+them. The grid now uses the mixed probe of the report. The weights follow
+the same path in both, so the losses at a shared checkpoint should match the
+saved grid run exactly, and the script prints the largest difference so that
+this can be checked. The kernel fields are compared only when the probes
+match.
 
 The three cells all have alpha 1. The first has no weight decay. Its kernel
 grows and turns, and it generalises. The second has eta kappa 0.0003, the
@@ -36,7 +40,6 @@ from pathlib import Path
 import numpy as np
 
 import ntk_lib as L
-from RepoducedCode import make_modular_addition_dataset
 
 HERE = Path(__file__).resolve().parent
 # ntk_lib writes next to itself. After the merge that is this folder anyway.
@@ -56,12 +59,8 @@ def run_name(eta_kappa):
 
 def probe_pairs(cfg):
     """Return the probe pairs (a, b) that ntk_lib.train_run used for this configuration."""
-    p = cfg["p"]
-    (X_train, _), (X_test, _) = make_modular_addition_dataset(
-        p=p, train_fraction=cfg["train_fraction"], seed=cfg["data_seed"])
-    X = X_test if cfg["probe"] == "test" else X_train
-    X = X[: cfg["probe_size"]].numpy()
-    return X[:, :p].argmax(1), X[:, p:].argmax(1)
+    a, b, _ = L.probe_pairs({**L.LEGACY_VALUES, **cfg})
+    return a, b
 
 
 def add_probe_to_kernel_file(name, cfg):
@@ -81,11 +80,15 @@ def compare_with_grid(run, eta_kappa):
     if not grid_path.exists():
         print(f"{grid_path.name} is not in results, so there is nothing to compare against.")
         return
-    grid = json.loads(grid_path.read_text())["history"]
-    mine = run["history"]
+    saved = json.loads(grid_path.read_text())
+    grid, mine = saved["history"], run["history"]
     index = {s: i for i, s in enumerate(grid["step"])}
     shared = [(i, index[s]) for i, s in enumerate(mine["step"]) if s in index]
-    for key in ["train_loss", "test_loss", "S_c", "R_c", "A_t"]:
+    same_probe = {**L.LEGACY_VALUES, **saved["config"]}["probe"] == run["config"]["probe"]
+    keys = ["train_loss", "test_loss"] + (["S_c", "R_c", "A_t"] if same_probe else [])
+    if not same_probe:
+        print("  the grid run uses another probe, so only the losses are compared")
+    for key in keys:
         diff = max(abs(mine[key][i] - grid[key][j]) for i, j in shared)
         print(f"  {key:>10}: largest difference {diff:.2e} over {len(shared)} shared checkpoints")
 

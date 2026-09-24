@@ -14,6 +14,10 @@ script to have been run once on the machine. See animations/README.md.
 The JSON holds the configuration and the history. The history keys are the
 ones ntk_lib.HISTORY_KEYS lists: step, train_loss, test_loss, train_acc,
 test_acc, S_t, R_t, S_c, R_c, A_t, param_dist, weight_norm, yKy and K_norm.
+Runs made from 24 September 2026 on also hold S_c, R_c, A_t and A_u on the
+training part and the test part of the probe, as S_c_train, S_c_test and so
+on. The grid runs use the mixed probe of the report, 203 training pairs and
+53 test pairs. The dense runs keep the probe of the first 256 training pairs.
 The centred terms are S_c and R_c. The report computes all three timing
 variables on the centred kernel, so a scene wants S_c and R_c, not S_t and
 R_t, unless it is showing the raw comparison on purpose.
