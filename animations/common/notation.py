@@ -29,12 +29,47 @@ TARGET_GRAM = r"\widetilde{G} = H Y Y^\top H"
 
 # The movement statistic and its decomposition, Equation eq:decomp.
 MOVEMENT = r"D = \frac{\lVert K_t - K_0 \rVert_F}{\lVert K_0 \rVert_F}"
+# The same statistic on the centred kernel. Equation eq:decomp holds for it too,
+# with the centred S_t and R_t, because the identity is the law of cosines.
+MOVEMENT_CENTRED = r"D = \frac{\lVert \widetilde{K}_t - \widetilde{K}_0 \rVert_F}{\lVert \widetilde{K}_0 \rVert_F}"
 DECOMPOSITION = (
     r"\frac{\lVert K_t - K_0 \rVert_F^2}{\lVert K_0 \rVert_F^2}"
     r" = e^{2S_t} + 1 - 2e^{S_t}(1 - R_t)"
 )
 PURE_SCALE_LIMIT = r"R_t = 0 \;\Rightarrow\; D^2 = (1 - e^{S_t})^2"
 PURE_ROTATION_LIMIT = r"S_t = 0 \;\Rightarrow\; D^2 = 2R_t"
+
+# The aim and the identity that ties alignment to rotation. This is the
+# group's own algebra, written out in repoduced-code/term_dependence.py. It is
+# not from a paper. The report uses rho for the norm clamp and theta for the
+# parameters, so the aim is gamma. k_t is the centred kernel over its norm, and
+# u_t is the unit vector along the part of k_t that is orthogonal to k_0.
+K_UNIT = r"\widehat{\widetilde{K}}"
+TARGET_UNIT = r"\widehat{\widetilde{G}}"
+AIM = r"\gamma_t"
+SPLIT = (
+    r"\widehat{\widetilde{K}}_t = (1 - R_t)\,\widehat{\widetilde{K}}_0"
+    r" + \sqrt{R_t(2 - R_t)}\;u_t"
+)
+AIM_DEFINITION = (
+    r"\gamma_t = \frac{\langle u_t, \widehat{\widetilde{G}} \rangle}{\sqrt{1 - A_0^2}}"
+    r",\qquad u_t \perp \widehat{\widetilde{K}}_0"
+)
+ALIGNMENT_IDENTITY = (
+    r"A_t = A_0\,(1 - R_t) + \gamma_t \sqrt{1 - A_0^2}\,\sqrt{R_t(2 - R_t)}"
+)
+NORM_RATIO = r"e^{S_t}"
+KERNEL_CHANGE = r"\widehat{\widetilde{K}}_t - \widehat{\widetilde{K}}_0"
+
+# The weight-decay rate, as the product the report writes. ntk_lib calls it
+# eta_kappa.
+DECAY = r"\eta\lambda"
+
+# Offsets between two probe pairs (a, b) and (a', b'), both mod p.
+OFFSET_A = r"a - a'"
+OFFSET_B = r"b - b'"
+SUM_LINE = r"a + b \equiv a' + b'"
+DIFFERENCE_LINE = r"a - b \equiv a' - b'"
 
 # The laziness knob. Kumar et al. (2024), Appendix 8.1, Equation 7.
 PREDICTOR = r"\tilde f(x, \theta) = \alpha\,[\,f(x, \theta) - f(x, \theta_0)\,]"

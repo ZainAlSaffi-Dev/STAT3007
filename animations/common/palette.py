@@ -28,6 +28,15 @@ SCALE = BLUE
 ROTATION = ORANGE
 ALIGNMENT = AQUA
 
+# Heat maps of a signed quantity run from NEGATIVE through PAPER at zero to
+# POSITIVE.
+NEGATIVE = BLUE
+POSITIVE = ORANGE
+
+# The aim, the fourth quantity in the turn and aim scenes. ntk_lib has no
+# colour for it, so this one is new.
+AIM = "#7c3aed"
+
 # One colour per loss curve.
 TRAIN = BLUE
 TEST = ORANGE

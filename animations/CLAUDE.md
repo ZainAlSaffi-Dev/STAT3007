@@ -73,8 +73,13 @@ Rendered video lands in `out/mp4/`, which is in `.gitignore` because the files
 are large. Still frames land in `out/stills/` and are committed, because the
 report uses them.
 
-Every scene exports at least one still. Call `self.add(...)` for the final state
-and render with `-s`, or use a dedicated method that the README describes.
+Every scene exports at least one still. Render it with `-s`, which saves the
+last frame, so make the last frame the one worth keeping.
+
+Anything two scenes share goes into `common/`. A colour goes into `palette.py`,
+a symbol into `notation.py`, a list of runs into `data.py`, a drawing helper
+into `layout.py` and a kernel computation into `kernels.py`. A scene file holds
+only what is particular to that scene.
 
 A scene is not finished until it renders from start to end without an error.
 When you report a scene as done, say which command you ran and how long the
@@ -83,10 +88,15 @@ render took. If it failed, say that instead.
 ## Where things are
 
 - Run data: `repoduced-code/results/*.json`, loaded through `common/data.py`.
-  The runs are on `origin/sam` and are not merged yet.
+  `data.available()` lists them. `data.DENSE_RUNS` names the three runs that
+  save the kernel every 250 steps.
 - The probe kernels: `repoduced-code/results/*_kernels.npz`. These are ignored by
   git, so they have to be regenerated locally before any scene can animate the
-  kernel matrix itself.
+  kernel matrix itself. `repoduced-code/kernel_snapshots.py` writes the dense
+  ones.
+- A starting point for a new scene: `scene_template.py`, which renders as it
+  stands.
+- A check that every scene still renders: `uv run python render_all.py`.
 - Metric definitions: `docs/report.tex`, the Kernel metrics part of the Methods
   section.
 - The decomposition: `docs/report.tex`, Equation `eq:decomp`.

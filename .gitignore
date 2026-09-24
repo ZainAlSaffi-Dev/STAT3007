@@ -222,6 +222,10 @@ __marimo__/
 
 # Rendered animation video. Large, and rebuildable from the scenes.
 animations/out/mp4/
+# Manim's LaTeX and text caches, and the logs render_all.py writes.
+animations/out/Tex/
+animations/out/texts/
+animations/out/logs/
 
 # Saved probe kernels from the experiment runs are large and can be regenerated.
 repoduced-code/results/*_kernels.npz
