@@ -28,7 +28,6 @@ The baseline is one hidden layer of width 100, input size 2p as two concatenated
 - `repoduced-code/ntk_lib.py` builds on that module with both parameterisations, the training loop, the grokking time, the censored fit, and the plot helpers. It is the module the notebooks import.
 - `repoduced-code/tier0_reproduction.ipynb` and `repoduced-code/tier1_alignment_threshold.ipynb` are the two finished notebooks. The three `sam_*.ipynb` notebooks are earlier exploratory work.
 - `repoduced-code/results/` holds one JSON file per run and a compressed kernel file beside it. Runs are cached, so `run_or_load` reloads a saved run when its configuration matches and retrains it otherwise.
-- `pyproject.toml` and `uv.lock` define the environment.
 
 ## Rule 1. Never invent a source
 
@@ -107,7 +106,7 @@ Do not change the template settings that the brief says not to change. The font 
 
 ## Working conventions for the experiments
 
-Use Python 3.11 or later. Use `uv` to manage the environment. The runs are small enough for the CPU default in `ntk_lib.py`.
+Use Python 3.11 or later. Use the `conda` environment `tara-env`  to manage the environment. The runs are small enough for the CPU default in `ntk_lib.py`.
 
 Keep experiments reproducible. Fix seeds, record every hyperparameter with each run, and save outputs in a form that can be reloaded. The model seed and the data seed are separate. A run is saved as one JSON file in `repoduced-code/results/` named after its cell, with the probe kernels in a compressed file beside it, and `run_or_load` retrains only when the saved configuration does not match the requested one. Checkpoints are recorded on a step grid, and any new sweep should keep the log-spaced reading of the results in mind, because grokking spans several orders of magnitude in step count.
 
