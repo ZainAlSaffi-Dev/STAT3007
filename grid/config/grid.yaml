@@ -1,0 +1,21 @@
+# Settings every cell shares. Each seed draws its own split and weights, and
+# every cell reuses the same seeds. Memorisation is the first step with train
+# accuracy at least 0.99 and grokking the first with test accuracy at each
+# level, following Khanh et al. (2026) and Kim et al. (2026).
+fixed:
+  seeds: [0, 1, 2, 3, 4]
+  memorised: 0.99
+  grokked: [0.8, 0.9, 0.95]
+
+# One row per cell. The pilot is the baseline of Kumar et al. (2024, App. 8.3,
+# arXiv v3): p = 23, 90% of pairs for training, width 100, eta = 100 and no
+# weight decay.
+cells:
+  - p: 23
+    train_fraction: 0.9
+    width: 100
+    parameterisation: ntk
+    alpha: 1.0
+    eta_0: 100.0
+    eta_lambda: 0.0
+    steps: 100000

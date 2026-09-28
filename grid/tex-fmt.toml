@@ -1,0 +1,4 @@
+# styles/latex_packages.tex defines Pin, Pout, Cppin and Cppout with
+# \lstnewenvironment, and PythonTeX runs a pycode body as Python, so their
+# bodies are code that tex-fmt must neither indent nor wrap.
+verbatims = ["Pin", "Pout", "Cppin", "Cppout", "pycode"]

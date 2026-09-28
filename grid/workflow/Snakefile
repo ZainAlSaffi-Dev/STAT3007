@@ -1,0 +1,56 @@
+import pandas as pd
+from snakemake.utils import Paramspace
+
+
+configfile: "config/grid.yaml"
+
+
+cells = Paramspace(pd.DataFrame(config["cells"]))
+tables = ["metrics", "events", "spectra"]
+
+
+localrules:
+    database,
+
+
+rule all:
+    input:
+        "results/grid.duckdb",
+
+
+rule train:
+    output:
+        **{
+            table: f"results/cells/{cells.wildcard_pattern}/{table}.parquet"
+            for table in tables
+        },
+    log:
+        f"logs/train/{cells.wildcard_pattern}.log",
+    benchmark:
+        f"results/benchmarks/train/{cells.wildcard_pattern}.tsv"
+    params:
+        cell=cells.instance,
+        tables=tables,
+    script:
+        "scripts/train.py"
+
+
+rule database:
+    input:
+        **{
+            table: expand(
+                f"results/cells/{{cell}}/{table}.parquet",
+                cell=cells.instance_patterns,
+            )
+            for table in tables
+        },
+    output:
+        "results/grid.duckdb",
+    log:
+        "logs/database.log",
+    params:
+        tables=tables,
+        cells=cells.dataframe.rename_axis("cell").reset_index(),
+        fixed=config["fixed"],
+    script:
+        "scripts/database.py"
