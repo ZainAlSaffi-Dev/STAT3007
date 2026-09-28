@@ -172,16 +172,17 @@ class Eigenbasis(LinearTransformationScene):
         basis = np.array(settings["eigenvectors"]).T
         diagonal = np.linalg.solve(basis, matrix @ basis)
         title = MathTex("A", "=", "C", "D", "C^{-1}")
+        product, _, change, scaling, inverse = title
         self.add_title(title)
         for vector, colour in zip(basis.T, PALETTE, strict=False):
             self.add_vector(vector, color=colour)
-        self.play(Indicate(title[title.index_of_part_by_tex("C^{-1}")]))
+        self.play(Indicate(inverse))
         self.apply_inverse(basis)
-        self.play(Indicate(title[title.index_of_part_by_tex("D")]))
+        self.play(Indicate(scaling))
         self.apply_matrix(diagonal)
-        self.play(Indicate(title[title.index_of_part_by_tex("C")]))
+        self.play(Indicate(change))
         self.apply_matrix(basis)
-        self.play(Indicate(title[title.index_of_part_by_tex("A")]))
+        self.play(Indicate(product))
         self.wait()
 
 
