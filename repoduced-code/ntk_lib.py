@@ -174,6 +174,65 @@ def entk(model, x_probe, chunk_above=2_000_000):
     return compute_entk(model, params, x_probe, mode="trace").detach()
 
 
+def closed_form_scales(model):
+    """Return the factors c1 on the hidden preactivation and c2 on the output of a bias-free model."""
+    if isinstance(model, NTKMLP):
+        return 1.0 / math.sqrt(model.input_dim), 1.0 / math.sqrt(model.hidden_dim)
+    if isinstance(model, MeanFieldMLP):
+        return 1.0 / model.input_dim, 1.0 / model.hidden_dim
+    raise TypeError(f"the closed-form kernel needs NTKMLP or MeanFieldMLP, not {type(model).__name__}")
+
+
+def entk_closed_form(model, x_probe, parts=False, output=None):
+    """The sum-over-logits kernel of a bias-free one hidden layer ReLU network, from its weights.
+
+    Write h = c1 X W1^T for the hidden preactivations, Z = relu(h), M for the
+    mask of positive entries of h, and s_i for the sum over outputs of W2[c, i]
+    squared. The factors are c1 = 1 / sqrt(2p) and c2 = 1 / sqrt(N) for
+    NTKMLP, and 1 / (2p) and 1 / N for MeanFieldMLP. The gradient of output c
+    with respect to W2[c, i] is c2 Z_i, and with respect to row i of W1 it is
+    c2 W2[c, i] M_i c1 x. Summing the inner products over the outputs gives
+
+        K = p c2^2 Z Z^T + c1^2 c2^2 (X X^T) * (M diag(s) M^T),
+
+    where the star is the elementwise product. The first term comes from W2
+    and the second from W1. This is the group's own derivation from the
+    definition in RepoducedCode.compute_entk in mode "trace". No paper
+    states it. It costs O(n^2 N) instead of a Jacobian of n p rows.
+
+    The sums run in float64. With parts=False the result is returned in
+    float32, the precision train_run works in. With parts=True the two terms
+    are returned in float64 as (K_W1, K_W2). With output=c the kernel is that
+    of output c alone, the first-logit kernel of the report when c = 0.
+    """
+    if model.activation != "relu":
+        raise ValueError("the closed-form kernel is derived for the relu activation only")
+    c1, c2 = closed_form_scales(model)
+    X = x_probe.detach().double()
+    W1, W2 = model.W1.detach().double(), model.W2.detach().double()
+    h = c1 * (X @ W1.T)
+    Z = torch.relu(h)
+    M = (h > 0).double()
+    if output is None:
+        s, n_out = (W2 ** 2).sum(0), W2.shape[0]
+    else:
+        s, n_out = W2[output] ** 2, 1
+    K_W2 = n_out * c2 ** 2 * (Z @ Z.T)
+    K_W1 = c1 ** 2 * c2 ** 2 * (X @ X.T) * ((M * s) @ M.T)
+    if parts:
+        return K_W1, K_W2
+    return (K_W1 + K_W2).float()
+
+
+def probe_kernel(model, x_probe, method):
+    """Return the probe kernel by the chosen method, "autograd" or "closed_form"."""
+    if method == "autograd":
+        return entk(model, x_probe)
+    if method == "closed_form":
+        return entk_closed_form(model, x_probe)
+    raise ValueError(f"unknown kernel method {method!r}")
+
+
 # =====================================================================
 # Centred scale and rotation
 # =====================================================================
@@ -214,12 +273,12 @@ DEFAULTS = dict(parameterisation="mean_field", p=23, hidden_dim=100, alpha=1.0,
                 eta_0=100.0, eta_kappa=0.0, steps=60000, eval_interval=250,
                 probe_size=256, seed=0, data_seed=42, train_fraction=0.9,
                 activation="relu", init_scale=1.0, kernel_save_interval=5000, probe="train",
-                checkpoint_steps=None)
+                checkpoint_steps=None, kernel_method="autograd")
 
 # Configuration keys added after some runs were saved, with the value those
 # runs were trained with. A saved run that lacks one of them is compared as if
 # it had that value.
-LEGACY_VALUES = dict(probe="train", checkpoint_steps=None)
+LEGACY_VALUES = dict(probe="train", checkpoint_steps=None, kernel_method="autograd")
 
 # The centred terms and the two alignments on the training part and on the
 # test part of the probe. A part with fewer than two pairs gives NaN.
@@ -288,14 +347,17 @@ def normalise_checkpoints(cfg):
     return {**cfg, "checkpoint_steps": steps}
 
 
-def train_run(name, verbose=True, on_checkpoint=None, **overrides):
+def train_run(name, verbose=True, on_checkpoint=None, results_dir=None, **overrides):
     """Train one run and return a dictionary with the configuration and history.
 
     The predictor is the centred and rescaled function of Kumar et al.
     (2024), Appendix 8.1, Equation 7, with learning rate eta_0 over alpha
     squared. Weight decay enters as a factor of one minus eta times kappa per
     step. The model seed is separate from the data seed. The train loss is
-    recorded after the update, at the same point as the test loss.
+    recorded after the update, at the same point as the test loss. The
+    initial function f_0 on the training and test sets is computed once,
+    since it never changes. This gives the same numbers bit for bit as
+    computing it at every step, and it saves a forward pass per step.
 
     At each checkpoint the history records the losses, the accuracies, the
     raw scale and rotation terms S_t and R_t, the centred versions S_c and
@@ -316,6 +378,16 @@ def train_run(name, verbose=True, on_checkpoint=None, **overrides):
     a dictionary of the history values just recorded. Training continues
     from the same model afterwards, so the callback must not change it. The
     callback is not part of the configuration and is not saved.
+
+    kernel_method chooses how the probe kernel is computed: "autograd" with
+    torch.func, or "closed_form" with entk_closed_form, which gives the same
+    kernel to float32 rounding for the bias-free ReLU models. results_dir
+    chooses where the files are written. It defaults to RESULTS and is not
+    part of the configuration.
+
+    If the training loss at a checkpoint is not finite, the run stops there
+    without recording that checkpoint. The returned dictionary then has
+    diverged set to True and diverged_step set to that step.
     """
     unknown = set(overrides) - set(DEFAULTS)
     if unknown:
@@ -323,6 +395,8 @@ def train_run(name, verbose=True, on_checkpoint=None, **overrides):
     cfg = normalise_checkpoints({**DEFAULTS, **overrides})
     config = dict(name=name, **cfg)
     p, alpha = cfg["p"], cfg["alpha"]
+    out_dir = Path(results_dir) if results_dir is not None else RESULTS
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     (X_train, y_train), (X_test, y_test) = make_modular_addition_dataset(
         p=p, train_fraction=cfg["train_fraction"], seed=cfg["data_seed"])
@@ -345,27 +419,34 @@ def train_run(name, verbose=True, on_checkpoint=None, **overrides):
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, weight_decay=weight_decay)
     loss_fn = nn.MSELoss()
 
-    def predict(X):
-        return alpha * (model(X) - model_0(X))
+    with torch.no_grad():
+        f0_train, f0_test = model_0(X_train), model_0(X_test)
+
+    def predict(X, f0):
+        return alpha * (model(X) - f0)
 
     params_0 = torch.cat([q.detach().flatten() for q in model.parameters()]).clone()
     norm_0 = torch.linalg.norm(params_0).item()
-    K_0 = entk(model, x_probe)
+    K_0 = probe_kernel(model, x_probe, cfg["kernel_method"])
 
     history = {k: [] for k in HISTORY_KEYS}
     saved_steps, saved_kernels = [], []
 
     def evaluate(step):
+        """Record one checkpoint. Return False, and record nothing, if the training loss is not finite."""
         model.eval()
         with torch.no_grad():
-            tr, te = predict(X_train), predict(X_test)
+            tr, te = predict(X_train, f0_train), predict(X_test, f0_test)
             train_loss, test_loss = loss_fn(tr, y_train).item(), loss_fn(te, y_test).item()
+            if not math.isfinite(train_loss):
+                model.train()
+                return False
             train_acc = (tr.argmax(1) == y_train.argmax(1)).float().mean().item()
             test_acc = (te.argmax(1) == y_test.argmax(1)).float().mean().item()
             params_t = torch.cat([q.flatten() for q in model.parameters()])
             weight_norm = torch.linalg.norm(params_t).item()
             param_dist = (torch.linalg.norm(params_t - params_0) / norm_0).item()
-        K_t = entk(model, x_probe)
+        K_t = probe_kernel(model, x_probe, cfg["kernel_method"])
         S_t, R_t = compute_scale_and_rotation(K_0, K_t)
         S_c, R_c = compute_centred_scale_and_rotation(K_0, K_t)
         A_t = compute_task_alignment(K_t, y_probe)
@@ -394,6 +475,7 @@ def train_run(name, verbose=True, on_checkpoint=None, **overrides):
         if on_checkpoint is not None:
             on_checkpoint(step, model, K_t, {k: history[k][-1] for k in HISTORY_KEYS})
         model.train()
+        return True
 
     checkpoints = None if cfg["checkpoint_steps"] is None else set(cfg["checkpoint_steps"])
 
@@ -403,38 +485,48 @@ def train_run(name, verbose=True, on_checkpoint=None, **overrides):
         return step in checkpoints
 
     t0 = time.time()
-    evaluate(0)
+    diverged_step = None
+    if not evaluate(0):
+        diverged_step = 0
     for step in range(1, cfg["steps"] + 1):
+        if diverged_step is not None:
+            break
         optimizer.zero_grad()
-        loss = loss_fn(predict(X_train), y_train)
+        loss = loss_fn(predict(X_train, f0_train), y_train)
         loss.backward()
         optimizer.step()
         if is_checkpoint(step):
-            evaluate(step)
+            if not evaluate(step):
+                diverged_step = step
+                break
             if verbose and step % (cfg["eval_interval"] * 40) == 0:
                 h = history
                 print(f"{name}: step {step:6d}  train {h['train_loss'][-1]:.2e}  "
                       f"test {h['test_loss'][-1]:.2e}  S {h['S_t'][-1]:+.2f}  "
                       f"R {h['R_t'][-1]:.3f}  Rc {h['R_c'][-1]:.3f}  A {h['A_t'][-1]:.3f}")
     run = dict(config=config, history=history, init_weight_norm=norm_0,
-               seconds=time.time() - t0)
-    (RESULTS / f"{name}.json").write_text(json.dumps(run))
-    np.savez_compressed(RESULTS / f"{name}_kernels.npz",
-                        steps=np.asarray(saved_steps), K=np.stack(saved_kernels))
+               seconds=time.time() - t0, diverged=diverged_step is not None, diverged_step=diverged_step)
+    (out_dir / f"{name}.json").write_text(json.dumps(run))
+    if saved_kernels:
+        np.savez_compressed(out_dir / f"{name}_kernels.npz",
+                            steps=np.asarray(saved_steps), K=np.stack(saved_kernels))
     if verbose:
-        print(f"{name}: done in {run['seconds']:.0f} s, saved to results/{name}.json")
+        note = f", diverged at step {diverged_step}" if diverged_step is not None else ""
+        print(f"{name}: done in {run['seconds']:.0f} s{note}, saved to {out_dir / name}.json")
     return run
 
 
-def run_or_load(name, rerun=False, verbose=True, on_checkpoint=None, **overrides):
+def run_or_load(name, rerun=False, verbose=True, on_checkpoint=None, results_dir=None, **overrides):
     """Load a saved run if its configuration matches, otherwise train it.
 
     A saved run that lacks a key in LEGACY_VALUES is compared as if it had
     the value given there, which is the value it was trained with.
     on_checkpoint is passed to train_run, so it is called only when the run
-    is trained. Loading a saved run does not call it.
+    is trained. Loading a saved run does not call it. results_dir is where
+    the run is looked for and written, RESULTS by default.
     """
-    path = RESULTS / f"{name}.json"
+    out_dir = Path(results_dir) if results_dir is not None else RESULTS
+    path = out_dir / f"{name}.json"
     if path.exists() and not rerun:
         run = json.loads(path.read_text())
         saved = {**LEGACY_VALUES, **{k: v for k, v in run["config"].items() if k != "name"}}
@@ -445,12 +537,12 @@ def run_or_load(name, rerun=False, verbose=True, on_checkpoint=None, **overrides
             return run
         if verbose:
             print(f"{name}: saved run does not match, training again")
-    return train_run(name, verbose=verbose, on_checkpoint=on_checkpoint, **overrides)
+    return train_run(name, verbose=verbose, on_checkpoint=on_checkpoint, results_dir=results_dir, **overrides)
 
 
-def load_kernels(name):
+def load_kernels(name, results_dir=None):
     """Return the saved probe kernels of a run as (steps, K) arrays."""
-    data = np.load(RESULTS / f"{name}_kernels.npz")
+    data = np.load((Path(results_dir) if results_dir is not None else RESULTS) / f"{name}_kernels.npz")
     return data["steps"], data["K"]
 
 
