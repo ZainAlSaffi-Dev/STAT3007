@@ -51,6 +51,7 @@ giveninits=true, uniquename=init]{biblatex}
 \sisetup{drop-zero-decimal, round-mode=figures}
 \usepackage{booktabs}
 \crefname{table}{Table}{Tables}
+\usepackage[section]{placeins}
 
 \begin{document}
 
@@ -98,9 +99,9 @@ stays close to its initial value until the training data are fitted and moves
 far from it afterwards. A distance does not say how the kernel changed. A
 kernel multiplied by a constant $c>0$ lies at relative distance
 $\lvert c-1\rvert$ from where it started, by \eqref{eq:identity}, yet in the
-linear dynamics of kernel gradient descent of Arora et al.
-\fxfatal{Cite Arora et al.\ once its library item has a citation key.}
-the kernel enters only through its product with the learning rate, so
+linear dynamics of kernel gradient descent of
+\citet{aroraFinegrainedAnalysisOptimization2019} the kernel enters only
+through its product with the learning rate, so
 multiplying the kernel by $c$ has the effect of multiplying the learning rate
 by $c$. A rescaled kernel therefore reports movement while the linearised
 training changes only by a change of step size.
@@ -211,15 +212,14 @@ squared error its eigenvectors stay fixed while its eigenvalues decay;
 \citet{kumarGrokkingTransitionLazy2024} cite this result, in an argument they
 call speculative, for weight decay moving networks out of the lazy regime.
 The evolution in that result is a rescaling of the kernel. For homogeneous
-networks trained on the squared error with weight decay, Pracher et al.
-\fxfatal{Cite Pracher et al.\ once its library item has a citation key.}
-show that a residual persists after the training data are fitted, write the
+networks trained on the squared error with weight decay,
+\citet{pracherSpectralTheoryGrokking2026} show that a residual persists
+after the training data are fitted, write the
 evolution of the kernel as a term driven by that residual plus a weight-decay
 term that shrinks the kernel, and predict a grokking time inversely
 proportional to the product of learning rate and weight decay, which they
-observe on modular addition; Xu et al.
-\fxfatal{Cite Xu et al.\ once its library item has a citation key.}
-prove bounds on the grokking time of over-parameterised linear regression under
+observe on modular addition; \citet{xuGrokGrokkingProvable2026} prove
+bounds on the grokking time of over-parameterised linear regression under
 gradient descent with weight decay. Both mechanisms need weight decay, and none
 of these accounts separates the scale of the kernel from its shape.
 
@@ -350,9 +350,8 @@ large $D_t$ therefore does not show that the kernel changed shape.
 The centred kernel $HK_{t}H$ is symmetric and positive semi-definite
 \citep{cortesAlgorithmsLearningKernels2024}, so it has orthonormal eigenvectors
 $v_1,\dots,v_n$ with eigenvalues $\lambda_1\ge\dots\ge\lambda_n\ge0$
-\citep{axlerLinearAlgebraDone2024}. In the linear dynamics of Arora et al.
-\fxfatal{Cite Arora et al.\ once its library item has a citation key.},
-gradient descent with step
+\citep{axlerLinearAlgebraDone2024}. In the linear dynamics of
+\citet{aroraFinegrainedAnalysisOptimization2019}, gradient descent with step
 $\eta$ on a fixed kernel with eigenvalues $\lambda_i$ leaves the residual
 $\sqrt{\sum_{i=1}^{n}(1-\eta\lambda_i)^{2k}(v_i^\top y)^2}$ after $k$ steps, so
 the part of the labels along an eigenvector with a large eigenvalue is fitted
@@ -394,7 +393,33 @@ levels over which \citet{khanhWeightNormSets2026} check that their results do
 not depend on the threshold. A seed that has not reached a level within the
 step budget is kept, and its event time is recorded as censored at the budget.
 
-Two censored regressions, fitted with lifelines
+Within a cell, the seeds give the Kaplan--Meier estimate of the probability
+that an event has not occurred by step $t$,
+\begin{equation}
+  \hat F(t) = \prod_{j\mid t_j\le t}\frac{n_j-d_j}{n_j},
+\end{equation}
+where $t_1<t_2<\cdots$ are the distinct steps at which the event occurs, $d_j$
+seeds reach it at $t_j$ and $n_j$ are still at risk there. Greenwood's formula
+estimates its variance as
+$\hat F^2(t)\sum_{j\mid t_j\le t}d_j/[n_j(n_j-d_j)]$, and with
+$\hat s^2(t)=\sum_{j\mid t_j\le t}d_j/[n_j(n_j-d_j)]\big/[\log\hat F(t)]^2$
+the approximate \qty{95}{\percent} interval $\hat F(t)^{\exp[\pm1.96\hat s(t)]}$
+stays within $[0,1]$ \citep{kalbfleischStatisticalAnalysisFailure2002}. The
+median event time of a cell is the step at which $\hat F$ falls to one half. A
+cell whose $\hat F$ stays above one half up to the budget has no median within
+it, and at a grokking level it does not grok.
+
+Each run is also labelled by its phase at the last step, following
+\citet{pracherSpectralTheoryGrokking2026}: grokking when its training and test
+accuracies both end above a threshold, memorisation when only its training
+accuracy does, forgetting when its training accuracy rose above the threshold
+earlier and ends below it, and no fitting otherwise. The phases describe the
+cells and do not select runs. A run keeps its event times whatever its phase,
+since in the analysis of one failure mode a unit that fails by another mode, or
+is removed from test without failing, contributes its running time as a
+censoring time \citep{nelsonAcceleratedTestingStatistical1990}.
+
+Three censored regressions, fitted with lifelines
 \citep{davidson-pilonLifelinesSurvivalAnalysis2019}, relate the event times to
 the settings of the cells. The log-normal accelerated failure time model takes
 the survival function of an event time $T$ with covariates $x$ to be
@@ -404,7 +429,18 @@ the survival function of an event time $T$ with covariates $x$ to be
   \label{eq:aft}
 \end{equation}
 where $\Phi$ is the standard normal distribution function, so a unit increase
-in $x_i$ multiplies the median event time by $e^{a_i}$. The additive model of
+in $x_i$ multiplies the median event time by $e^{a_i}$. Its parameters are
+maximum likelihood estimates. With the step budget $\tau$ as the common
+censoring time, seed $i$ contributes the log likelihood
+\begin{equation}
+  \mathcal{L}_i = I_i\Bigl[-\log\sigma-\tfrac{1}{2}\log(2\pi)
+  -\tfrac{1}{2}z_i^2\Bigr] + (1-I_i)\log\bigl[1-\Phi(\zeta_i)\bigr]
+\end{equation}
+in terms of its log time, where $z_i=(\log t_i-\mu(x_i))/\sigma$,
+$\zeta_i=(\log\tau-\mu(x_i))/\sigma$ and $I_i$ is one if the event is observed
+\citep{nelsonAcceleratedTestingStatistical1990}. This is the likelihood of
+\citet{kalbfleischStatisticalAnalysisFailure2002} for a log-linear model under
+independent censoring, with normal errors. The additive model of
 \citet{aalenLinearRegressionModel1989} takes the intensity of the event for
 seed $i$ at step $t$ to be $\alpha_0(t)+\sum_j\alpha_j(t)Z_j^i$ while the seed
 has not reached the level and zero afterwards, and estimates the cumulative
@@ -419,7 +455,132 @@ $I_k$ is the indicator of the seed whose event occurs at $T_k$. Unlike
 \eqref{eq:aft} with logarithmic covariates, \eqref{eq:aalen} admits a covariate
 at zero, such as $\eta\lambda=0$. Intervals come from resampling seeds with the
 bias-corrected and accelerated bootstrap \citep{efronIntroductionBootstrap1994}.
-\fxfatal{Name the covariates of each fit once the grid is fixed.}
+
+Each event and level is fitted separately. In \eqref{eq:aft} and
+\eqref{eq:aalen} the covariates are the settings of a cell, fixed in time:
+indicators of the levels of $\alpha$, and $\eta\lambda$, which enters
+\eqref{eq:aft} through $\log(\eta\lambda)$ and \eqref{eq:aalen} directly.
+\citet{aalenLinearRegressionModel1989} states his results for covariates fixed
+in time, and lifelines fits \eqref{eq:aalen} only for such covariates. The
+statistics of \cref{sec:statistics} change along training, so they enter a
+third model, the relative risk model with time-dependent covariates of
+\citet{kalbfleischStatisticalAnalysisFailure2002},
+\begin{equation}
+  h\bigl(t\mid Z(t)\bigr) = h_0(t)\exp\bigl[Z(t)^\top\gamma\bigr],
+\end{equation}
+whose coefficients maximise the partial likelihood
+\begin{equation}
+  L(\gamma) = \prod_{j=1}^{k}
+  \frac{\exp\bigl[Z_j(t_j)^\top\gamma\bigr]}
+  {\sum_{l=1}^{n}Y_l(t_j)\exp\bigl[Z_l(t_j)^\top\gamma\bigr]} ,
+\end{equation}
+where $t_1<\cdots<t_k$ are the event times, $Z_j$ belongs to the seed whose
+event occurs at $t_j$, and $Y_l(t)$ is one while seed $l$ is at risk. Here
+$Z(t)=(S_t,R_t,A_t)$ is held from each checkpoint to the next, so its paths
+are left-continuous as the model requires. These covariates are internal:
+the run that reaches the event generates them. The model therefore describes
+the rate of the event given the current kernel and has no survivor function
+of its own. When a setting acts on the event through these covariates, an
+analysis conditional on them shows little effect of that setting
+\citep{kalbfleischStatisticalAnalysisFailure2002}.
+
+\subsection{Choice of levels}
+
+Where weight decay sets the grokking time, \eqref{eq:aft} with the single
+covariate $x=\log(\eta\lambda)$ makes $\log T$ normal with mean $a_0+a_1x$ and
+variance $\sigma^2$. Without censoring this is the simple linear regression
+model, whose designs \citet{bergerIntroductionOptimalDesigns2009} construct as
+follows. A design $\xi$ places a proportion $w_j$ of the runs at level $x_j$,
+$j=1,\dots,m$, with $\sum_j w_j=1$, on levels rescaled to $[-1,1]$, and has the
+information matrix
+\begin{equation}
+  M(\xi) = \sum_{j=1}^{m} w_j f(x_j)f(x_j)^\top ,\qquad f(x) = (1,x)^\top .
+\end{equation}
+With $N$ runs, $n_j=Nw_j$ of them at $x_j$, the least squares estimates have
+covariance $\sigma^2(X^\top X)^{-1}$, where $X^\top X=N M(\xi)$, and the slope
+has variance $\operatorname{var}(\hat a_1)=\sigma^2/\sum_i(x_i-\bar x)^2$. The
+design that minimises this variance is unique and places half the runs at each
+end of the interval, and for the straight line it is also D-, A-, E- and
+G-optimal. When the line is in doubt, a quadratic term measures its curvature.
+The D-optimal design for the quadratic places a third of the runs at each of
+$-1$, $0$ and $1$, and the design for its curvature coefficient alone places
+half of them at $0$ and a quarter at each end. For many models with $p$
+parameters an optimal design has between $p$ and $p(p+1)/2$ distinct levels,
+and a design $\xi$ is compared with the D-optimal design $\xi^*$ of the model
+that holds by its relative efficiency
+\begin{equation}
+  \mathrm{RE}_{\mathrm{D}} = \biggl\{
+    \frac{\det\operatorname{Cov}(\hat a^*)}{\det\operatorname{Cov}(\hat a)}
+  \biggr\}^{1/p} ,
+\end{equation}
+where $\hat a^*$ and $\hat a$ are the estimates under $\xi^*$ and $\xi$.
+
+Censoring at the budget changes the information a run carries. For
+$\mu(x)=a_0+a_1x$ and censoring at $\log\tau$, a run at level $x$ contributes
+to the parameters $(a_0,a_1,\sigma)$ the expected information
+\begin{equation}
+  F_x = \frac{1}{\sigma^2}
+  \begin{pmatrix}
+    A(\zeta)  & xA(\zeta)   & B(\zeta)  \\
+    xA(\zeta) & x^2A(\zeta) & xB(\zeta) \\
+    B(\zeta)  & xB(\zeta)   & C(\zeta)
+  \end{pmatrix},
+\end{equation}
+where $\zeta=(\log\tau-\mu(x))/\sigma$ and, with $\phi$ and $\Phi$ evaluated
+at $\zeta$,
+\begin{equation}
+  \begin{aligned}
+    A(\zeta) &= \Phi-\Bigl[\zeta-\frac{\phi}{1-\Phi}\Bigr]\phi, \qquad
+    B(\zeta) = -\phi\Bigl[1+\zeta\Bigl(\zeta-\frac{\phi}{1-\Phi}\Bigr)\Bigr],\\
+    C(\zeta) &= 2\Phi-\zeta\phi\Bigl[1+\zeta^2-\frac{\zeta\phi}{1-\Phi}\Bigr].
+  \end{aligned}
+\end{equation}
+The information of a plan is the sum of $F_x$ over its runs, the covariance
+of the maximum likelihood estimates is its inverse, and a function $h$ of the
+parameters has variance $HF^{-1}H^\top$, where $H$ is the gradient of $h$
+\citep{nelsonAcceleratedTestingStatistical1990}. Because $\zeta$ depends on the
+parameters, an optimum plan for censored data is found by numerical search
+for guessed values of them and is only locally optimum, and good compromise
+plans run more units at low stress, here small $\eta\lambda$, than at high
+\citep{nelsonAcceleratedTestingStatistical1990}.
+
+Across the level at which the grokking time returns to its value without
+weight decay, the mean log time is a broken line,
+$\mu(x)=a_0+a_1x+b(x-\psi)_+$ with $(x-\psi)_+=(x-\psi)I(x>\psi)$. Following
+\citet{muggeoEstimatingRegressionModels2003}, step $s$ of the fit sets
+$U^{(s)}=(x-\psi^{(s)})_+$ and $V^{(s)}=-I(x>\psi^{(s)})$, fits the linear
+predictor $a_1x + b U^{(s)} + \kappa V^{(s)}$, and updates
+$\psi^{(s+1)}=\psi^{(s)}+\hat\kappa/\hat b$ until $\hat\kappa$ vanishes, when
+every estimate, $\hat\psi$ included, is maximum likelihood. The left slope
+$a_1$ may be fixed at zero. The break has the Wald interval
+$\hat\psi\pm1.96\operatorname{SE}(\hat\psi)$ with
+\begin{equation}
+  \operatorname{SE}(\hat\psi) = \Bigl\{\Bigl[\operatorname{var}(\hat\kappa)
+      +\operatorname{var}(\hat b)\Bigl(\frac{\hat\kappa}{\hat b}\Bigr)^2
+    +2\frac{\hat\kappa}{\hat b}\operatorname{cov}(\hat\kappa,\hat b)\Bigr]
+  \Big/\hat b^2\Bigr\}^{1/2},
+\end{equation}
+which widens when the break lies near an end of the range of $x$, and that
+interval should not include either end. The break depends on constants that
+the grid itself estimates, so a design for it is also only locally optimal; a
+sequential design takes the guesses from a first stage, here the pilot runs,
+and updates the design with their estimates
+\citep{bergerIntroductionOptimalDesigns2009}.
+
+\citet{parkExperimentalDesignsFitting1978a} constructs D-optimal designs for
+segmented polynomials with a known break. For $k$ distinct levels,
+$\lvert X^\top X\rvert$ is largest when every level has the same number of
+runs, and under continuity at the break the design is D-optimal on each segment
+with a level at the break. A line below the break and a quadratic above it
+therefore have the design $x\in\{-1,\psi,(1+\psi)/2,1\}$ on the rescaled axis.
+The quadratic is one degree above the line expected above the break, as
+\citet{parkExperimentalDesignsFitting1978a} advises when lack of fit is to be
+tested, with equal numbers of runs at each level. The design is locally optimal
+at the guessed break. The guess is the product $\eta\lambda$ at which the
+inverse-decay boundary that \citet{pracherSpectralTheoryGrokking2026}
+calibrate for a network on the same task, scaled by their clock, gives a
+grokking time equal to the pilot's time without weight decay. A second stage
+places the design again at the estimated break.
 
 \section{Experiments}
 
