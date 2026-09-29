@@ -1,3 +1,20 @@
+@article{aalenLinearRegressionModel1989,
+  title = {A Linear Regression Model for the Analysis of Life Times},
+  author = {Aalen, Odd O.},
+  year = 1989,
+  month = aug,
+  journal = {Statistics in Medicine},
+  volume = {8},
+  number = {8},
+  pages = {907--925},
+  issn = {0277-6715, 1097-0258},
+  doi = {10.1002/sim.4780080803},
+  urldate = {2026-09-28},
+  abstract = {Abstract             A linear model is suggested for the influence of covariates on the intensity function. This approach is less vulnerable than the Cox model to problems of inconsistency when covariates are deleted or the precision of covariate measurements is changed. A method of non-parametric estimation of regression functions is presented. This results in plots that may give information on the change over time in the influence of covariates. A test method and two goodness of fit plots are also given. The approach is illustrated by simulation as well as by data from a clinical trial of treatment of carcinoma of the oropharynx.},
+  copyright = {http://onlinelibrary.wiley.com/termsAndConditions\#vor},
+  langid = {english}
+}
+
 @misc{atanasovNeuralNetworksKernel2021,
   title = {Neural Networks as Kernel Learners: The Silent Alignment Effect},
   shorttitle = {Neural Networks as Kernel Learners},
@@ -14,6 +31,69 @@
   archiveprefix = {arXiv},
   langid = {english},
   keywords = {Computer Science - Machine Learning,Statistics - Machine Learning}
+}
+
+@book{axlerLinearAlgebraDone2024,
+  title = {Linear {{Algebra Done Right}}},
+  author = {Axler, Sheldon},
+  year = 2024,
+  series = {Undergraduate {{Texts}} in {{Mathematics}}},
+  publisher = {Springer International Publishing},
+  address = {Cham},
+  doi = {10.1007/978-3-031-41026-0},
+  urldate = {2026-09-28},
+  copyright = {https://creativecommons.org/licenses/by-nc/4.0},
+  isbn = {978-3-031-41025-3 978-3-031-41026-0},
+  langid = {english}
+}
+
+@misc{baratinImplicitRegularizationNeural2021,
+  title = {Implicit Regularization via Neural Feature Alignment},
+  author = {Baratin, Aristide and George, Thomas and Laurent, C{\'e}sar and Hjelm, R. Devon and Lajoie, Guillaume and Vincent, Pascal and {Lacoste-Julien}, Simon},
+  year = 2021,
+  month = mar,
+  number = {arXiv:2008.00938},
+  eprint = {2008.00938},
+  primaryclass = {cs.LG},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2008.00938},
+  urldate = {2026-09-24},
+  abstract = {We approach the problem of implicit regularization in deep learning from a geometrical viewpoint. We highlight a regularization effect induced by a dynamical alignment of the neural tangent features introduced by Jacot et al, along a small number of task-relevant directions. This can be interpreted as a combined mechanism of feature selection and compression. By extrapolating a new analysis of Rademacher complexity bounds for linear models, we motivate and study a heuristic complexity measure that captures this phenomenon, in terms of sequences of tangent kernel classes along optimization paths.},
+  archiveprefix = {arXiv},
+  langid = {english},
+  keywords = {Computer Science - Machine Learning,Statistics - Machine Learning}
+}
+
+@article{basriConvergenceRateNeural2019,
+  title = {The {{Convergence Rate}} of {{Neural Networks}} for {{Learned Functions}} of {{Different Frequencies}}},
+  author = {Basri, Ronen and Jacobs, David and Kasten, Yoni and Kritchman, Shira},
+  year = 2019,
+  publisher = {arXiv},
+  doi = {10.48550/ARXIV.1906.00425},
+  urldate = {2026-09-28},
+  abstract = {We study the relationship between the frequency of a function and the speed at which a neural network learns it. We build on recent results that show that the dynamics of overparameterized neural networks trained with gradient descent can be well approximated by a linear system. When normalized training data is uniformly distributed on a hypersphere, the eigenfunctions of this linear system are spherical harmonic functions. We derive the corresponding eigenvalues for each frequency after introducing a bias term in the model. This bias term had been omitted from the linear network model without significantly affecting previous theoretical results. However, we show theoretically and experimentally that a shallow neural network without bias cannot represent or learn simple, low frequency functions with odd frequencies. Our results lead to specific predictions of the time it will take a network to learn functions of varying frequency. These predictions match the empirical behavior of both shallow and deep networks.},
+  copyright = {arXiv.org perpetual, non-exclusive license},
+  keywords = {FOS: Computer and information sciences,FOS: Electrical engineering electronic engineering information engineering,Machine Learning (cs.LG),Machine Learning (stat.ML),Signal Processing (eess.SP)}
+}
+
+@article{canatarSpectralBiasTaskModel2021,
+  title = {Spectral Bias and Task-Model Alignment Explain Generalization in Kernel Regression and Infinitely Wide Neural Networks},
+  author = {Canatar, Abdulkadir and Bordelon, Blake and Pehlevan, Cengiz},
+  year = 2021,
+  month = may,
+  journal = {Nature Communications},
+  volume = {12},
+  number = {1},
+  eprint = {2006.13198},
+  primaryclass = {stat.ML},
+  pages = {2914},
+  issn = {2041-1723},
+  doi = {10.1038/s41467-021-23103-1},
+  urldate = {2026-09-24},
+  abstract = {Generalization beyond a training dataset is a main goal of machine learning, but theoretical understanding of generalization remains an open problem for many models. The need for a new theory is exacerbated by recent observations in deep neural networks where overparameterization leads to better performance, contradicting the conventional wisdom from classical statistics. In this paper, we investigate generalization error for kernel regression, which, besides being a popular machine learning method, also includes infinitely overparameterized neural networks trained with gradient descent. We use techniques from statistical mechanics to derive an analytical expression for generalization error applicable to any kernel or data distribution. We present applications of our theory to real and synthetic datasets, and for many kernels including those that arise from training deep neural networks in the infinite-width limit. We elucidate an inductive bias of kernel regression to explain data with "simple functions", which are identified by solving a kernel eigenfunction problem on the data distribution. This notion of simplicity allows us to characterize whether a kernel is compatible with a learning task, facilitating good generalization performance from a small number of training examples. We show that more data may impair generalization when noisy or not expressible by the kernel, leading to non-monotonic learning curves with possibly many peaks. To further understand these phenomena, we turn to the broad class of rotation invariant kernels, which is relevant to training deep neural networks in the infinite-width limit, and present a detailed mathematical analysis of them when data is drawn from a spherically symmetric distribution and the number of input dimensions is large.},
+  archiveprefix = {arXiv},
+  langid = {english},
+  keywords = {Computer Science - Machine Learning,Condensed Matter - Disordered Systems and Neural Networks,Statistics - Machine Learning}
 }
 
 @misc{chizatLazyTrainingDifferentiable2020,
@@ -48,6 +128,53 @@
   archiveprefix = {arXiv},
   langid = {english},
   keywords = {Computer Science - Artificial Intelligence,Computer Science - Machine Learning}
+}
+
+@article{davidson-pilonLifelinesSurvivalAnalysis2019,
+  title = {Lifelines: Survival Analysis in Python},
+  shorttitle = {Lifelines},
+  author = {{Davidson-Pilon}, Cameron},
+  year = 2019,
+  month = aug,
+  journal = {Journal of Open Source Software},
+  volume = {4},
+  number = {40},
+  pages = {1317},
+  issn = {2475-9066},
+  doi = {10.21105/joss.01317},
+  urldate = {2026-09-24},
+  copyright = {http://creativecommons.org/licenses/by/4.0/},
+  langid = {english}
+}
+
+@book{efronIntroductionBootstrap1994,
+  title = {An Introduction to the Bootstrap},
+  author = {Efron, Bradley and Tibshirani, R.J.},
+  year = 1994,
+  month = may,
+  edition = {0},
+  publisher = {{Chapman and Hall/CRC}},
+  doi = {10.1201/9780429246593},
+  urldate = {2026-09-24},
+  isbn = {978-0-429-24659-3},
+  langid = {english}
+}
+
+@misc{fortDeepLearningKernel2020,
+  title = {Deep Learning versus Kernel Learning: An Empirical Study of Loss Landscape Geometry and the Time Evolution of the {{Neural Tangent Kernel}}},
+  shorttitle = {Deep Learning versus Kernel Learning},
+  author = {Fort, Stanislav and Dziugaite, Gintare Karolina and Paul, Mansheej and Kharaghani, Sepideh and Roy, Daniel M. and Ganguli, Surya},
+  year = 2020,
+  month = oct,
+  number = {arXiv:2010.15110},
+  eprint = {2010.15110},
+  primaryclass = {cs.LG},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2010.15110},
+  urldate = {2026-09-24},
+  abstract = {In suitably initialized wide networks, small learning rates transform deep neural networks (DNNs) into neural tangent kernel (NTK) machines, whose training dynamics is well-approximated by a linear weight expansion of the network at initialization. Standard training, however, diverges from its linearization in ways that are poorly understood. We study the relationship between the training dynamics of nonlinear deep networks, the geometry of the loss landscape, and the time evolution of a data-dependent NTK. We do so through a large-scale phenomenological analysis of training, synthesizing diverse measures characterizing loss landscape geometry and NTK dynamics. In multiple neural architectures and datasets, we find these diverse measures evolve in a highly correlated manner, revealing a universal picture of the deep learning process. In this picture, deep network training exhibits a highly chaotic rapid initial transient that within 2 to 3 epochs determines the final linearly connected basin of low loss containing the end point of training. During this chaotic transient, the NTK changes rapidly, learning useful features from the training data that enables it to outperform the standard initial NTK by a factor of 3 in less than 3 to 4 epochs. After this rapid chaotic transient, the NTK changes at constant velocity, and its performance matches that of full network training in 15\% to 45\% of training time. Overall, our analysis reveals a striking correlation between a diverse set of metrics over training time, governed by a rapid chaotic to stable transition in the first few epochs, that together poses challenges and opportunities for the development of more accurate theories of deep learning.},
+  archiveprefix = {arXiv},
+  keywords = {Computer Science - Machine Learning,Statistics - Machine Learning}
 }
 
 @misc{gromovGrokkingModularArithmetic2023,
@@ -139,6 +266,24 @@
   keywords = {Computer Science - Artificial Intelligence,Computer Science - Machine Learning}
 }
 
+@misc{kopitkovNeuralSpectrumAlignment2020,
+  title = {Neural Spectrum Alignment: Empirical Study},
+  shorttitle = {Neural Spectrum Alignment},
+  author = {Kopitkov, Dmitry and Indelman, Vadim},
+  year = 2020,
+  month = apr,
+  number = {arXiv:1910.08720},
+  eprint = {1910.08720},
+  primaryclass = {cs.LG},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.1910.08720},
+  urldate = {2026-09-24},
+  abstract = {Expressiveness and generalization of deep models was recently addressed via the connection between neural networks (NNs) and kernel learning, where first-order dynamics of NN during a gradient-descent (GD) optimization were related to gradient similarity kernel, also known as Neural Tangent Kernel (NTK). In the majority of works this kernel is considered to be time-invariant, with its properties being defined entirely by NN architecture and independent of the learning task at hand. In contrast, in this paper we empirically explore these properties along the optimization and show that in practical applications the NTK changes in a very dramatic and meaningful way, with its top eigenfunctions aligning toward the target function learned by NN. Moreover, these top eigenfunctions serve as basis functions for NN output - a function represented by NN is spanned almost completely by them for the entire optimization process. Further, since the learning along top eigenfunctions is typically fast, their alignment with the target function improves the overall optimization performance. In addition, we study how the neural spectrum is affected by learning rate decay, typically done by practitioners, showing various trends in the kernel behavior. We argue that the presented phenomena may lead to a more complete theoretical understanding behind NN learning.},
+  archiveprefix = {arXiv},
+  langid = {english},
+  keywords = {Computer Science - Machine Learning,Statistics - Machine Learning}
+}
+
 @misc{kornblithSimilarityNeuralNetwork2019,
   title = {Similarity of Neural Network Representations Revisited},
   author = {Kornblith, Simon and Norouzi, Mohammad and Lee, Honglak and Hinton, Geoffrey},
@@ -208,6 +353,37 @@
   keywords = {Computer Science - Artificial Intelligence,Computer Science - Machine Learning,Physics - Data Analysis Statistics and Probability,Statistics - Machine Learning,Statistics - Methodology}
 }
 
+@misc{lyuDichotomyEarlyLate2024,
+  title = {Dichotomy of Early and Late Phase Implicit Biases Can Provably Induce Grokking},
+  author = {Lyu, Kaifeng and Jin, Jikai and Li, Zhiyuan and Du, Simon S. and Lee, Jason D. and Hu, Wei},
+  year = 2024,
+  month = apr,
+  number = {arXiv:2311.18817},
+  eprint = {2311.18817},
+  primaryclass = {cs.LG},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2311.18817},
+  urldate = {2026-09-24},
+  abstract = {Recent work by Power et al. (2022) highlighted a surprising "grokking" phenomenon in learning arithmetic tasks: a neural net first "memorizes" the training set, resulting in perfect training accuracy but near-random test accuracy, and after training for sufficiently longer, it suddenly transitions to perfect test accuracy. This paper studies the grokking phenomenon in theoretical setups and shows that it can be induced by a dichotomy of early and late phase implicit biases. Specifically, when training homogeneous neural nets with large initialization and small weight decay on both classification and regression tasks, we prove that the training process gets trapped at a solution corresponding to a kernel predictor for a long time, and then a very sharp transition to min-norm/max-margin predictors occurs, leading to a dramatic change in test accuracy.},
+  archiveprefix = {arXiv},
+  langid = {english},
+  keywords = {Computer Science - Artificial Intelligence,Computer Science - Machine Learning}
+}
+
+@article{mohamadiFastWellFoundedApproximation2022,
+  title = {A Fast, Well-Founded Approximation to the Empirical Neural Tangent Kernel},
+  author = {Mohamadi, Mohamad Amin and Bae, Wonho and Sutherland, Danica J.},
+  year = 2022,
+  eprint = {2206.12543},
+  primaryclass = {stat.ML},
+  doi = {10.48550/arXiv.2206.12543},
+  urldate = {2026-09-24},
+  abstract = {Empirical neural tangent kernels (eNTKs) can provide a good understanding of a given network's representation: they are often far less expensive to compute and applicable more broadly than infinite width NTKs. For networks with O output units (e.g. an O-class classifier), however, the eNTK on N inputs is of size \$NO \textbackslash times NO\$, taking \$O((NO)\textasciicircum 2)\$ memory and up to \$O((NO)\textasciicircum 3)\$ computation. Most existing applications have therefore used one of a handful of approximations yielding \$N \textbackslash times N\$ kernel matrices, saving orders of magnitude of computation, but with limited to no justification. We prove that one such approximation, which we call "sum of logits", converges to the true eNTK at initialization for any network with a wide final "readout" layer. Our experiments demonstrate the quality of this approximation for various uses across a range of settings.},
+  archiveprefix = {arXiv},
+  langid = {english},
+  keywords = {Computer Science - Machine Learning,Statistics - Machine Learning}
+}
+
 @misc{mohamadiWhyYouGrok2024,
   title = {Why Do You Grok? {{A}} Theoretical Analysis of Grokking Modular Addition},
   shorttitle = {Why Do You Grok?},
@@ -259,6 +435,40 @@
   archiveprefix = {arXiv},
   langid = {english},
   keywords = {Computer Science - Machine Learning}
+}
+
+@misc{rahamanSpectralBiasNeural2019,
+  title = {On the Spectral Bias of Neural Networks},
+  author = {Rahaman, Nasim and Baratin, Aristide and Arpit, Devansh and Draxler, Felix and Lin, Min and Hamprecht, Fred A. and Bengio, Yoshua and Courville, Aaron},
+  year = 2019,
+  month = may,
+  number = {arXiv:1806.08734},
+  eprint = {1806.08734},
+  primaryclass = {stat.ML},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.1806.08734},
+  urldate = {2026-09-24},
+  abstract = {Neural networks are known to be a class of highly expressive functions able to fit even random input-output mappings with \$100\textbackslash\%\$ accuracy. In this work, we present properties of neural networks that complement this aspect of expressivity. By using tools from Fourier analysis, we show that deep ReLU networks are biased towards low frequency functions, meaning that they cannot have local fluctuations without affecting their global behavior. Intuitively, this property is in line with the observation that over-parameterized networks find simple patterns that generalize across data samples. We also investigate how the shape of the data manifold affects expressivity by showing evidence that learning high frequencies gets \textbackslash emph\textbraceleft easier\textbraceright{} with increasing manifold complexity, and present a theoretical understanding of this behavior. Finally, we study the robustness of the frequency components with respect to parameter perturbation, to develop the intuition that the parameters must be finely tuned to express high frequency functions.},
+  archiveprefix = {arXiv},
+  langid = {english},
+  keywords = {Computer Science - Machine Learning,Statistics - Machine Learning}
+}
+
+@misc{shanTheoryNeuralTangent2022,
+  title = {A Theory of Neural Tangent Kernel Alignment and Its Influence on Training},
+  author = {Shan, Haozhe and Bordelon, Blake},
+  year = 2022,
+  month = feb,
+  number = {arXiv:2105.14301},
+  eprint = {2105.14301},
+  primaryclass = {stat.ML},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2105.14301},
+  urldate = {2026-09-24},
+  abstract = {The training dynamics and generalization properties of neural networks (NN) can be precisely characterized in function space via the neural tangent kernel (NTK). Structural changes to the NTK during training reflect feature learning and underlie the superior performance of networks outside of the static kernel regime. In this work, we seek to theoretically understand kernel alignment, a prominent and ubiquitous structural change that aligns the NTK with the target function. We first study a toy model of kernel evolution in which the NTK evolves to accelerate training and show that alignment naturally emerges from this demand. We then study alignment mechanism in deep linear networks and two layer ReLU networks. These theories provide good qualitative descriptions of kernel alignment and specialization in practical networks and identify factors in network architecture and data structure that drive kernel alignment. In nonlinear networks with multiple outputs, we identify the phenomenon of kernel specialization, where the kernel function for each output head preferentially aligns to its own target function. Together, our results provide a mechanistic explanation of how kernel alignment emerges during NN training and a normative explanation of how it benefits training.},
+  archiveprefix = {arXiv},
+  langid = {english},
+  keywords = {Computer Science - Machine Learning,Statistics - Machine Learning}
 }
 
 @misc{tianProvableScalingLaws2025,
