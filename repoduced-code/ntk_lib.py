@@ -208,8 +208,16 @@ def entk_closed_form(model, x_probe, parts=False, output=None):
     if model.activation != "relu":
         raise ValueError("the closed-form kernel is derived for the relu activation only")
     c1, c2 = closed_form_scales(model)
-    X = x_probe.detach().double()
-    W1, W2 = model.W1.detach().double(), model.W2.detach().double()
+    K_W1, K_W2 = closed_form_terms(model.W1, model.W2, x_probe, c1, c2, output)
+    if parts:
+        return K_W1, K_W2
+    return (K_W1 + K_W2).float()
+
+
+def closed_form_terms(W1, W2, x, c1, c2, output=None):
+    """Return the two terms (K_W1, K_W2) of entk_closed_form in float64, from the weight matrices."""
+    X = x.detach().double()
+    W1, W2 = W1.detach().double(), W2.detach().double()
     h = c1 * (X @ W1.T)
     Z = torch.relu(h)
     M = (h > 0).double()
@@ -219,9 +227,7 @@ def entk_closed_form(model, x_probe, parts=False, output=None):
         s, n_out = W2[output] ** 2, 1
     K_W2 = n_out * c2 ** 2 * (Z @ Z.T)
     K_W1 = c1 ** 2 * c2 ** 2 * (X @ X.T) * ((M * s) @ M.T)
-    if parts:
-        return K_W1, K_W2
-    return (K_W1 + K_W2).float()
+    return K_W1, K_W2
 
 
 def probe_kernel(model, x_probe, method):

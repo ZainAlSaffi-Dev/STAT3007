@@ -12,6 +12,8 @@ dependencies = [
     "nbconvert>=7.16",
     "scipy>=1.17.1",
     "plotly>=7.1.0",
+    "pandas>=3.0.6",
+    "pyarrow>=25.0.1",
 ]
 
 [tool.uv]
