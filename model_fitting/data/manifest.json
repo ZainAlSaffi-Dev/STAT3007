@@ -1,11 +1,11 @@
 {
- "written": "2026-09-29T23:52:03",
+ "written": "2026-09-30T16:21:11",
  "argv": [
   "dataset_sweep.py",
   "assemble"
  ],
  "git": {
-  "commit": "a32604fecc91de55d340ab4799441a26f2677242",
+  "commit": "ce0a56dec2675fe9701d6daca8a1b419ff72ace7",
   "dirty": true
  },
  "versions": {
@@ -1406,6 +1406,7 @@
    "data_dictionary.md"
   ],
   "weights": "runs/<run_id>_weights.npz",
+  "curves": "curves/<run_id>.npz, 144 runs with seed in [0], committed",
   "run_json": "runs/<run_id>.json",
   "logs": "logs/sweep.log, logs/events.jsonl"
  },

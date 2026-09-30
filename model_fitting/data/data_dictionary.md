@@ -4,6 +4,8 @@ This file is written by `dataset_sweep.py assemble` from `dataset_features.COLUM
 
 `checkpoints.parquet` has one row per run and checkpoint. `runs.parquet` and `runs.csv` have one row per run. The two tables join on `run_id`. The weights at about 50 checkpoints per run are in `runs/<run_id>_weights.npz`, with arrays `steps`, `W1` of shape (T, N, 2p) and `W2` of shape (T, p, N). `ntk_lib.entk_closed_form` rebuilds any kernel from them.
 
+`curves/<run_id>.npz` holds every checkpoint column of the runs with seed in [0], one array per column, for the animations environment, which has numpy but no pandas. `animations/common/data.py` loads them. Unlike `checkpoints.parquet` and `runs/`, these files are committed.
+
 Notation. H = I - (1/n) 1 1^T. Kc = H K H is the centred kernel and k = Kc / ||Kc||_F the unit centred kernel. Y is the one-hot label matrix and G = H Y Y^T H. <A, B> is the Frobenius inner product. The probe is the mixed probe of 203 training and 53 test pairs.
 
 ## checkpoints

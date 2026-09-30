@@ -63,9 +63,14 @@ The output is in `model_fitting/data/` at the repository root.
   validation results.
 - `runs/` holds the per-run files. The weights saved at about 50 checkpoints
   per run let any kernel be rebuilt with `ntk_lib.entk_closed_form`.
+- `curves/` holds every checkpoint column of the seed 0 run of each of the 144
+  cells, one numpy file per run, for the animations.
+  `animations/common/data.py` loads them.
 
 `checkpoints.parquet` and `runs/` are too large for git and are written
-again by `run` and `assemble`. Load the tables with pandas:
+again by `run` and `assemble`. The runs table, the dictionary, the manifest
+and `curves/` are committed, so the animations work on any machine. Load the
+tables with pandas:
 
 ```python
 import pandas as pd

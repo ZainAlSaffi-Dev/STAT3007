@@ -94,6 +94,10 @@ render took. If it failed, say that instead.
   git, so they have to be regenerated locally before any scene can animate the
   kernel matrix itself. `repoduced-code/kernel_snapshots.py` writes the dense
   ones.
+- The feature dataset: `model_fitting/data/`. The seed 0 curves of every cell,
+  `curves/<run_id>.npz`, and the runs table, `runs.csv`, are committed and are
+  loaded through `data.load_curves` and `data.load_runs_table`. The columns
+  are defined in `model_fitting/data/data_dictionary.md`.
 - A starting point for a new scene: `scene_template.py`, which renders as it
   stands.
 - A check that every scene still renders: `uv run python render_all.py`.

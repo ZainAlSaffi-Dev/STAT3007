@@ -138,6 +138,22 @@ and are not, so run the script once on each machine, as in the quick start.
 `repoduced-code/term_dependence.py` holds the analysis behind the turn and aim
 scenes.
 
+The feature dataset in `model_fitting/data/` is the third source. It covers
+alpha {0.5, 1, 2}, width {50, 100, 200, 400, 800, 1600} and eta lambda {0,
+3e-6, 1e-5, 3e-5, 1e-4, 3e-4, 1e-3, 3e-3}, with five seeds of 200,000 steps.
+Two parts of it are committed, so a scene can use them on any machine.
+
+- `curves/<run_id>.npz` holds all 137 checkpoint series of the seed 0 run of
+  every cell, 144 runs. `data.load_curves(data.dataset_run_id(100, 1.0, 3e-4))`
+  loads one, and `data.history` works on it as on a saved run.
+  `data.curve_runs()` lists them.
+- `runs.csv` holds one row per run of all 720, with the grokking times, the
+  censoring flags and the values at the events. `data.load_runs_table()`
+  returns it as arrays. This is the source for `TwoClocks`.
+
+`model_fitting/data/data_dictionary.md` defines every column. Seeds 1 to 4
+and the weights exist only on the machine that ran the sweep.
+
 ## Scenes
 
 | Scene | Folder | Source | Status | What it shows |

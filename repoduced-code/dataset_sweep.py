@@ -37,7 +37,10 @@ Run it from repoduced-code with the environment at the repository root.
 Output goes to model_fitting/data/ at the repository root, next to the
 model fitting work that uses it. The per-run files in runs/ and the long
 table checkpoints.parquet are ignored by git. runs.csv, runs.parquet, the
-data dictionary and the manifest are committed.
+data dictionary and the manifest are committed. So is curves/, which holds
+every checkpoint column of the seed 0 runs as one numpy file per run. The
+animations environment has numpy but no pandas, and it reads those files
+through animations/common/data.py.
 """
 
 import argparse
@@ -76,6 +79,10 @@ N_WEIGHT_LOG, WEIGHT_EVERY = 40, 20_000
 # them at once.
 WIDE = 800
 WIDE_WORKERS, NARROW_WORKERS = 4, 8
+# The seeds whose curves are written to curves/ and committed, so the
+# animations can draw any cell without the ignored long table. Seed 0 of all
+# 144 cells takes about 22 MB.
+ANIMATION_SEEDS = (0,)
 
 ACC_LEVELS = (0.95, 0.99, 1.0)
 LOSS_TAUS = (3e-2, 2e-2, 1e-2, 3e-3, 1e-3)
@@ -688,6 +695,44 @@ def run_row(meta, frame, out_dir):
     return row
 
 
+def write_curves(ckpt, out):
+    """Write the checkpoint columns of the runs with a seed in ANIMATION_SEEDS, one numpy file per run.
+
+    Each file curves/<run_id>.npz holds one array per column of
+    checkpoints.parquet, in checkpoint order. step is int64, the flags are
+    bool, and every other series is float32, which is enough for a picture.
+    alpha, width, eta_kappa and seed are stored once as 0-d arrays. A file
+    left over from an earlier assembly whose run is no longer selected is
+    removed, so the folder always matches the table.
+    """
+    import dataset_features as F
+    curves = out / "curves"
+    curves.mkdir(parents=True, exist_ok=True)
+    ids = ("alpha", "width", "eta_kappa", "seed")
+    written = set()
+    for rid, frame in ckpt[ckpt["seed"].isin(ANIMATION_SEEDS)].groupby("run_id", sort=False):
+        frame = frame.sort_values("step")
+        arrays = {}
+        for name in F.COLUMN_NAMES:
+            if name == "run_id":
+                continue
+            values = frame[name].to_numpy()
+            if name in ids:
+                arrays[name] = np.asarray(values[0])
+            elif name == "step":
+                arrays[name] = values.astype(np.int64)
+            elif values.dtype == bool:
+                arrays[name] = values
+            else:
+                arrays[name] = values.astype(np.float32)
+        np.savez_compressed(curves / f"{rid}.npz", **arrays)
+        written.add(f"{rid}.npz")
+    for stale in curves.glob("*.npz"):
+        if stale.name not in written:
+            stale.unlink()
+    return len(written)
+
+
 def write_dictionary(out):
     import pandas as pd
     import dataset_features as F
@@ -701,6 +746,10 @@ def write_dictionary(out):
              "per run. The two tables join on `run_id`. The weights at about 50 checkpoints per run are in "
              "`runs/<run_id>_weights.npz`, with arrays `steps`, `W1` of shape (T, N, 2p) and `W2` of shape "
              "(T, p, N). `ntk_lib.entk_closed_form` rebuilds any kernel from them.", "",
+             f"`curves/<run_id>.npz` holds every checkpoint column of the runs with seed in {list(ANIMATION_SEEDS)}, "
+             "one array per column, for the animations environment, which has numpy but no pandas. "
+             "`animations/common/data.py` loads them. Unlike `checkpoints.parquet` and `runs/`, these files are "
+             "committed.", "",
              "Notation. H = I - (1/n) 1 1^T. Kc = H K H is the centred kernel and k = Kc / ||Kc||_F the unit "
              "centred kernel. Y is the one-hot label matrix and G = H Y Y^T H. <A, B> is the Frobenius inner "
              "product. The probe is the mixed probe of 203 training and 53 test pairs.", ""]
@@ -745,6 +794,7 @@ def cmd_assemble(args, log):
     runs.to_parquet(OUT / "runs.parquet", index=False)
     runs.to_csv(OUT / "runs.csv", index=False)
     write_dictionary(OUT)
+    n_curves = write_curves(ckpt, OUT)
 
     ok = runs[runs["status"] != "failed"]
     per_cell = []
@@ -768,10 +818,12 @@ def cmd_assemble(args, log):
         total_seconds=float(runs["seconds"].sum()), per_cell=per_cell, decay_levels_note=DECAY_NOTE,
         files=dict(checkpoints="checkpoints.parquet", runs=["runs.parquet", "runs.csv"],
                    dictionary=["data_dictionary.csv", "data_dictionary.md"], weights="runs/<run_id>_weights.npz",
+                   curves=f"curves/<run_id>.npz, {n_curves} runs with seed in {list(ANIMATION_SEEDS)}, committed",
                    run_json="runs/<run_id>.json", logs="logs/sweep.log, logs/events.jsonl"))
     write_atomic(OUT / "manifest.json", json.dumps(clean(manifest), indent=1))
     log.info(f"assemble: {len(runs)} runs, {len(ckpt)} checkpoint rows x {len(ckpt.columns)} columns, "
-             f"{(OUT / 'checkpoints.parquet').stat().st_size / 1e6:.0f} MB; status {manifest['counts']['status']}")
+             f"{(OUT / 'checkpoints.parquet').stat().st_size / 1e6:.0f} MB; status {manifest['counts']['status']}; "
+             f"{n_curves} curve files for the animations")
     return cmd_validate(args, log)
 
 
