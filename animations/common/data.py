@@ -26,8 +26,21 @@ The probe kernels themselves are saved as name_kernels.npz alongside the
 JSON. Those files are in .gitignore, so they exist only on the machine that
 ran the sweep. A scene that animates the kernel matrix or its eigenvectors
 has to regenerate them by re-running the cell that produced the run.
+
+The feature dataset of repoduced-code/dataset_sweep.py is a third source. It
+covers alpha {0.5, 1, 2}, width {50, 100, 200, 400, 800, 1600} and eta lambda
+{0, 3e-6, 1e-5, 3e-5, 1e-4, 3e-4, 1e-3, 3e-3}, with five seeds, for 200,000
+steps. It lives in model_fitting/data. Two parts of it are committed. The
+runs table, runs.csv, has one row per run with the grokking times and the
+values at the events. load_runs_table reads it. The curves of the seed 0
+runs, curves/<run_id>.npz, hold every checkpoint column of the dataset.
+load_curves reads one of them in the same form as load_run, so history works
+on it. model_fitting/data/data_dictionary.md defines every column. The long
+table of all seeds is a parquet file that git ignores, and this environment
+cannot read parquet in any case.
 """
 
+import csv
 import json
 import sys
 from pathlib import Path
@@ -37,6 +50,8 @@ import numpy as np
 REPO = Path(__file__).resolve().parents[2]
 REPRO = REPO / "repoduced-code"
 RESULTS = REPRO / "results"
+DATASET = REPO / "model_fitting" / "data"
+CURVES = DATASET / "curves"
 
 _MISSING = (
     "Call available() for the runs that exist. A dense run is written by "
@@ -114,6 +129,74 @@ def load_probe(name):
     if "probe_a" not in data:
         raise KeyError(f"{path.name} has no probe pairs. Only the dense runs from kernel_snapshots.py record them.")
     return data["probe_a"], data["probe_b"]
+
+
+def dataset_run_id(width, alpha, eta_kappa, seed=0):
+    """Return the name of a dataset run, the same name ntk_lib.cell_name gives it."""
+    return f"ntk_N{width}_a{alpha:g}_wd{eta_kappa:g}_s{seed}"
+
+
+def curve_runs():
+    """Return the names of the dataset runs whose curves are committed, sorted."""
+    if not CURVES.is_dir():
+        return []
+    return sorted(p.stem for p in CURVES.glob("*.npz"))
+
+
+def load_curves(name):
+    """Return the curves of one dataset run as a dictionary with a config and a history.
+
+    The history maps every checkpoint column of the dataset to an array in
+    checkpoint order, so history(run, "step", "S_c") works as it does for a
+    saved run. The config holds alpha, width, eta_kappa and seed.
+    """
+    path = CURVES / f"{name}.npz"
+    if not path.exists():
+        raise FileNotFoundError(
+            f"{path} does not exist. Only the seed 0 runs of the dataset have committed curves. "
+            f"curve_runs() lists them, and dataset_run_id() builds a name.")
+    with np.load(path) as data:
+        arrays = {key: data[key] for key in data.files}
+    config = {key: arrays.pop(key).item() for key in ("alpha", "width", "eta_kappa", "seed")}
+    return dict(config=config, history=arrays)
+
+
+def _parse(value):
+    """Turn one cell of runs.csv into a float, a bool, or the string itself. An empty cell is NaN."""
+    if value == "":
+        return np.nan
+    if value in ("True", "False"):
+        return value == "True"
+    try:
+        return float(value)
+    except ValueError:
+        return value
+
+
+def load_runs_table():
+    """Return runs.csv of the dataset as a dictionary of column name to array, one entry per run.
+
+    Numeric columns are float arrays, with NaN where the value is empty, for
+    example the grokking time of a run that never memorised. The flag columns
+    are bool arrays, unless a run left one empty, and the text columns are
+    object arrays.
+    """
+    path = DATASET / "runs.csv"
+    if not path.exists():
+        raise FileNotFoundError(f"{path} does not exist. repoduced-code/dataset_sweep.py assemble writes it.")
+    with open(path, newline="") as f:
+        rows = list(csv.DictReader(f))
+    table = {}
+    for key in rows[0]:
+        values = [_parse(r[key]) for r in rows]
+        kinds = {type(v) for v in values if not (isinstance(v, float) and np.isnan(v))}
+        if kinds <= {float}:
+            table[key] = np.asarray(values, dtype=float)
+        elif kinds == {bool} and all(isinstance(v, bool) for v in values):
+            table[key] = np.asarray(values, dtype=bool)
+        else:
+            table[key] = np.asarray(values, dtype=object)
+    return table
 
 
 def grokking_time(run, tau_train, tau_test):
