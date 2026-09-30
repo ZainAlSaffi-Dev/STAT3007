@@ -34,7 +34,8 @@ Run it from repoduced-code with the environment at the repository root.
     uv run python dataset_sweep.py assemble     # the tables, the data dictionary and the manifest
     uv run python dataset_sweep.py validate     # the checks, also run by assemble
 
-Output goes to results/dataset/. The per-run files in runs/ and the long
+Output goes to model_fitting/data/ at the repository root, next to the
+model fitting work that uses it. The per-run files in runs/ and the long
 table checkpoints.parquet are ignored by git. runs.csv, runs.parquet, the
 data dictionary and the manifest are committed.
 """
@@ -56,7 +57,7 @@ from pathlib import Path
 import numpy as np
 
 HERE = Path(__file__).resolve().parent
-OUT = HERE / "results" / "dataset"
+OUT = HERE.parent / "model_fitting" / "data"
 RUNS = OUT / "runs"
 LOGS = OUT / "logs"
 
@@ -722,7 +723,7 @@ def cmd_assemble(args, log):
 
     metas = [json.loads(p.read_text()) for p in sorted(RUNS.glob("*_meta.json"))]
     if not metas:
-        log.error("assemble: no finished runs in results/dataset/runs")
+        log.error(f"assemble: no finished runs in {RUNS}")
         return 1
     frames, rows = [], []
     for m in metas:
@@ -879,7 +880,7 @@ def main(argv=None):
     parser.add_argument("--wide-workers", type=int, default=WIDE_WORKERS)
     parser.add_argument("--narrow-workers", type=int, default=NARROW_WORKERS)
     parser.add_argument("--out", type=Path, default=None,
-                        help="output directory instead of results/dataset, for smoke tests")
+                        help="output directory instead of model_fitting/data, for smoke tests")
     args = parser.parse_args(argv)
     if args.out is not None:
         global OUT, RUNS, LOGS

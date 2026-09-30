@@ -14,6 +14,10 @@ file before changing anything.
 - `repoduced-code/results/` holds one JSON file per saved run. The probe
   kernels, `*_kernels.npz`, are too large for git and are written again on each
   machine.
+- `model_fitting/` holds the exploratory analysis and model fitting.
+  `model_fitting/data/` holds the feature dataset that
+  `repoduced-code/dataset_sweep.py` writes. The section on the feature dataset
+  below describes it.
 - `animations/` holds the Manim scenes for the presentation and for explaining
   the maths. It has its own environment and its own `README.md`.
 - `docs/` holds the proposal and the report source, `report.tex`.
@@ -47,7 +51,7 @@ uv run python dataset_sweep.py status     # how many runs have finished
 uv run python dataset_sweep.py assemble   # the tables, dictionary, manifest and validation
 ```
 
-The output is in `repoduced-code/results/dataset/`.
+The output is in `model_fitting/data/` at the repository root.
 
 - `checkpoints.parquet` has one row per run and checkpoint.
 - `runs.parquet` and `runs.csv` have one row per run. They hold the
@@ -65,8 +69,8 @@ again by `run` and `assemble`. Load the tables with pandas:
 
 ```python
 import pandas as pd
-ckpt = pd.read_parquet("repoduced-code/results/dataset/checkpoints.parquet")
-runs = pd.read_parquet("repoduced-code/results/dataset/runs.parquet")
+ckpt = pd.read_parquet("model_fitting/data/checkpoints.parquet")
+runs = pd.read_parquet("model_fitting/data/runs.parquet")
 data = ckpt.merge(runs, on=["run_id", "alpha", "width", "eta_kappa", "seed"])
 ```
 
