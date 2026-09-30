@@ -524,6 +524,7 @@ TSWLatexianTemp*
 /.cache/
 /*.pdf
 /project/*.pdf
+/project/report/*.pdf
 /Figures/external/
 checkpoints/
 *.csv
