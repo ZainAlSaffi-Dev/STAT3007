@@ -24,9 +24,6 @@ copier. [`.copier-answers.yml`](.copier-answers.yml) records the answers, and
 uv sync
 ```
 
-CUDA wheels are pinned for Windows in [`pyproject.toml`](pyproject.toml), and
-other platforms resolve to the default PyTorch index.
-
 ## Checks
 
 ```bash

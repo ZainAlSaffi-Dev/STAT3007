@@ -31,9 +31,7 @@ dependencies = [
   "pandas>=2.2",
   "pydantic>=2.13.5",
   "pyyaml>=6.0.3",
-  "requests>=2.32",
   "scipy>=1.18.0",
-  "urllib3>=2.7.0",
 ]
 
 [project.urls]
@@ -63,21 +61,7 @@ docs = [
 ]
 notebooks = [
   { include-group = "analysis" },
-  "datasets",
-  "graphviz>=0.21",
-  "ipykernel",
-  "jax>=0.10.2",
-  "jupyter",
-  "kagglehub",
   "manim>=0.21.0",
-  "pillow",
-  "scikit-learn>=1.5",
-  "seaborn",
-  "statsmodels>=0.15.0",
-  "torchvision",
-  "torchviz>=0.0.3",
-  "tqdm>=4.66",
-  "ucimlrepo",
 ]
 grid = [
     "duckdb>=1.5.5",
@@ -119,14 +103,6 @@ fork-strategy = "fewest"
 [tool.uv.dependency-groups]
 notebooks = { requires-python = "<3.14" }
 
-[tool.uv.sources]
-torchvision = [{ index = "pytorch-cu130", marker = "sys_platform == 'win32'" }]
-
-[[tool.uv.index]]
-name = "pytorch-cu130"
-url = "https://download.pytorch.org/whl/cu130"
-explicit = true
-
 
 [tool.autoimport.common_statements]
 "ge" = "from operator import ge"
@@ -139,10 +115,10 @@ explicit = true
 [tool.deptry]
 non_dev_dependency_groups = ["notebooks", "grid", "analysis"]
 extend_exclude = ["noxfile\\.py"]
-known_first_party = ["util", "deeplearning"]
+known_first_party = ["deeplearning"]
 
 [tool.deptry.per_rule_ignores]
-DEP002 = ["ipykernel", "jupyter", "manim", "snakemake", "snakemake-executor-plugin-slurm", "statsmodels"]
+DEP002 = ["manim", "snakemake", "snakemake-executor-plugin-slurm"]
 
 
 [tool.pytest]
@@ -197,7 +173,6 @@ disallow_incomplete_defs = true
 [tool.ruff]
 builtins = ["snakemake"]
 show-fixes = true
-extend-exclude = ["assignments", "practicals", "notebooks"]
 force-exclude = true
 
 [tool.ruff.lint]
@@ -248,7 +223,6 @@ convention = "google"
 "tests/**" = ["D100", "D103", "ICN001", "T20", "S101"]
 "noxfile.py" = ["D", "T20"]
 "docs/conf.py" = ["D"]
-"data/*.py" = ["T20"]
 
 [tool.pydoclint]
 style = "google"

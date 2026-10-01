@@ -65,12 +65,9 @@ repos:
           - pandas-stubs
           - pydantic
           - pytest
-          - requests
           - scipy-stubs
           - torch
           - types-PyYAML
-          - types-requests
-          - urllib3
 
   - repo: https://github.com/jsh9/pydoclint
     rev: "0.9.1"
