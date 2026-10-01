@@ -8,7 +8,7 @@ name = "deeplearning"
 authors = [
   { name = "Zac Kienzle", email = "zac.kienzle@gmail.com" },
 ]
-description = "STAT3007 Deep Learning: course notes, worked problems and experiment code"
+description = "STAT3007 Group G2: what sets the grokking time on modular addition"
 readme = "README.md"
 requires-python = ">=3.12"
 classifiers = [
@@ -37,10 +37,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ZacKienzle2/DeepLearning"
-"Bug Tracker" = "https://github.com/ZacKienzle2/DeepLearning/issues"
-Discussions = "https://github.com/ZacKienzle2/DeepLearning/discussions"
-Changelog = "https://github.com/ZacKienzle2/DeepLearning/releases"
+Homepage = "https://github.com/ZainAlSaffi-Dev/STAT3007"
+"Bug Tracker" = "https://github.com/ZainAlSaffi-Dev/STAT3007/issues"
+Discussions = "https://github.com/ZainAlSaffi-Dev/STAT3007/discussions"
+Changelog = "https://github.com/ZainAlSaffi-Dev/STAT3007/releases"
 
 
 [dependency-groups]
