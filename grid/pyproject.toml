@@ -10,9 +10,7 @@ authors = [
 ]
 description = "STAT3007 Deep Learning: course notes, worked problems and experiment code"
 readme = "README.md"
-# moderngl 5.12, which manim needs, publishes no cp314 Windows wheel, and
-# required-environments needs one for every Python this range admits.
-requires-python = ">=3.12,<3.14"
+requires-python = ">=3.12"
 classifiers = [
   "Development Status :: 1 - Planning",
   "Intended Audience :: Science/Research",
@@ -28,11 +26,13 @@ classifiers = [
 dynamic = ["version"]
 dependencies = [
   "annotated-types>=0.8.0",
+  "icontract>=2.7.3",
   "numpy>=1.26",
   "pandas>=2.2",
   "pydantic>=2.13.5",
   "pyyaml>=6.0.3",
   "requests>=2.32",
+  "scipy>=1.18.0",
   "urllib3>=2.7.0",
 ]
 
@@ -48,6 +48,7 @@ test = [
   "hypothesis >=6",
   "pytest >=9",
   "pytest-cov >=7",
+  "pytest-env>=1.7.1",
 ]
 dev = [
   { include-group = "test" },
@@ -109,7 +110,14 @@ env-vars.PYTHONWARNDEFAULTENCODING = "1"
 required-environments = [
   "sys_platform == 'win32' and platform_machine == 'AMD64'",
 ]
-default-groups = ["dev", "notebooks"]
+# One version of each package for every Python the lock covers, so a checkout
+# trains on the same torch whichever interpreter uv discovers.
+fork-strategy = "fewest"
+
+# moderngl 5.12, which manim needs, publishes no cp314 Windows wheel, and
+# required-environments needs one for every Python a group is locked for.
+[tool.uv.dependency-groups]
+notebooks = { requires-python = "<3.14" }
 
 [tool.uv.sources]
 torchvision = [{ index = "pytorch-cu130", marker = "sys_platform == 'win32'" }]
@@ -119,15 +127,6 @@ bibliography = { git = "https://github.com/ZacKienzle2/bibliography" }
 name = "pytorch-cu130"
 url = "https://download.pytorch.org/whl/cu130"
 explicit = true
-
-
-[tool.mutmut]
-source_paths = ["src/"]
-only_mutate = ["src/deeplearning/kernels.py"]
-pytest_add_cli_args_test_selection = ["tests/test_kernels.py"]
-pytest_add_cli_args = ["--hypothesis-profile", "ci"]
-also_copy = ["config/"]
-process_isolation = "forkserver"
 
 
 [tool.autoimport.common_statements]
@@ -149,16 +148,27 @@ DEP002 = ["ipykernel", "jupyter", "manim", "snakemake", "snakemake-executor-plug
 
 [tool.pytest]
 minversion = "9.0"
-addopts = ["-ra", "--showlocals"]
+addopts = ["-ra", "--showlocals", "--hypothesis-profile=ci"]
 strict = true
 filterwarnings = [
   "error",
   "ignore::DeprecationWarning:torch.jit._script",
+  "ignore::FutureWarning:torch.jit._script",
 ]
 log_level = "INFO"
 testpaths = [
   "tests",
 ]
+
+[tool.pytest_env]
+# Tests check the contracts icontract.SLOW marks; runs outside the tests skip them.
+ICONTRACT_SLOW = "true"
+
+
+[tool.mutmut]
+# The tests import torch, which mutmut's documentation names as unsafe to fork
+# after importing, so each mutant forks from a clean fork server.
+process_isolation = "forkserver"
 
 
 [tool.coverage]

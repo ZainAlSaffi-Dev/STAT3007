@@ -1,0 +1,6 @@
+channels:
+  - conda-forge
+dependencies:
+  - r-duckdb
+  - r-segmented
+  - r-survival

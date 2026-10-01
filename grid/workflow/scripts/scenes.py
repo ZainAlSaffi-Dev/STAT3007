@@ -25,7 +25,9 @@ import numpy as np
 import torch
 import yaml
 from manim import (
+    DEFAULT_MOBJECT_TO_EDGE_BUFFER,
     DOWN,
+    RIGHT,
     UR,
     ApplyMatrix,
     Arrow,
@@ -317,7 +319,7 @@ class SpectralBias(Scene):
             ),
             Group(
                 residual,
-                residual.get_axis_labels(counter, MathTex(r"(1 - \eta \lambda_k)^t")),
+                residual.get_y_axis_label(MathTex(r"(1 - \eta \lambda_k)^t")),
                 residual.get_horizontal_line(
                     residual.c2p(10**horizon, settings["tolerance"])
                 ),
@@ -332,13 +334,19 @@ class SpectralBias(Scene):
                 ),
             ),
         )
-        panels.arrange(DOWN).scale_to_fit_height(config.frame_height)
+        panels.arrange(DOWN)
+        # The counter is placed by next_to rather than as an axis label, which
+        # Manim would shift onto the screen before the panels are scaled.
+        Group(panels, counter.next_to(residual.x_axis, RIGHT)).scale_to_fit_height(
+            config.frame_height - 2 * DEFAULT_MOBJECT_TO_EDGE_BUFFER
+        )
         steps = ValueTracker(0)
         counter.add_updater(
             lambda variable: variable.tracker.set_value(10 ** steps.get_value())
         )
         self.add(
             panels,
+            counter,
             VMobject(stroke_color=PALETTE[1]).add_updater(
                 lambda curve: curve.set_points_as_corners(
                     function.c2p(

@@ -67,12 +67,14 @@ repos:
         additional_dependencies:
           - annotated-types
           - hypothesis
+          - icontract
           - nox
           - numpy
           - pandas-stubs
           - pydantic
           - pytest
           - requests
+          - scipy-stubs
           - torch
           - types-PyYAML
           - types-requests

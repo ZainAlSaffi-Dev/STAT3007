@@ -664,7 +664,7 @@ events = con.sql("""
     SELECT event AS Event, level AS Level, median(time) AS Median,
         min(time) AS Minimum, max(time) AS Maximum,
         count(*) FILTER (WHERE observed) AS Reached
-    FROM event_times NATURAL JOIN exemplar
+    FROM events NATURAL JOIN exemplar
     GROUP BY event, level
     ORDER BY event DESC, level
 """).df()
