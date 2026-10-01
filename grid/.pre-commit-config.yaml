@@ -3,20 +3,12 @@ ci:
   autofix_commit_msg: "style: pre-commit fixes"
   autoupdate_schedule: "monthly"
 
-# Course material as the course supplies it, the vendored class styles, the
-# bibliography, which is appended to and never rewritten whole, and the report's
-# bibliography, which Better BibTeX exports from Zotero.
+# The report's bibliography, which Better BibTeX exports from Zotero.
 exclude: |
   (?x)^(
     \.cruft\.json|
     \.copier-answers\.yml|
-    assignments/.*|
-    practicals/.*|
-    notebooks/.*|
-    project/templates/.*|
-    project/report/ref\.bib|
-    styles/.*|
-    References/References\.bib
+    project/report/ref\.bib
   )$
 
 repos:

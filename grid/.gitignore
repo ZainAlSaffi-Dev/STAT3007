@@ -520,16 +520,11 @@ TSWLatexianTemp*
 
 
 # This repository
-/Library/
 /.cache/
 /*.pdf
-/project/*.pdf
 /project/report/*.pdf
-/Figures/external/
 checkpoints/
 *.csv
-/assignments/**/*.pkl
-/assignments/**/*-sol.zip
 
 # manim's default media_dir, relative to the repository root it runs from
 /media/

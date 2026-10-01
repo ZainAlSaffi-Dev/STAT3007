@@ -2,7 +2,7 @@
 # file ChkTeX distributes: a bare `KEYWORD { ... }` adds to the built-in list,
 # while `KEYWORD = { ... }` replaces it, so everything here extends the defaults.
 
-VerbEnvir { verbatim Verbatim lstlisting minted code Pin Pout Cppin Cppout }
+VerbEnvir { verbatim Verbatim lstlisting minted code pycode }
 
 # "Default commandline options. These will be processed before the ones you
 # give on the command line." Warning numbers are suppressed here because -n is
