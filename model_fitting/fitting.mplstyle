@@ -1,0 +1,14 @@
+# The shared look of every figure in the fitting notebooks.
+figure.figsize: 7, 4
+figure.dpi: 110
+figure.facecolor: fcfcfb
+axes.facecolor: fcfcfb
+axes.edgecolor: b5b4ae
+axes.grid: True
+grid.color: e6e5e0
+axes.spines.top: False
+axes.spines.right: False
+xtick.color: 52514e
+ytick.color: 52514e
+lines.linewidth: 2
+legend.frameon: False
