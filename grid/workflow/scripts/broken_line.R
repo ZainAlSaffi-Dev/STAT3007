@@ -7,7 +7,10 @@
 # censored at the step budget, which is the log-linear model of Kalbfleisch and
 # Prentice (2002) with a normal error, the log-normal model. segmented.default
 # reads the coefficients of a censReg fit from its estimate component (segmented
-# NEWS, 1.2-0). Each event and level is fitted twice: with a free left slope,
+# NEWS, 1.2-0). censReg refuses rows with no censored observation, and without
+# its censored terms its log-likelihood (censReg vignette, Eq. 5) is that of the
+# normal linear model, which lm fits and segmented.lm takes (segmented manual).
+# Each event and level is fitted twice: with a free left slope,
 # and with the left slope fixed at zero by leaving x out of the starting fit,
 # Muggeo's model 2. The rows are the database view design_runs, with x =
 # log(eta*lambda). psi gets the delta method interval of confint.segmented, b
@@ -38,10 +41,12 @@ for (d in split(runs, runs[c("event", "level")], drop = TRUE)) {
   budget <- unique(d$budget)
   stopifnot(length(budget) == 1, all(d$observed == (d$y < budget)))
   for (model in names(starts)) {
-    fit <- segmented(
-      censReg(starts[[model]], left = -Inf, right = budget, data = d),
-      seg.Z = ~x
-    )
+    start <- if (all(d$observed)) {
+      lm(starts[[model]], data = d)
+    } else {
+      censReg(starts[[model]], left = -Inf, right = budget, data = d)
+    }
+    fit <- segmented(start, seg.Z = ~x)
     psi <- confint.segmented(fit, "x", .coef = coef(fit), .vcov = vcov(fit))
     wald <- coef(summary(fit))["U1.x", ]
     fits[[length(fits) + 1]] <- data.frame(
