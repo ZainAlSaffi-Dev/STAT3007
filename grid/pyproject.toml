@@ -52,7 +52,6 @@ test = [
 ]
 dev = [
   { include-group = "test" },
-  "bibliography",
   "deptry>=0.25",
 ]
 docs = [
@@ -96,6 +95,7 @@ analysis = [
 
 [tool.hatch]
 version.source = "vcs"
+version.raw-options.search_parent_directories = true
 build.hooks.vcs.version-file = "src/deeplearning/_version.py"
 
 [tool.hatch.envs.default]
@@ -121,7 +121,6 @@ notebooks = { requires-python = "<3.14" }
 
 [tool.uv.sources]
 torchvision = [{ index = "pytorch-cu130", marker = "sys_platform == 'win32'" }]
-bibliography = { git = "https://github.com/ZacKienzle2/bibliography" }
 
 [[tool.uv.index]]
 name = "pytorch-cu130"
