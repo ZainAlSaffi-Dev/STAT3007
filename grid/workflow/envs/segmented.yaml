@@ -1,0 +1,11 @@
+channels:
+  - conda-forge
+dependencies:
+  - r-duckdb
+  - r-segmented
+  - r-remotes
+  - r-maxlik
+  - r-glmmml
+  - r-sandwich
+  - r-misctools
+  - r-plm

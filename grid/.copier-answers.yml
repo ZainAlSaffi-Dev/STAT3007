@@ -1,0 +1,14 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: 2026.08.14-8-g72fb90f
+_src_path: gh:scientific-python/cookie
+backend: hatch
+docs: sphinx
+email: zac.kienzle@gmail.com
+full_name: Zac Kienzle
+license: MIT
+org: ZacKienzle2
+project_name: deeplearning
+project_short_description: 'STAT3007 Group G2: what sets the grokking time on modular
+    addition'
+url: https://github.com/ZainAlSaffi-Dev/STAT3007
+vcs: true
