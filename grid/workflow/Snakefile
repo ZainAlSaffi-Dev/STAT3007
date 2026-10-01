@@ -16,11 +16,9 @@ tables = ["metrics", "events", "spectra", "phases"]
 scan_tables = ["metrics", "events", "phases"]
 
 
-def written(checkpoint):
-    """The YAML a checkpoint wrote, once it has run."""
-    return yaml.safe_load(
-        Path(checkpoint.get().output[0]).read_text(encoding="utf-8")
-    )
+def written(rule):
+    """The YAML a rule wrote, which a job that takes it as input reads."""
+    return yaml.safe_load(Path(rule.output[0]).read_text(encoding="utf-8"))
 
 
 def at(levels):
@@ -35,17 +33,17 @@ def at(levels):
 
 def placed():
     """Stage 2a: the first placement below its upper end."""
-    return at(written(checkpoints.design)["levels"]["eta_lambda"][:-1])
+    return at(written(rules.design)["levels"]["eta_lambda"][:-1])
 
 
 def scanned():
     """The scan points above the highest stage-2a level that groks."""
-    return at(written(checkpoints.scan)["eta_lambda"])
+    return at(written(rules.scan)["eta_lambda"])
 
 
 def replaced():
     """Stage 2b: Park's midpoint and upper end placed again."""
-    return at(written(checkpoints.boundary)["levels"]["eta_lambda"][2:])
+    return at(written(rules.boundary)["levels"]["eta_lambda"][2:])
 
 
 def stages():
