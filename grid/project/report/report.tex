@@ -61,7 +61,11 @@ import duckdb
 database = "../../../results/grid.duckdb"
 pytex.add_dependencies(database)
 con = duckdb.connect(database, read_only=True)
-query = con.sql("SELECT *, len(seeds) AS n_seeds FROM exemplar")
+query = con.sql("""
+    SELECT *,
+        (SELECT count(DISTINCT seed) FROM metrics NATURAL JOIN exemplar) AS n_seeds
+    FROM exemplar
+""")
 cell = dict(zip(query.columns, query.fetchone()))
 \end{pycode}
 
