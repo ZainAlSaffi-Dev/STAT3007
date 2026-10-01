@@ -1,0 +1,55 @@
+\pgfplotstableread{pythontex-files-\jobname/dynamics.csv}\dynamics
+\mmznext{
+  context={%
+    \csname pdf@filemdfivesum\endcsname{pythontex-files-\jobname/dynamics.csv}%
+  },
+}
+\begin{tikzpicture}
+  \begin{groupplot}[
+      group style={
+        group size=2 by 2,
+        xlabels at=edge bottom,
+        xticklabels at=edge bottom,
+      },
+      width=\linewidth/2,
+      xmode=log,
+      xlabel={step $t$},
+      error bars/y dir=both,
+      error bars/y explicit,
+    ]
+    \nextgroupplot[
+      ymode=log,
+      title={MSE},
+      legend entries={train, test},
+      legend pos=south west,
+    ]
+    \addplot table [
+      x=step, y=train_loss,
+      y error plus expr=\thisrow{train_loss_hi}-\thisrow{train_loss},
+      y error minus expr=\thisrow{train_loss}-\thisrow{train_loss_lo},
+    ] {\dynamics};
+    \addplot table [
+      x=step, y=test_loss,
+      y error plus expr=\thisrow{test_loss_hi}-\thisrow{test_loss},
+      y error minus expr=\thisrow{test_loss}-\thisrow{test_loss_lo},
+    ] {\dynamics};
+    \nextgroupplot[title={$S_t$}]
+    \addplot table [
+      x=step, y=S_sum,
+      y error plus expr=\thisrow{S_sum_hi}-\thisrow{S_sum},
+      y error minus expr=\thisrow{S_sum}-\thisrow{S_sum_lo},
+    ] {\dynamics};
+    \nextgroupplot[title={$R_t$}]
+    \addplot table [
+      x=step, y=R_sum,
+      y error plus expr=\thisrow{R_sum_hi}-\thisrow{R_sum},
+      y error minus expr=\thisrow{R_sum}-\thisrow{R_sum_lo},
+    ] {\dynamics};
+    \nextgroupplot[title={$A_t$}]
+    \addplot table [
+      x=step, y=A_sum,
+      y error plus expr=\thisrow{A_sum_hi}-\thisrow{A_sum},
+      y error minus expr=\thisrow{A_sum}-\thisrow{A_sum_lo},
+    ] {\dynamics};
+  \end{groupplot}
+\end{tikzpicture}

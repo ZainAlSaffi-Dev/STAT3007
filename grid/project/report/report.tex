@@ -1,0 +1,832 @@
+% tex-fmt: off
+\documentclass[a4paper,11pt]{article} % Don't change this
+\usepackage{fullpage} % Don't change this
+
+\usepackage{titling} % Don't change this
+\pretitle{\vspace{-6em}\begin{center}\larger[2]\bf} % Don't change this
+\postauthor{\end{center}} % Don't change this
+\preauthor{\vspace{-2em}\begin{center}\smaller[1]} % Don't change this
+\postauthor{\end{center}\vspace{-5em}} % Don't change this
+
+\usepackage[shortlabels]{enumitem} % Don't change this
+\setlist{itemsep=0em,topsep=0.3em} % Don't change this
+% tex-fmt: on
+
+%%% Some useful packages.
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage[hidelinks]{hyperref}
+\usepackage{relsize}
+\usepackage{cleveref}
+\crefname{figure}{Fig.}{Figs.}
+
+\usepackage[natbib=true, style=authoryear-icomp, maxnames=3,
+giveninits=true, uniquename=init]{biblatex}
+\citetrackerfalse
+\bibliography{ref} % put bib entries in ref.bib
+
+\usepackage[linesnumbered]{algorithm2e}
+\usepackage{cleveref}
+\crefname{equation}{Equation.}{Equations.}
+\crefname{figure}{Figure}{Figures.}
+
+\usepackage{lipsum}
+\usepackage{wrapfig}
+\usepackage{tikz}
+
+%%% Add additional packages or macros below
+\usepackage[draft,layout=inline]{fixme}
+\usepackage{microtype}
+\usepackage{memoize}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepgfplotslibrary{groupplots}
+\pgfplotsset{compat=1.18, table/col sep=comma}
+\usepackage{pythontex}
+\setpythontexworkingdir{<outputdir>}
+\usepackage{siunitx}
+\sisetup{drop-zero-decimal, round-mode=figures}
+\usepackage{booktabs}
+\crefname{table}{Table}{Tables}
+\usepackage[section]{placeins}
+
+\begin{document}
+
+\begin{pycode}
+import duckdb
+
+database = "../../../results/grid.duckdb"
+pytex.add_dependencies(database)
+con = duckdb.connect(database, read_only=True)
+query = con.sql("SELECT *, len(seeds) AS n_seeds FROM exemplar")
+cell = dict(zip(query.columns, query.fetchone()))
+\end{pycode}
+
+\title{Scale or Shape? Decomposing NTK Movement During Grokking}
+\author{Group G2 \\
+  Zain Al-Saffi (s4800836) $\cdot$
+  Jasper Chong (s4883420) $\cdot$
+  Aaron D'Mello (s4890257) \\
+Zac Kienzle (s4803349) $\cdot$ Samuel Rieger (s4904959)}
+
+\date{}
+\maketitle
+
+\begin{abstract}
+  \fxfatal{Abstract, written last from the finished sections.}
+\end{abstract}
+
+\section{Introduction}
+
+Grokking is the delayed generalisation that
+\citet{powerGrokkingGeneralizationOverfitting2022} found on small algorithmic
+datasets: validation accuracy rises from chance long after the training data
+have been fitted. Modular addition learned by a two-layer perceptron is a
+minimal instance. Full-batch gradient descent on the squared error groks there
+with no explicit regularisation \citep{gromovGrokkingModularArithmetic2023},
+and \citet{kumarGrokkingTransitionLazy2024} use this setting, with no weight
+decay, as a baseline.
+
+One account holds that grokking is a transition from lazy training, in which
+the network behaves as a kernel method with its initial tangent kernel, to rich
+training, in which the kernel adapts to the task
+\citep{kumarGrokkingTransitionLazy2024}. The evidence that the kernel changes
+is a distance: \citet{mohamadiWhyYouGrok2024} observe that the empirical NTK
+stays close to its initial value until the training data are fitted and moves
+far from it afterwards. A distance does not say how the kernel changed.
+\citet{shanTheoryNeuralTangent2022} find that the tangent kernel grows in
+Frobenius norm during training, as
+\citet{baratinImplicitRegularizationNeural2021} report, but that kernel
+gradient descent with the initial kernel scaled up to
+the amplitude of the final one still trains more slowly than the network, so
+that changes to the structure of the kernel, and not its amplitude alone,
+account for the faster training.
+
+The distinction matters for accounts of what sets the grokking time. The result
+cited for weight decay forcing the NTK to change
+\citep{kumarGrokkingTransitionLazy2024} is that of
+\citet{lewkowyczTrainingDynamicsDeep2021}, in which the kernel only rescales,
+and recent accounts time grokking by the weight norm
+\citep{khanhWeightNormSets2026}, the scale of the logits
+\citep{khanhWhatDoesWeight2026} and the rate of weight decay
+\citep{kimGrokkingWeightDecayClock2026}. None of them measures the shape of the
+kernel.
+
+This report separates the two with published measures of the tangent kernel
+(\cref{sec:statistics}): its scale $S_t$, the Frobenius norm relative to
+initialisation; its shape change $R_t$, the kernel distance of
+\citet{fortDeepLearningKernel2020}, which compares kernels in a scale-invariant
+manner; its relative variation $D_t$ of
+\citet{geigerDisentanglingFeatureLazy2020}; and its alignment $A_t$ with the
+labels. We measure these statistics and the kernel's spectrum along training on
+the modular-addition baseline of
+\citet{kumarGrokkingTransitionLazy2024}, and ask which of scale and shape moves
+before and while the network groks, and whether the times at which it memorises
+and groks follow either.
+\fxfatal{State the findings and the contributions
+once the grid has run.}
+
+\section{Related Work}
+
+\paragraph{Grokking.} \Citet{powerGrokkingGeneralizationOverfitting2022}
+report that on small algorithmic datasets, long after a network has overfitted
+its training data, validation accuracy can rise from chance towards perfect
+generalisation, and that weight decay is particularly effective at improving
+generalisation there. \Citet{nandaProgressMeasuresGrokking2023} reverse-engineer
+the algorithm a small transformer learns for modular addition, which turns
+addition into rotation about a circle through discrete Fourier transforms, and
+use it to split training into memorisation, circuit formation and clean-up.
+For the two-layer perceptron we study,
+\citet{gromovGrokkingModularArithmetic2023}
+gives closed-form weights that solve modular addition when the activation is
+quadratic, and observes grokking under full-batch gradient descent with no
+explicit regularisation. \Citet{liuOmnigrokGrokkingAlgorithmic2023} trace
+grokking to a mismatch between the training and test losses as functions of
+the weight norm.
+
+\paragraph{Lazy and rich training.} In the infinite-width limit the NTK stays
+constant during training, so the network trains as a kernel method
+\citep{jacotNeuralTangentKernel2020}.
+\Citet{chizatLazyTrainingDifferentiable2020}
+show that this lazy regime is a matter of scale: multiplying a model by a
+factor $\alpha$, with its initial output kept bounded, brings its training
+closer to that of its linearisation as $\alpha$ grows, while the
+mean-field factor $1/m$ of a two-layer network of
+width $m$ keeps the dynamics non-degenerate as $m\to\infty$.
+\Citet{kumarGrokkingTransitionLazy2024} propose that grokking is a transition
+from lazy to rich, feature-learning dynamics, which arises when the top
+eigenvectors of the initial NTK are misaligned with the labels, the dataset is
+large enough to generalise from but not so large that the training loss tracks
+the test loss, and training starts in the lazy regime.
+\Citet{mohamadiWhyYouGrok2024} observe that the Frobenius distance of the
+empirical NTK from its initial value is negligible until the training data are
+fitted and large afterwards, and prove that with fewer than $Cp^2$ training
+pairs, for a constant $C$ they do not give, no input-output
+permutation-equivariant kernel method has expected loss below half that of the
+zero predictor on modular addition. \Citet{lyuDichotomyEarlyLate2024} prove that
+homogeneous networks trained with large initialisation and small weight decay
+stay at a kernel predictor for a long time and then move sharply to a
+min-norm or max-margin predictor. \Citet{atanasovNeuralNetworksKernel2021}
+describe silent alignment, in which the kernel's eigenstructure evolves while
+the kernel is small and only its overall scale grows afterwards, under small
+initialisation and whitened data.
+
+\paragraph{Kernel alignment and spectral bias.} On a fixed kernel, gradient
+descent fits the components of the labels along the eigenvectors with large
+eigenvalues first (\cref{sec:spectra}). Networks learn low frequencies first
+\citep{rahamanSpectralBiasNeural2019}, which
+\citet{basriConvergenceRateNeural2019} explain for a two-layer network on the
+sphere through the eigenvalues of its NTK at each frequency, and
+\citet{canatarSpectralBiasTaskModel2021} relate the generalisation of kernel
+regression to the share of the target's power in the top eigenfunctions.
+Outside the kernel regime, the top eigenfunctions of the NTK align with the
+target during training \citep{kopitkovNeuralSpectrumAlignment2020}, the NTK
+changes rapidly in a short initial transient and at constant velocity afterwards
+\citep{fortDeepLearningKernel2020}, and the spectrum of the tangent kernel
+becomes more anisotropic while its centred alignment with the class labels
+rises \citep{baratinImplicitRegularizationNeural2021}.
+\Citet{shanTheoryNeuralTangent2022} give a theory of this alignment for deep
+linear and two-layer ReLU networks, in which, with several outputs, the kernel
+of each output aligns with its own target.
+\Citet{kumarGrokkingTransitionLazy2024} also compute an alignment of the
+initial kernel with the labels, on the test set; their printed formula has no
+centring, and they evaluate it at initialisation only.
+
+\paragraph{What sets the grokking time.} \Citet{khanhWeightNormSets2026} clamp
+the weight norm at a multiple $\rho$ of a critical norm and find that the time
+to grok grows exponentially in $\rho$. \Citet{khanhWhatDoesWeight2026} show that
+under cross-entropy the norm acts on this delay through the scale of the logits,
+while under squared error its effect is about half as large and runs through a
+different route. \Citet{kimGrokkingWeightDecayClock2026} derive, for linear
+models trained with heavy-ball momentum $\beta$ and weight decay, a
+grokking time
+that scales as $(1-\beta)/(\eta\lambda)$, and observe this scaling on modular
+addition. \Citet{lewkowyczTrainingDynamicsDeep2021} prove, assuming a
+conjecture on the
+correlation functions of wide networks, that for a $k$-homogeneous network in
+the infinite-width limit trained by gradient flow, $L_2$ regularisation makes
+the NTK evolve as $\frac{d}{dt}\Theta_t=-2(k-1)\lambda\Theta_t$, and that under
+squared error its eigenvectors stay fixed while its eigenvalues decay;
+\citet{kumarGrokkingTransitionLazy2024} cite this result, in an argument they
+call speculative, for weight decay moving networks out of the lazy regime.
+The evolution in that result is a rescaling of the kernel. Its proof starts
+from the gradient-flow equation of the kernel at finite width,
+\begin{equation}
+  \frac{d\Theta_t(x,x')}{dt} = -2(k-1)\lambda\Theta_t(x,x')
+  + T_t(x,x') + T_t(x',x),
+  \label{eq:kernelflow}
+\end{equation}
+where $T_t(x,x')=-\sum_{x''}\partial_{\mu\nu}f_t(x)\,\partial_\mu f_t(x')\,
+\partial_\nu f_t(x'')\,\ell'(x'')$ sums over the training inputs and
+repeated parameter indices, and shows that $T_0$ has expectation of order
+$n^{-1}$ in the width $n$, so that $T$ drops out in the limit
+\citep{lewkowyczTrainingDynamicsDeep2021}. In \eqref{eq:kernelflow} the
+weight decay appears explicitly only in the term that rescales the kernel;
+$T_t$ depends on it only through the trajectory. For homogeneous
+networks trained on the squared error with weight decay,
+\citet{pracherSpectralTheoryGrokking2026} show that a residual persists
+after the training data are fitted, write the
+evolution of the kernel as a term driven by that residual plus a weight-decay
+term that shrinks the kernel, and predict a grokking time inversely
+proportional to the product of learning rate and weight decay, which they
+observe on modular addition; \citet{xuGrokGrokkingProvable2026} prove
+bounds on the grokking time of over-parameterised linear regression under
+gradient descent with weight decay. Both mechanisms need weight decay, and none
+of these accounts separates the scale of the kernel from its shape.
+
+\section{Methods}
+
+\subsection{Task, network and training}
+
+The task is the modular addition of \citet{gromovGrokkingModularArithmetic2023}
+at the baseline of \citet{kumarGrokkingTransitionLazy2024}. For a modulus $p$,
+each pair $(a,b)$ of residues in $\{0,\dots,p-1\}$ is encoded as the
+concatenation $x_{a,b}\in\mathbb{R}^{2p}$ of the one-hot codes of $a$ and $b$,
+and its target $y_{a,b}\in\mathbb{R}^{p}$ is the one-hot code of
+$(a+b) \bmod p$. The dataset holds all $p^2$ pairs. Each seed draws its own
+split of the pairs into a training set $\mathcal{T}$ and a test set, as well as
+its own initial weights.
+
+The network is the two-layer perceptron without biases of
+\citet{gromovGrokkingModularArithmetic2023},
+\begin{equation}
+  f(x;\theta) = c_N W^{(2)} \phi\bigl(D^{-1/2} W^{(1)} x\bigr),
+  \label{eq:network}
+\end{equation}
+with input dimension $D=2p$, width $N$, weights
+$W^{(1)}\in\mathbb{R}^{N\times D}$ and $W^{(2)}\in\mathbb{R}^{p\times N}$
+whose entries are drawn from $\mathcal{N}(0,1)$, and an activation $\phi$
+applied to each entry. \Citet{gromovGrokkingModularArithmetic2023} derives
+his exact solution for the quadratic activation, finds his empirical results
+only mildly sensitive to the choice of activation, and reports that the same
+weights work for the rectifier at a larger width; we use the rectifier
+$\phi(h)=\max\{h,0\}$. A network function is $k$-homogeneous if scaling every
+parameter by $c>0$ scales it by $c^k$, and a fully connected network with $L$
+layers and rectifier activations is $L$-homogeneous
+\citep{lewkowyczTrainingDynamicsDeep2021}, so \eqref{eq:network} is
+2-homogeneous; the centred predictor below, which subtracts the constant
+$f(x;\theta_0)$, is not. The readout factor is
+$c_N=N^{-1/2}$ in the NTK parameterisation of
+\citet{jacotNeuralTangentKernel2020} and $c_N=N^{-1}$ in the mean-field
+parameterisation of \citet{gromovGrokkingModularArithmetic2023}. Following
+\citet{kumarGrokkingTransitionLazy2024}, the trained predictor is the centred
+and rescaled function
+\begin{equation}
+  \tilde f(x;\theta) = \alpha\bigl[f(x;\theta)-f(x;\theta_0)\bigr],
+\end{equation}
+where $\theta_0$ holds the initial weights, and the learning rate is
+$\eta=\eta_0/\alpha^2$, which keeps the initial rate of change of the function
+the same for every $\alpha$. The loss is the squared error averaged over the
+$p$ outputs and the training pairs,
+$L(\theta)=\frac{1}{p\lvert\mathcal{T}\rvert}\sum_{(a,b)\in\mathcal{T}}
+\lVert\tilde f(x_{a,b};\theta)-y_{a,b}\rVert^2$, and training is full-batch
+gradient descent with weight decay,
+\begin{equation}
+  \theta_{k+1} = (1-\eta\lambda)\,\theta_k - \eta\nabla L(\theta_k).
+\end{equation}
+This is the decoupled weight decay of
+\citet{kimGrokkingWeightDecayClock2026} with no momentum buffer, and for plain
+gradient descent coupled $L_2$ regularisation and decoupled weight decay
+coincide \citep{kimGrokkingWeightDecayClock2026}. The grid sets the product
+$\eta\lambda$ directly.
+
+\subsection{The empirical tangent kernel}
+
+For a scalar output $g(x;\theta)$ the tangent features are the gradients
+$\nabla_\theta g(x;\theta)$, and the tangent kernel is the inner product of the
+features of two inputs
+\citep{jacotNeuralTangentKernel2020,baratinImplicitRegularizationNeural2021}.
+We evaluate it on all $n=p^2$ pairs, so that at step $t$ the kernel is the
+matrix $K_t\in\mathbb{R}^{n\times n}$ with entries
+\begin{equation}
+  [K_t]_{ij} = \bigl\langle\nabla_\theta g(x_i;\theta_t),
+  \nabla_\theta g(x_j;\theta_t)\bigr\rangle .
+\end{equation}
+Two scalar outputs are measured: the sum of the logits
+of \eqref{eq:network} divided by $\sqrt{p}$, whose kernel is the pseudo-NTK of
+\citet{mohamadiFastWellFoundedApproximation2022} and is reported in the main
+text, and the first logit, which \citet{mohamadiWhyYouGrok2024} use in place of
+the full kernel of a vector output. The kernel is evaluated at
+initialisation, on a
+logarithmically spaced grid of steps, and at every event step of
+\cref{sec:timing}.
+
+\subsection{Scale, shape and alignment}
+\label{sec:statistics}
+
+For a set $\mathcal{S}$ of pairs, $K_t[\mathcal{S}]$ is the submatrix of $K_t$
+on those pairs and $Y[\mathcal{S}]$ the matrix whose rows are their targets;
+$\mathcal{T}$ holds the training pairs of a seed and $\mathcal{V}$ its test
+pairs. Following \citet{cortesAlgorithmsLearningKernels2024}, the Frobenius
+product is $\langle A,B\rangle_F=\operatorname{tr}(A^\top B)$ with norm
+$\lVert A\rVert_F=\sqrt{\langle A,A\rangle_F}$, and $K_c=CKC$ centres an
+$r\times r$ kernel matrix with $C=I_r-\frac{1}{r}\mathbf{1}\mathbf{1}^\top$.
+All four statistics are measured on the kernel of the test pairs of a seed,
+$K_t=K_t[\mathcal{V}]$ and $Y=Y[\mathcal{V}]$ in this subsection. We record
+\begin{equation}
+  \begin{aligned}
+    S_t &= \frac{\lVert K_t\rVert_F}{\lVert K_0\rVert_F}, &
+    R_t &= 1-\frac{\operatorname{tr}\bigl(K_tK_0^\top\bigr)}
+    {\sqrt{\operatorname{tr}\bigl(K_tK_t^\top\bigr)}\,
+    \sqrt{\operatorname{tr}\bigl(K_0K_0^\top\bigr)}},\\
+    D_t &= \frac{\lVert K_t-K_0\rVert_F}{\lVert K_0\rVert_F}, &
+    A_t &= \mathrm{CKA}\bigl(K_t,YY^\top\bigr),\quad
+    \mathrm{CKA}(K,K') = \frac{\operatorname{tr}(K_c{K'}_c)}
+    {\lVert K_c\rVert_F\,\lVert {K'}_c\rVert_F}.
+  \end{aligned}
+  \label{eq:statistics}
+\end{equation}
+The scale $S_t$ is the Frobenius norm of the kernel relative to its value at
+initialisation. \Citet{shanTheoryNeuralTangent2022} find that this norm grows
+during training, and in the silent alignment of
+\citet{atanasovNeuralNetworksKernel2021} the kernel first aligns while small
+and then evolves in scale only, $K(x,x',t)=g(t)K_\infty(x,x')$. The shape
+change $R_t$ is the kernel distance of \citet{fortDeepLearningKernel2020}
+between the kernels at step $t$ and at initialisation, which compares two
+kernel matrices in a scale-invariant manner. The variation $D_t$ is the total
+relative variation of the kernel that \citet{geigerDisentanglingFeatureLazy2020}
+measure on the test set to quantify feature training. The alignment $A_t$ is
+the centred kernel alignment (CKA) of the kernel with the class label kernel
+$YY^\top$ on a held-out set, as \citet{baratinImplicitRegularizationNeural2021}
+measure it after \citet{cortesAlgorithmsLearningKernels2024}; its normalisation
+makes it invariant under isotropic rescaling
+\citep{baratinImplicitRegularizationNeural2021}.
+
+Because the first three statistics are taken on one matrix, the variation is a
+function of the scale and the shape,
+\begin{equation}
+  D_t^2 = S_t^2 - 2S_t(1-R_t) + 1 ,
+  \label{eq:identity}
+\end{equation}
+and $R_t=0$ exactly when $K_t=cK_0$ for some $c>0$
+(\cref{sec:identity}). A kernel that only rescales therefore has
+$D_t=\lvert S_t-1\rvert$, which is as large as its change of scale, so a large
+$D_t$ does not by itself show that the kernel changed shape.
+
+\subsection{Spectral measures}
+\label{sec:spectra}
+
+In the linear dynamics of \citet{aroraFinegrainedAnalysisOptimization2019}, the
+predictions $u_k$ on the training pairs follow
+$u_{k+1}=u_k-\eta G(u_k-y)$ with a fixed Gram matrix $G$, from $u_0=0$. If $G$
+has eigenvalues $\omega^G_i$ with orthonormal eigenvectors $g_i$, the residual
+after $k$ steps is
+$\lVert y-u_k\rVert=\sqrt{\sum_{i}(1-\eta\omega^G_i)^{2k}(g_i^\top y)^2}$, so
+the part of the labels along an eigenvector with a large eigenvalue is fitted
+first; \citet{jacotNeuralTangentKernel2020} give the continuous-time form, in
+which the component along each kernel principal component decays exponentially
+at a rate set by its eigenvalue. Eigenvalues are written $\omega$ to keep them
+apart from the weight decay $\lambda$. The measures use the kernel on all
+$n=p^2$ pairs, which covers every input of the task. The centred kernel
+$CK_{t}C$, with $C=I_n-\frac{1}{n}\mathbf{1}\mathbf{1}^\top$, is symmetric and
+positive semi-definite
+\citep{cortesAlgorithmsLearningKernels2024}, so it has orthonormal eigenvectors
+$v_1,\dots,v_n$ with eigenvalues $\omega_1\ge\dots\ge\omega_n\ge0$
+\citep{axlerLinearAlgebraDone2024}. We record the target power along each
+eigenvector, $P_{t,i}=\sum_{c=1}^{p}(v_i^\top Cy_c)^2$, where $y_c$ is the
+$c$th column of $Y$, and its cumulative share over the leading eigenvectors,
+which \citet{canatarSpectralBiasTaskModel2021} call the cumulative power
+distribution and use to explain why a kernel generalises on one task and not on
+another. The centring follows \citet{baratinImplicitRegularizationNeural2021},
+who report results for centred tangent features;
+\citet{jacotNeuralTangentKernel2020} note that their kernel principal
+component analysis is not centred, so its first component is almost the
+constant function. From the singular values
+$\sigma_1\ge\dots\ge\sigma_n\ge0$ of $CK_{t}C$ we compute the effective rank of
+\citet{royEffectiveRankMeasure2007}, which
+\citet{baratinImplicitRegularizationNeural2021} apply to the tangent kernel, and
+from the eigenvalues the trace ratios of
+\citet{baratinImplicitRegularizationNeural2021},
+\begin{equation}
+  \operatorname{erank}_t = \exp\Bigl(-\sum_{j}\mu_j\log\mu_j\Bigr),\qquad
+  \mu_j=\frac{\sigma_j}{\sum_{i}\sigma_i},\qquad
+  T_{t,k}=\frac{\sum_{j\le k}\omega_j}{\sum_{j}\omega_j},
+  \label{eq:erank}
+\end{equation}
+which measure how evenly the kernel spreads over its eigenvectors; $T_{t,k}$ is
+the share of the trace carried by the $k$ largest eigenvalues, which is how
+\citet{baratinImplicitRegularizationNeural2021} describe their trace ratios:
+the relative importance of the top $k$ eigenvalues.
+\Citet{royEffectiveRankMeasure2007} take $0\log0=0$, so
+zero singular values, such as the one along the constant vector, which $C$ maps
+to zero, do not enter the effective rank.
+
+\subsection{Event times}
+\label{sec:timing}
+
+Following \citet{khanhWeightNormSets2026}, the memorisation step of a seed is
+the first step at which its training accuracy reaches
+\pys{\num{!{cell["memorised"]}}}, and its grokking step at level $\ell$ is the
+first step at which its test accuracy reaches $\ell$, for each
+$\ell\in\{\pys{\numlist{!{";".join(map(str, cell["grokked"]))}}}\}$, the
+test-accuracy thresholds at which \citet{khanhWeightNormSets2026} check that
+their critical weight norm does not depend on the threshold. A seed
+that has not reached a level within the
+step budget is kept, and its event time is recorded as censored at the budget.
+
+Within a cell, the seeds give the Kaplan--Meier estimate of the probability
+that an event has not occurred by step $t$,
+\begin{equation}
+  \hat F(t) = \prod_{j\mid t_j\le t}\frac{n_j-d_j}{n_j},
+\end{equation}
+where $t_1<t_2<\cdots$ are the distinct steps at which the event occurs, $d_j$
+seeds reach it at $t_j$ and $n_j$ are still at risk there. Greenwood's formula
+estimates its variance as
+$\hat F^2(t)\sum_{j\mid t_j\le t}d_j/[n_j(n_j-d_j)]$, and with
+$\hat s^2(t)=\sum_{j\mid t_j\le t}d_j/[n_j(n_j-d_j)]\big/[\log\hat F(t)]^2$
+the approximate \qty{95}{\percent} interval $\hat F(t)^{\exp[\pm1.96\hat s(t)]}$
+stays within $[0,1]$ \citep{kalbfleischStatisticalAnalysisFailure2002}. The
+median event time of a cell is the step at which $\hat F$ falls to one half. A
+cell whose $\hat F$ stays above one half up to the budget has no median within
+it, and at a grokking level it does not grok.
+
+Each run is also labelled by its phase at the last step, following
+\citet{pracherSpectralTheoryGrokking2026}: grokking when its training and test
+accuracies both end above a threshold, memorisation when only its training
+accuracy does, forgetting when its training accuracy rose above the threshold
+earlier and ends below it, and no fitting otherwise. The phases describe the
+cells and do not select runs. A run keeps its event times whatever its phase,
+since in the analysis of one failure mode a unit that fails by another mode, or
+is removed from test without failing, contributes its running time as a
+censoring time \citep{nelsonAcceleratedTestingStatistical1990}.
+
+Three censored regressions, fitted with lifelines
+\citep{davidson-pilonLifelinesSurvivalAnalysis2019}, relate the event times to
+the settings of the cells. The log-normal accelerated failure time model takes
+the survival function of an event time $T$ with covariates $x$ to be
+\begin{equation}
+  S(t\mid x) = 1-\Phi\biggl(\frac{\log t-\mu(x)}{\sigma}\biggr),\qquad
+  \mu(x) = a_0 + \sum_{i}a_i x_i ,
+  \label{eq:aft}
+\end{equation}
+where $\Phi$ is the standard normal distribution function, so a unit increase
+in $x_i$ multiplies the median event time by $e^{a_i}$. Its parameters are
+maximum likelihood estimates. With the step budget $\tau$ as the common
+censoring time, seed $i$ contributes the log likelihood
+\begin{equation}
+  \mathcal{L}_i = I_i\Bigl[-\log\sigma-\tfrac{1}{2}\log(2\pi)
+  -\tfrac{1}{2}z_i^2\Bigr] + (1-I_i)\log\bigl[1-\Phi(\zeta_i)\bigr]
+\end{equation}
+in terms of its log time, where $z_i=(\log t_i-\mu(x_i))/\sigma$,
+$\zeta_i=(\log\tau-\mu(x_i))/\sigma$, and $I_i=1$ if the event is observed and
+$I_i=0$ otherwise \citep{nelsonAcceleratedTestingStatistical1990}. This is the
+likelihood of \citet{kalbfleischStatisticalAnalysisFailure2002} for a
+log-linear model under independent censoring, with normal errors. The additive
+model of
+\citet{aalenLinearRegressionModel1989} takes the intensity of the event for
+seed $i$ at step $t$ to be $\alpha_0(t)+\sum_j\alpha_j(t)Z_j^i$ while the seed
+has not reached the level and zero afterwards, and estimates the cumulative
+regression functions $A_j(t)=\int_0^t\alpha_j(s)\,ds$ by
+\begin{equation}
+  A^*(t) = \sum_{T_k\le t} \bigl[Y(T_k)^\top Y(T_k)\bigr]^{-1}Y(T_k)^\top I_k ,
+  \label{eq:aalen}
+\end{equation}
+where the event times $T_1<T_2<\dots$ are ordered, row $i$ of $Y(t)$ is
+$(1,Z_1^i,\dots,Z_r^i)$ while seed $i$ is at risk and zero otherwise, and
+$I_k$ is the indicator of the seed whose event occurs at $T_k$. Unlike
+\eqref{eq:aft} with logarithmic covariates, \eqref{eq:aalen} admits a covariate
+at zero, such as $\eta\lambda=0$. Intervals come from resampling seeds with the
+bias-corrected and accelerated bootstrap \citep{efronIntroductionBootstrap1994}.
+
+Each event and level is fitted separately. The covariates of \eqref{eq:aft}
+and \eqref{eq:aalen} are the settings of a cell, fixed in time. As
+$\log(\eta\lambda)$ is undefined at $\eta\lambda=0$, \eqref{eq:aft} is fitted
+twice: to the cells without weight decay, with indicators of the levels of
+$\alpha$, and to the cells with $\eta\lambda>0$, all at the $\alpha$ of the
+pilot cell, with the single covariate $\log(\eta\lambda)$, while
+\eqref{eq:aalen} takes all cells together, with the indicators of $\alpha$ and
+$\eta\lambda$ itself.
+\citet{aalenLinearRegressionModel1989} states his results for covariates fixed
+in time, and lifelines fits \eqref{eq:aalen} only for such covariates. The
+statistics of \cref{sec:statistics} change along training, so they enter a
+third model, the relative risk model with time-dependent covariates of
+\citet{kalbfleischStatisticalAnalysisFailure2002},
+\begin{equation}
+  h\bigl(t\mid Z(t)\bigr) = h_0(t)\exp\bigl[Z(t)^\top\gamma\bigr],
+\end{equation}
+whose coefficients maximise the partial likelihood
+\begin{equation}
+  L(\gamma) = \prod_{j=1}^{k}
+  \frac{\exp\bigl[Z_j(t_j)^\top\gamma\bigr]}
+  {\sum_{l=1}^{n}Y_l(t_j)\exp\bigl[Z_l(t_j)^\top\gamma\bigr]} ,
+\end{equation}
+where $t_1<\cdots<t_k$ are the event times, $Z_j$ belongs to the seed whose
+event occurs at $t_j$, and $Y_l(t)$ is one while seed $l$ is at risk.
+\Citet{kalbfleischStatisticalAnalysisFailure2002} write it for untied event
+times; seeds can reach an event at the same step, and the lifelines fitter
+handles such ties by Efron's method. Here
+$Z(t)=(S_t,R_t,A_t)$ is held from each checkpoint to the next, so its paths
+are left-continuous as the model requires. These covariates are internal:
+the run that reaches the event generates them. The model therefore describes
+the rate of the event given the current kernel and has no survivor function
+of its own. When a setting acts on the event through these covariates, an
+analysis conditional on them shows little effect of that setting
+\citep{kalbfleischStatisticalAnalysisFailure2002}.
+
+\subsection{Choice of levels}
+
+Where weight decay sets the grokking time, \eqref{eq:aft} with the single
+covariate $x=\log(\eta\lambda)$ makes $\log T$ normal with mean $a_0+a_1x$ and
+variance $\sigma^2$. Without censoring this is the simple linear regression
+model, whose designs \citet{bergerIntroductionOptimalDesigns2009} construct as
+follows. A design $\xi$ places a proportion $w_j$ of the runs at level $x_j$,
+$j=1,\dots,m$, with $\sum_j w_j=1$, on levels rescaled to $[-1,1]$, and has the
+information matrix
+\begin{equation}
+  M(\xi) = \sum_{j=1}^{m} w_j f(x_j)f(x_j)^\top ,\qquad f(x) = (1,x)^\top .
+\end{equation}
+With $N$ runs, $n_j=Nw_j$ of them at $x_j$, the least squares estimates have
+covariance $\sigma^2(X^\top X)^{-1}$, where $X^\top X=N M(\xi)$, and the slope
+has variance $\operatorname{var}(\hat a_1)=\sigma^2/\sum_i(x_i-\bar x)^2$. The
+design that minimises this variance is unique and places half the runs at each
+end of the interval, and for the straight line it is also D-, A-, E- and
+G-optimal. When the line is in doubt, a quadratic term measures its curvature.
+The D-optimal design for the quadratic places a third of the runs at each of
+$-1$, $0$ and $1$, and the design for its curvature coefficient alone places
+half of them at $0$ and a quarter at each end. For many models with $p$
+parameters an optimal design has between $p$ and $p(p+1)/2$ distinct levels,
+and a design $\xi$ is compared with the D-optimal design $\xi^*$ of the model
+that holds by its relative efficiency
+\begin{equation}
+  \mathrm{RE}_{\mathrm{D}} = \biggl\{
+    \frac{\det\operatorname{Cov}(\hat a^*)}{\det\operatorname{Cov}(\hat a)}
+  \biggr\}^{1/p} ,
+\end{equation}
+where $\hat a^*$ and $\hat a$ are the estimates under $\xi^*$ and $\xi$.
+
+Censoring at the budget changes the information a run carries. For
+$\mu(x)=a_0+a_1x$ and censoring at $\log\tau$, a run at level $x$ contributes
+to the parameters $(a_0,a_1,\sigma)$ the expected information
+\begin{equation}
+  F_x = \frac{1}{\sigma^2}
+  \begin{pmatrix}
+    A(\zeta)  & xA(\zeta)   & B(\zeta)  \\
+    xA(\zeta) & x^2A(\zeta) & xB(\zeta) \\
+    B(\zeta)  & xB(\zeta)   & C(\zeta)
+  \end{pmatrix},
+\end{equation}
+where $\zeta=(\log\tau-\mu(x))/\sigma$ and, with $\phi$ and $\Phi$ evaluated
+at $\zeta$,
+\begin{equation}
+  \begin{aligned}
+    A(\zeta) &= \Phi-\Bigl[\zeta-\frac{\phi}{1-\Phi}\Bigr]\phi, \qquad
+    B(\zeta) = -\phi\Bigl[1+\zeta\Bigl(\zeta-\frac{\phi}{1-\Phi}\Bigr)\Bigr],\\
+    C(\zeta) &= 2\Phi-\zeta\phi\Bigl[1+\zeta^2-\frac{\zeta\phi}{1-\Phi}\Bigr].
+  \end{aligned}
+\end{equation}
+The information of a plan is the sum of $F_x$ over its runs, the covariance
+of the maximum likelihood estimates is its inverse, and a function $h$ of the
+parameters has variance $HF^{-1}H^\top$, where $H$ is the gradient of $h$
+\citep{nelsonAcceleratedTestingStatistical1990}. Because $\zeta$ depends on the
+parameters, an optimum plan for censored data is found by numerical search
+for guessed values of them and is only locally optimum, and good compromise
+plans run more units at low stress, here small $\eta\lambda$, than at high
+\citep{nelsonAcceleratedTestingStatistical1990}.
+
+Across the level at which the grokking time returns to its value without
+weight decay, the mean log time is a broken line,
+$\mu(x)=a_0+a_1x+b(x-\psi)_+$ with $(x-\psi)_+=(x-\psi)I(x>\psi)$. The method
+of \citet{muggeoEstimatingRegressionModels2003} applies to any regression model
+with a linear predictor, survival models included, so it runs inside the
+censored likelihood of \eqref{eq:aft}. Step $s$ of the fit sets
+$U^{(s)}=(x-\psi^{(s)})_+$ and $V^{(s)}=-I(x>\psi^{(s)})$, fits the linear
+predictor $a_1x + b U^{(s)} + \kappa V^{(s)}$, and updates
+$\psi^{(s+1)}=\psi^{(s)}+\hat\kappa/\hat b$ until $\hat\kappa$ vanishes, when
+every estimate, $\hat\psi$ included, is maximum likelihood. Fixing the left
+slope $a_1$ at zero gives a threshold model, in which the grokking time does
+not change below the break, and whether the left slope is zero is a Wald test
+of $a_1$ in the unconstrained fit \citep{muggeoSegmentedPackageFit2008}.
+Whether a break exists at all is not a Wald test of $b$, since $\psi$
+vanishes under $b=0$; the segmented package bounds the $p$-value of that test
+by the method of Davies \citep{muggeoSegmentedPackageFit2008}. The break has
+the Wald interval $\hat\psi\pm1.96\operatorname{SE}(\hat\psi)$, whose standard
+error comes from the delta method for the ratio $\hat\kappa/\hat b$ and, at
+convergence, where $\hat\kappa=0$, reduces to
+$\operatorname{SE}(\hat\kappa)/\lvert\hat b\rvert$
+\citep{muggeoEstimatingRegressionModels2003,muggeoSegmentedPackageFit2008}.
+When the break lies away from the middle of the range of $x$, its estimate is
+biased with an asymmetric distribution and the Wald interval can perform
+poorly, in part because $\operatorname{SE}(\hat\psi)$ may understate its
+variability \citep{muggeoIntervalEstimationBreakpoint2017}. The break
+depends on constants that
+the grid itself estimates, so a design for it is also only locally optimal; a
+sequential design takes the guesses from a first stage, which here consists of
+the pilot runs, and updates the design with their estimates
+\citep{bergerIntroductionOptimalDesigns2009}.
+
+\citet{parkExperimentalDesignsFitting1978a} constructs D-optimal designs for
+segmented polynomials with a known break. For $k$ distinct levels,
+$\lvert X^\top X\rvert$ is largest when every level has the same number of
+runs, and under continuity at the break the design is D-optimal on each segment
+with a level at the break. A line below the break and a quadratic above it
+therefore have the design $x\in\{-1,\psi,(1+\psi)/2,1\}$ on the rescaled axis.
+The quadratic is one degree above the line expected above the break, as
+\citet{parkExperimentalDesignsFitting1978a} advises when lack of fit is to be
+tested, with equal numbers of runs at each level. The design is locally optimal
+at the guessed break. The guess is the product $\eta\lambda$ at which the
+inverse-decay boundary that \citet{pracherSpectralTheoryGrokking2026}
+calibrate for a network on the same task, scaled by their clock, gives a
+grokking time equal to the pilot's time without weight decay. A second stage
+places the design again at the estimated break.
+
+\section{Experiments}
+
+\subsection{The pilot cell}
+
+The pilot cell is the baseline of \citet{kumarGrokkingTransitionLazy2024}:
+modulus $p=\pys{\num{!{cell["p"]}}}$, a fraction
+\pys{\num{!{cell["train_fraction"]}}} of the pairs for training, width
+$N=\pys{\num{!{cell["width"]}}}$ in the
+\pys{!{ {"ntk": "NTK", "mean_field": "mean-field"}[cell["parameterisation"]] }}
+parameterisation, $\alpha=\pys{\num{!{cell["alpha"]}}}$,
+$\eta_0=\pys{\num{!{cell["eta_0"]}}}$,
+$\eta\lambda=\pys{\num{!{cell["eta_lambda"]}}}$ and a budget of
+\pys{\num{!{cell["steps"]}}} steps, for \pys{!{cell["n_seeds"]}} seeds.
+\Cref{tab:events} gives the steps at which the seeds memorise and grok,
+\cref{fig:dynamics} the losses and the statistics of the sum kernel along
+training, and \cref{tab:kernel} those statistics and the spectral measures at
+initialisation and at the last step.
+\fxfatal{Describe the pilot against the questions of the introduction once the
+grid gives the comparison cells.}
+
+\begin{table}[t]
+  \centering
+  \caption{Steps at which the seeds of the pilot cell first reach each event:
+    training accuracy at the memorisation level, or test accuracy at a grokking
+    level. Median, minimum and maximum over seeds, and the number of seeds that
+  reach the event within the budget.}
+  \label{tab:events}
+\begin{pycode}
+events = con.sql("""
+    SELECT event AS Event, level AS Level, median(time) AS Median,
+        min(time) AS Minimum, max(time) AS Maximum,
+        count(*) FILTER (WHERE observed) AS Reached
+    FROM events NATURAL JOIN exemplar
+    GROUP BY event, level
+    ORDER BY event DESC, level
+""").df()
+print(events.style.hide(axis="index").to_latex(hrules=True, siunitx=True))
+\end{pycode}
+\end{table}
+
+\begin{table}[t]
+  \centering
+  \caption{Statistics \eqref{eq:statistics} and spectral measures
+    \eqref{eq:erank} of the sum kernel of the pilot cell at
+    initialisation and at the last step, and the share of the centred target's
+    power on the $2(p-1)$ leading eigenvectors. Minimum, median and maximum over
+  seeds.}
+  \label{tab:kernel}
+\begin{pycode}
+kernel = con.sql("""
+    SELECT statistic AS Statistic, step AS Step, min(value) AS Minimum,
+        median(value) AS Median, max(value) AS Maximum
+    FROM (
+        UNPIVOT (
+            SELECT seed, step, S_sum, R_sum, A_sum, D_sum
+            FROM metrics NATURAL JOIN exemplar
+            WHERE step IN (0, steps)
+        ) ON S_sum, R_sum, A_sum, D_sum INTO NAME statistic VALUE value
+        UNION ALL BY NAME
+        UNPIVOT (
+            SELECT seed, step, erank, trace_ratio, target_share
+            FROM spectral_summary NATURAL JOIN exemplar
+            WHERE kernel = 'sum' AND step IN (0, steps)
+        ) ON erank, trace_ratio, target_share INTO NAME statistic VALUE value
+    )
+    GROUP BY statistic, step
+    ORDER BY statistic, step
+""").df()
+labels = {
+    "S_sum": "$S_t$",
+    "R_sum": "$R_t$",
+    "A_sum": "$A_t$",
+    "D_sum": "$D_t$",
+    "erank": r"$\operatorname{erank}_t$",
+    "trace_ratio": "$T_{t,2(p-1)}$",
+    "target_share": r"target power on $v_1,\dots,v_{2(p-1)}$",
+}
+print(kernel.style.hide(axis="index").format({"Statistic": labels.get}).to_latex(
+    hrules=True, siunitx=True,
+))
+\end{pycode}
+\end{table}
+
+\subsection{The grid}
+
+\fxfatal{The grid: its arms and levels, each level taken from a transcribed
+source, and the timing fits.}
+
+\begin{figure}[t]
+  \centering
+\begin{pycode}
+series = "'^(train_loss|test_loss|S_sum|R_sum|A_sum)$'"
+con.sql(rf"""
+    SELECT step,
+        median(COLUMNS({series})) AS '\0',
+        min(COLUMNS({series})) AS '\0_lo',
+        max(COLUMNS({series})) AS '\0_hi'
+    FROM metrics NATURAL JOIN exemplar
+    WHERE step > 0
+    GROUP BY step
+    ORDER BY step
+""").to_csv("dynamics.csv")
+pytex.add_created("dynamics.csv")
+print(r"\input{figures/dynamics}")
+\end{pycode}
+  \caption{Train and test MSE and the statistics $S_t$, $R_t$ and $A_t$ of the
+    sum-over-logits kernel against step $t$, at the baseline cell of
+    \citet{kumarGrokkingTransitionLazy2024}. Points are medians over
+  \py{cell["n_seeds"]} seeds and error bars span their range.}
+  \label{fig:dynamics}
+\end{figure}
+
+\section{Conclusion}
+
+\fxfatal{Conclusion: what the measurements show, and the limitations.}
+
+\section*{Contribution}
+
+\fxfatal{Contribution of each group member, from the group.}
+
+\section*{Acknowledgement}
+
+\fxfatal{Acknowledgement, written by the group.}
+
+\appendix
+\section{Derivations}
+
+\subsection{Scale, shape and variation}
+\label{sec:identity}
+
+Throughout, $K_t$ and $K_0$ are real $r\times r$ kernel matrices on the test
+pairs of a seed with $K_0\neq0$ and $K_t\neq0$, so that \eqref{eq:statistics}
+is defined.
+
+\paragraph{Results used.} On the linear maps between two finite-dimensional
+inner product spaces, $\langle S,T\rangle=\operatorname{tr}(T^*S)$ is an inner
+product, which with respect to orthonormal bases is the standard inner product
+of the matrix entries, and its norm is the Frobenius norm
+\citep{axlerLinearAlgebraDone2024}. For real matrices the adjoint is the
+transpose, so this is the Frobenius product
+$\langle A,B\rangle_F=\operatorname{tr}(A^\top B)$ of
+\citet{cortesAlgorithmsLearningKernels2024}. Square matrices satisfy
+$\operatorname{tr}(AB)=\operatorname{tr}(BA)$
+\citep{axlerLinearAlgebraDone2024}. In an inner product space,
+\begin{equation*}
+  \lVert u-v\rVert^2 = \lVert u\rVert^2 + \lVert v\rVert^2
+  - \langle u,v\rangle - \langle v,u\rangle ,
+\end{equation*}
+over the real numbers $\langle u,v\rangle=\langle v,u\rangle$, and
+$\langle u,v\rangle=\lVert u\rVert\,\lVert v\rVert$ holds if and only if one of
+$u$ and $v$ is a nonnegative real multiple of the other
+\citep{axlerLinearAlgebraDone2024}.
+
+\paragraph{The identity.} By $\operatorname{tr}(AB)=\operatorname{tr}(BA)$,
+$\operatorname{tr}(K_tK_0^\top)=\operatorname{tr}(K_0^\top K_t)
+=\langle K_0,K_t\rangle_F$, and likewise
+$\operatorname{tr}(K_tK_t^\top)=\lVert K_t\rVert_F^2$, so
+\eqref{eq:statistics} gives
+\begin{equation*}
+  1-R_t = \frac{\langle K_t,K_0\rangle_F}{\lVert K_t\rVert_F\,\lVert
+  K_0\rVert_F}.
+\end{equation*}
+The expansion above with the symmetry of the real inner product gives
+\begin{equation*}
+  \lVert K_t-K_0\rVert_F^2
+  = \lVert K_t\rVert_F^2 + \lVert K_0\rVert_F^2
+  - 2\langle K_t,K_0\rangle_F .
+\end{equation*}
+Dividing by $\lVert K_0\rVert_F^2$, the left side is $D_t^2$, the first term
+is $S_t^2$, and
+\begin{equation*}
+  \frac{\langle K_t,K_0\rangle_F}{\lVert K_0\rVert_F^2}
+  = \frac{\lVert K_t\rVert_F}{\lVert K_0\rVert_F}\cdot
+  \frac{\langle K_t,K_0\rangle_F}{\lVert K_t\rVert_F\,\lVert K_0\rVert_F}
+  = S_t(1-R_t),
+\end{equation*}
+which gives \eqref{eq:identity}.
+
+\paragraph{When the shape is unchanged.} By the expression for $1-R_t$ above,
+$R_t=0$ exactly when
+$\langle K_t,K_0\rangle_F=\lVert K_t\rVert_F\,\lVert K_0\rVert_F$, that is,
+by the last result above, exactly when one of $K_t$ and $K_0$ is a
+nonnegative real multiple of the other. Neither is zero, so the multiple is
+positive, and $R_t=0$ exactly when $K_t=cK_0$ for some $c>0$. Then
+$S_t=c$, and \eqref{eq:identity} gives $D_t^2=(S_t-1)^2$.
+
+\smaller
+\printbibliography
+
+\newpage
+\fxfatal{The group keeps one of the two consent statements below.}
+
+\begin{center}
+  \emph{We give consent for this to be used as a teaching resource.}\\
+  \emph{We DO NOT give consent for this to be used as a teaching resource.}
+\end{center}
+
+\end{document}

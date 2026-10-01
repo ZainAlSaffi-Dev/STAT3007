@@ -1,0 +1,18 @@
+# ChkTeX resource file. Keyword semantics are those documented in the resource
+# file ChkTeX distributes: a bare `KEYWORD { ... }` adds to the built-in list,
+# while `KEYWORD = { ... }` replaces it, so everything here extends the defaults.
+
+VerbEnvir { verbatim Verbatim lstlisting minted code Pin Pout Cppin Cppout }
+
+# "Default commandline options. These will be processed before the ones you
+# give on the command line." Warning numbers are suppressed here because -n is
+# the documented way to mute a message; they were previously listed under
+# Silent, which takes command names and so ignored them entirely.
+CmdLine { -n1 -n2 -n3 -n8 -n10 -n17 -n24 -n36 -n41 }
+
+# "These commands do not produce any textual output; and are thus allowed to
+# have a space after them." Every entry below is a switch or a break rather
+# than something that sets type, so a following space is harmless.
+Silent { \onehalfspacing \raggedbottom \cleardoublepage \citetrackerfalse }
+
+WipeArg { \cite:*[]{} \citep:*[]{} \citet:*[]{} \label:{} \ref:{} \eqref:{} \autoref:{} \cref:{} \Cref:{} \pageref:{} \bibliography:{} \input:{} \include:{} \includegraphics:*[]{} }

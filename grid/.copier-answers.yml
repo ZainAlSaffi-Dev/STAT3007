@@ -1,0 +1,14 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: 2026.08.14-8-g72fb90f
+_src_path: gh:scientific-python/cookie
+backend: hatch
+docs: sphinx
+email: zac.kienzle@gmail.com
+full_name: Zac Kienzle
+license: MIT
+org: ZacKienzle2
+project_name: deeplearning
+project_short_description: 'STAT3007 Deep Learning: course notes, worked problems
+    and experiment code'
+url: https://github.com/ZacKienzle2/DeepLearning
+vcs: true
