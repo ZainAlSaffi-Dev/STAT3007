@@ -21,7 +21,7 @@ with Path(snakemake.log[0]).open("w", buffering=1) as log, redirect_stderr(log):
     )
     scan = yaml.safe_load(Path(snakemake.input.scan).read_text(encoding="utf-8"))
     phases = (
-        duckdb.read_parquet(list(snakemake.input.phases))
+        duckdb.read_parquet(snakemake.input.phases)
         .df()
         .set_index("eta_lambda")
         .phase.sort_index()
