@@ -6,8 +6,11 @@ table ``survival`` holds the Kaplan-Meier estimate of each cell with
 Greenwood's exponential interval, and ``medians`` its median with the
 median's interval (Kalbfleisch and Prentice 2002, Sec. 1.4.1). ``aft`` holds the log-normal
 accelerated failure time model in two arms: the output scales without weight
-decay, with indicators of alpha against the baseline cell's, and the runs of
-the view ``design_runs``, with the single covariate log(eta*lambda). ``aalen``
+decay, with indicators of alpha against the baseline cell's, fitted to the
+values of alpha with at least one event, since the estimate for a level
+without failures does not exist (Nelson 1990, Ch. 5, Eq. 2.6 and Sec. 3.3),
+and the runs of the view ``design_runs``, with the single covariate
+log(eta*lambda). ``aalen``
 holds the cumulative regression functions of Aalen (1989) on the alpha
 indicators and eta*lambda over all runs, with intervals from the
 bias-corrected and accelerated bootstrap over seeds (Efron and Tibshirani
@@ -70,8 +73,16 @@ with (
     con.from_df(pd.concat(survival, ignore_index=True)).create("survival")
     con.from_df(pd.DataFrame(medians)).create("medians")
 
+    without_decay = runs[runs.eta_lambda == 0]
     arms = {
-        "alpha": (runs[runs.eta_lambda == 0], alpha),
+        "alpha": (
+            without_decay[
+                without_decay.groupby(["event", "level", "alpha"]).observed.transform(
+                    "any"
+                )
+            ],
+            alpha,
+        ),
         "decay": (grid.sql("FROM design_runs").df(), "log(eta_lambda)"),
     }
     aft = [
