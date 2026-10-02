@@ -516,8 +516,11 @@ $\log(\eta\lambda)$ is undefined at $\eta\lambda=0$, \eqref{eq:aft} is fitted
 twice: to the cells without weight decay, with indicators of the levels of
 $\alpha$, and to the cells with $\eta\lambda>0$, all at the $\alpha$ of the
 pilot cell, with the single covariate $\log(\eta\lambda)$, while
-\eqref{eq:aalen} takes the cells at the $\alpha$ of the pilot cell together,
-$\eta\lambda=0$ included, with $\eta\lambda$ itself. The estimator is defined
+\eqref{eq:aalen} takes the pilot cell and the cells of the second stage
+together, $\eta\lambda=0$ included, with $\eta\lambda$ itself. Every seed has
+one run in each of these cells, the balanced grouping for which resampling
+whole groups is justified \citep[Sec.~3.8]{davisonBootstrapMethodsTheir1997},
+while the scan trains a single seed. The estimator is defined
 only while $Y(t)$ has full rank, and the step at which the rank falls is a
 final censoring time \citep[Sec.~4.1]{aalenLinearRegressionModel1989}; with
 indicators of $\alpha$ it would stop when the first group of runs at one
