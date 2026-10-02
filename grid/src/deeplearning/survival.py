@@ -23,8 +23,8 @@ def cumulative_regression(
     event time at which the design loses full rank, by the numerical rank of
     ``torch.linalg.matrix_rank`` at its default tolerance, every increment is
     zero: Aalen (1989, Sec. 4.1) takes that time as a final censoring time.
-    Columns are scaled by their standard deviation before the Cholesky
-    factorisation, as lifelines' fitter does.
+    Columns that vary are scaled by their standard deviation before the
+    Cholesky factorisation, as lifelines' fitter does.
 
     Args:
         covariates: Design matrix of shape ``(n, d)``, intercept included.
@@ -43,7 +43,7 @@ def cumulative_regression(
     at_risk = (time[:, None] >= event_times).to(covariates.dtype)
     events = (observed[:, None] & (time[:, None] == event_times)).to(covariates.dtype)
     scale = covariates.std(0)
-    scale = torch.where(scale < 1e-8, 1.0, scale)
+    scale = torch.where(scale > 0, scale, 1)
     x = covariates / scale
     members = torch.nn.functional.one_hot(cluster, counts.shape[-1]).to(x.dtype)
     gram = torch.einsum("ic,it,ip,iq->ctpq", members, at_risk, x, x)
