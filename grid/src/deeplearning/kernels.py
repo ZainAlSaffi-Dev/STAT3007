@@ -237,10 +237,12 @@ def two_layer_entk(
 @icontract.ensure(
     lambda result: torch.allclose(result.sum(-1), torch.zeros_like(result.sum(-1))),
     "every row sums to zero, since H 1 = 0",
+    enabled=icontract.SLOW,
 )
 @icontract.ensure(
     lambda result: torch.allclose(result.sum(-2), torch.zeros_like(result.sum(-2))),
     "every column sums to zero, since 1^T H = 0",
+    enabled=icontract.SLOW,
 )
 def centre(k: torch.Tensor) -> torch.Tensor:
     """Centre kernel matrices in feature space, Cortes et al. (2012), Equation 1.
@@ -267,6 +269,7 @@ def centre(k: torch.Tensor) -> torch.Tensor:
         result, torch.linalg.vecdot(a.flatten(-2), b.flatten(-2)), equal_nan=True
     ),
     "Tr[a^T b] is the dot product of the flattened matrices",
+    enabled=icontract.SLOW,
 )
 def frobenius(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     """Frobenius product ``Tr[a^T b]`` over the last two dimensions.
@@ -289,6 +292,7 @@ def frobenius(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
         torch.frexp(result).mantissa, torch.full_like(result, 0.5)
     ),
     "the result is a power of 2",
+    enabled=icontract.SLOW,
 )
 @icontract.ensure(
     lambda a, result: bool(
@@ -298,6 +302,7 @@ def frobenius(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
         ).all()
     ),
     "the result is the largest power of 2 not above max |a_ij|",
+    enabled=icontract.SLOW,
 )
 def base_power(a: torch.Tensor) -> torch.Tensor:
     """Largest power of 2 not above ``max |a_ij|``, the scale of each matrix.
