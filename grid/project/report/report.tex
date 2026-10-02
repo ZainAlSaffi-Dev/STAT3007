@@ -481,7 +481,7 @@ likelihood of \citet{kalbfleischStatisticalAnalysisFailure2002} for a
 log-linear model under independent censoring, with normal errors. The additive
 model of
 \citet{aalenLinearRegressionModel1989} takes the intensity of the event for
-seed $i$ at step $t$ to be $\alpha_0(t)+\sum_j\alpha_j(t)Z_j^i$ while the seed
+run $i$ at step $t$ to be $\alpha_0(t)+\sum_j\alpha_j(t)Z_j^i$ while the run
 has not reached the level and zero afterwards, and estimates the cumulative
 regression functions $A_j(t)=\int_0^t\alpha_j(s)\,ds$ by
 \begin{equation}
@@ -489,11 +489,15 @@ regression functions $A_j(t)=\int_0^t\alpha_j(s)\,ds$ by
   \label{eq:aalen}
 \end{equation}
 where the event times $T_1<T_2<\dots$ are ordered, row $i$ of $Y(t)$ is
-$(1,Z_1^i,\dots,Z_r^i)$ while seed $i$ is at risk and zero otherwise, and
-$I_k$ is the indicator of the seed whose event occurs at $T_k$. Unlike
+$(1,Z_1^i,\dots,Z_r^i)$ while run $i$ is at risk and zero otherwise, and
+$I_k$ is the indicator of the run whose event occurs at $T_k$. Unlike
 \eqref{eq:aft} with logarithmic covariates, \eqref{eq:aalen} admits a covariate
-at zero, such as $\eta\lambda=0$. Intervals come from resampling seeds with the
-bias-corrected and accelerated bootstrap \citep{efronIntroductionBootstrap1994}.
+at zero, such as $\eta\lambda=0$. The runs of one seed share its split and
+initial weights, so the intervals resample seeds, each with all its runs and
+their censoring, which keeps every group intact as the bootstrap for grouped
+and censored data does \citep{davisonBootstrapMethodsTheir1997}, and take the
+bias-corrected and accelerated interval
+\citep{efronIntroductionBootstrap1994}.
 
 Each event and level is fitted separately. The covariates of \eqref{eq:aft}
 and \eqref{eq:aalen} are the settings of a cell, fixed in time. As
