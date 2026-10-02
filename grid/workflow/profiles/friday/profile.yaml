@@ -3,88 +3,32 @@
 # resources and paths, which the --workflow-profile documentation assigns to workflow profiles, and
 # overrides the global profile key by key.
 #
-# A profile that starts with this key is a YTE template ("Use templating in profiles", Snakemake
-# 7.30 or newer), so the times and memory below are read from the partition file the global profile
-# names and from the partitions and nodes Slurm reports, not typed again.
+# A profile that starts with this key is a YTE template ("Use templating in profiles"). The global
+# profile's README has each workflow render the presets beside it with YTE's Python API and name a
+# preset for each rule, so no figure of the cluster is typed here.
 __use_yte__: true
-__variables__:
-  # Training runs on the H100s for now, by the user's choice on 2026-09-30. Only debug holds them,
-  # and the global profile leaves debug out of the automatic selection, so a job names it itself.
-  partition: debug
-  gpu_model: h100
 __definitions__:
+  - from pathlib import Path
+  - from snakemake.common import get_appdirs
+  - from yte import process_yaml
   - |
-    import json
-    import os
-    import subprocess
-    from pathlib import Path
-
-    import yaml
-    from snakemake.common import get_appdirs
-    from snakemake_executor_plugin_slurm.partitions import read_partition_file
-  # The global profile, found in the user configuration directory where Snakemake looks it up
-  # ("Using global profiles"), names the partition file of the plugin's automatic selection.
-  - |
-    partitions = read_partition_file(
-        Path(
-            os.path.expandvars(
-                yaml.safe_load(
-                    (Path(get_appdirs().user_config_dir) / "friday" / "profile.yaml").read_text(
-                        encoding="utf-8"
-                    )
-                )["slurm-partition-config"]
-            )
-        )
+    presets = process_yaml(
+        (Path(get_appdirs().user_config_dir) / "friday" / "presets.yaml").read_text()
     )
-  # The CPUs, RealMemory, features and partitions of every node, and the MaxTime of the training
-  # partition in minutes, from the JSON output of scontrol show node and scontrol show partition.
-  - |
-    nodes = json.loads(
-        subprocess.run(
-            ["scontrol", "show", "node", "--json"], capture_output=True, check=True, text=True
-        ).stdout
-    )["nodes"]
-    runtime = json.loads(
-        subprocess.run(
-            ["scontrol", "show", "partition", partition, "--json"],
-            capture_output=True,
-            check=True,
-            text=True,
-        ).stdout
-    )["partitions"][0]["maximums"]["time"]["number"]
-  # A job takes the RealMemory of a CPU for each thread, the least over the nodes it may land on:
-  # those of the partition without GPUs in the selection for a CPU job, and those whose features
-  # hold the GPU model for training.
-  - |
-    cpu = next(p for p in partitions if not p.limits.max_gpu)
-    cpu_node = min(
-        (node for node in nodes if cpu.name in node["partitions"]),
-        key=lambda node: node["real_memory"] / node["cpus"],
-    )
-    gpu_node = min(
-        (node for node in nodes if gpu_model in node["features"]),
-        key=lambda node: node["real_memory"] / node["cpus"],
-    )
+# Every CPU job's seconds go uncompared, so it runs on any node the plugin selects. Snakemake
+# exports the tmpdir resource as TMPDIR to each job, and the Friday user guide runs jobs "from /data
+# using /scratch for runtime data". Snakemake expands $USER in a profile value.
 default-resources:
-  # Snakemake 9.27 rejects mem_mb=None, and its own default of min(max(2 * input.size_mb, 1000),
-  # 8000) would reach sbatch as --mem, so a CPU job states the memory of its threads.
-  mem_mb: ?f"threads * {cpu_node['real_memory']} // {cpu_node['cpus']}"
-  # Snakemake exports the tmpdir resource as TMPDIR to each job, and its default is the controller's
-  # /tmp, which Friday neither gives each job nor wipes (no JobContainerType in scontrol show
-  # config). The Friday user guide runs jobs "from /data using /scratch for runtime data", and
-  # Snakemake expands $USER in a profile value.
+  ?for key, value in presets["cpu_untimed"].items():
+    ?key: ?value
   tmpdir: /scratch/$USER
 set-resources:
+  # Training runs on the H100s, by the user's choice on 2026-09-30, on the one device
+  # torch.accelerator.current_accelerator gives train.py.
   train: &train
-    # A job that names slurm_partition bypasses the automatic selection ("Automatic Partition
-    # Selection"), and the plugin maps gpu and gpu_model to --gpus=<model>:<count>. Training keeps
-    # the default of one thread: its benchmark in G3a recorded 108 s of CPU time over 116 s of wall
-    # time, the host loop of one core around the GPU.
-    slurm_partition: ?partition
+    ?for key, value in presets["gpu_h100"].items():
+      ?key: ?value
     gpu: 1
-    gpu_model: ?gpu_model
-    runtime: ?runtime
-    mem_mb: ?f"threads * {gpu_node['real_memory']} // {gpu_node['cpus']}"
   scan_train: *train
 # The global profile turns the efficiency report on and leaves its directory to each workflow. The
 # plugin writes efficiency_report_<run_uuid>.csv into it (efficiency_report.py), and logs/ is
