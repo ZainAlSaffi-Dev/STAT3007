@@ -51,6 +51,7 @@ test = [
 dev = [
   { include-group = "test" },
   "deptry>=0.25",
+  "pandas-stubs>=3.0.5.260914",
 ]
 docs = [
   "sphinx>=7.0",
