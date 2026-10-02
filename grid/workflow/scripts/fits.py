@@ -12,14 +12,17 @@ without failures does not exist (Nelson 1990, Ch. 5, Eq. 2.6 and Sec. 3.3),
 and the runs of the view ``design_runs``, with the single covariate
 log(eta*lambda). ``aalen``
 holds the cumulative regression functions of Aalen (1989) on eta*lambda over
-the runs at the baseline's alpha, eta*lambda = 0 included. Indicators of alpha
+the runs of the baseline cell and of the second stage, eta*lambda = 0
+included. Indicators of alpha
 would stop the estimator when the first alpha group leaves the risk set, the
 final censoring time at which the design loses rank (Aalen 1989, Sec. 4.1);
 alpha is compared in the AFT arm. The intervals come from the
 bias-corrected and accelerated bootstrap (Efron and Tibshirani 1993) over
 seeds, each drawn with all its runs and their censoring, which keeps the runs
 that share a split and initial weights together (Davison and Hinkley 1997,
-Secs. 3.5.2 and 3.8). ``cox`` holds the relative risk model with time-dependent covariates of
+Secs. 3.5.2 and 3.8). Every seed has one run in each of these cells, the
+balanced structure for which Davison and Hinkley (1997, Sec. 3.8) justify
+resampling whole groups, while the scan trains a single seed. ``cox`` holds the relative risk model with time-dependent covariates of
 Kalbfleisch and Prentice (2002, Eq. 6.14) on the scale and shape of the
 sum-of-logits kernel and the alignment of the tangent kernel of all outputs
 (Baratin et al. 2021).
@@ -49,7 +52,7 @@ with (
     [(base,)] = grid.sql("SELECT alpha FROM exemplar").fetchall()
     alpha = f"C(alpha, contr.treatment(base={base!r}))"
     runs = grid.sql("""
-        SELECT cell, seed, event, level, time, observed, alpha, eta_lambda
+        SELECT cell, seed, event, level, time, observed, alpha, eta_lambda, stage
         FROM events NATURAL JOIN cells
     """).df()
 
@@ -107,7 +110,7 @@ with (
     con.from_df(pd.concat(aft, ignore_index=True)).create("aft")
 
     aalen = []
-    baseline = runs[runs.alpha == base]
+    baseline = runs[(runs.alpha == base) & (runs.stage != "scan")]
     for (event, level), group in baseline.groupby(["event", "level"]):
         design = model_matrix("eta_lambda", group)
         seeds, cluster = np.unique(group.seed, return_inverse=True)
