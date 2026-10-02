@@ -30,6 +30,13 @@ set-resources:
       ?key: ?value
     gpu: 1
   scan_train: *train
+# Snakemake submits the jobs of one group as one cluster job, which saves queueing time, and the
+# grouping that suits a platform is set from the command line, here the profile ("Job Grouping").
+# The database and the two fits that read it run in one CPU job.
+groups:
+  database: analysis
+  fits: analysis
+  broken_line: analysis
 # The global profile turns the efficiency report on and leaves its directory to each workflow. The
 # plugin writes efficiency_report_<run_uuid>.csv into it (efficiency_report.py), and logs/ is
 # ignored by git in this layout.
