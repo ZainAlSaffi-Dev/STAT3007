@@ -702,6 +702,7 @@ dependencies = [
 [package.dev-dependencies]
 analysis = [
     { name = "duckdb" },
+    { name = "formulaic" },
     { name = "lifelines" },
     { name = "matplotlib" },
     { name = "scipy" },
@@ -731,6 +732,7 @@ grid = [
 ]
 notebooks = [
     { name = "duckdb", marker = "python_full_version < '3.14'" },
+    { name = "formulaic", marker = "python_full_version < '3.14'" },
     { name = "lifelines", marker = "python_full_version < '3.14'" },
     { name = "manim", marker = "python_full_version < '3.14'" },
     { name = "matplotlib", marker = "python_full_version < '3.14'" },
@@ -760,6 +762,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 analysis = [
     { name = "duckdb", specifier = ">=1.5.5" },
+    { name = "formulaic", specifier = ">=1.2.2" },
     { name = "lifelines", specifier = ">=0.30.0" },
     { name = "matplotlib", specifier = ">=3.11.1" },
     { name = "scipy", specifier = ">=1.18.0" },
@@ -789,6 +792,7 @@ grid = [
 ]
 notebooks = [
     { name = "duckdb", marker = "python_full_version < '3.14'", specifier = ">=1.5.5" },
+    { name = "formulaic", marker = "python_full_version < '3.14'", specifier = ">=1.2.2" },
     { name = "lifelines", marker = "python_full_version < '3.14'", specifier = ">=0.30.0" },
     { name = "manim", marker = "python_full_version < '3.14'", specifier = ">=0.21.0" },
     { name = "matplotlib", marker = "python_full_version < '3.14'", specifier = ">=3.11.1" },
