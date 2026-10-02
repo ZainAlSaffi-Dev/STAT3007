@@ -20,7 +20,7 @@ with Path(snakemake.log[0]).open("w", buffering=1) as log, redirect_stderr(log):
     ]
     with duckdb.connect(snakemake.input.join, read_only=True) as join:
         [(psi,)] = join.sql("SELECT psi FROM join_estimate").fetchall()
-    lower = float(snakemake.params.lower)
+    lower = float(snakemake.params["lower"])
     low, high = np.log(lower), np.log(upper)
     centre = (low + high) / 2
     x = float((psi - centre) / (high - centre))

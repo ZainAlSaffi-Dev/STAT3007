@@ -25,19 +25,19 @@ with (
 ):
     # Scan runs measure no kernel, so their metrics lack the kernel columns. The
     # stage directory is a Hive partition key, typed as the stage of cells.
-    for table in snakemake.params.tables:
+    for table in snakemake.params["tables"]:
         con.sql(
             "FROM read_parquet($files, union_by_name = true,"
             " hive_types = {'stage': VARCHAR})",
             params={"files": list(snakemake.input[table])},
         ).create(table)
-    con.from_df(snakemake.params.cells).cross(
-        con.from_df(pd.DataFrame([snakemake.params.fixed]))
+    con.from_df(snakemake.params["cells"]).cross(
+        con.from_df(pd.DataFrame([snakemake.params["fixed"]]))
     ).create("cells")
     con.sql("CREATE VIEW exemplar AS FROM cells ORDER BY cell LIMIT 1")
     designed = yaml.safe_load(Path(snakemake.input.design).read_text(encoding="utf-8"))
     con.from_df(pd.DataFrame(designed.pop("levels"))).create("design_levels")
-    con.from_df(pd.DataFrame([snakemake.params.design | designed])).create("design")
+    con.from_df(pd.DataFrame([snakemake.params["design"] | designed])).create("design")
     bounded = yaml.safe_load(Path(snakemake.input.boundary).read_text(encoding="utf-8"))
     con.from_df(pd.DataFrame([bounded])).create("boundary")
     con.sql(f"ATTACH '{snakemake.input.join}' AS first_stage (READ_ONLY)")
