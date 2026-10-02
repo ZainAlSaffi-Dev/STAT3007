@@ -60,7 +60,7 @@ rule all:
         "results/broken_line.duckdb",
         # Requested here as well, since the database reaches stage 1 only after
         # the last checkpoint, and it needs none of them.
-        "results/stages/1/events.parquet",
+        "results/stages/stage=1/events.parquet",
 
 
 # One job per stage trains all its cells fused, the partitioning of Wang et
@@ -74,7 +74,7 @@ rule train:
             wildcards.stage
         ],
     output:
-        **{table: f"results/stages/{{stage}}/{table}.parquet" for table in tables},
+        **{table: f"results/stages/stage={{stage}}/{table}.parquet" for table in tables},
     wildcard_constraints:
         stage="1|2",
     log:
@@ -94,7 +94,7 @@ use rule train as scan_train with:
         training="src/deeplearning/training.py",
         kernels="src/deeplearning/kernels.py",
     output:
-        **{table: f"results/stages/scan/{table}.parquet" for table in scan_tables},
+        **{table: f"results/stages/stage=scan/{table}.parquet" for table in scan_tables},
     log:
         "logs/train/scan.log",
     benchmark:
@@ -107,7 +107,7 @@ use rule train as scan_train with:
 
 checkpoint boundary:
     input:
-        "results/stages/scan/phases.parquet",
+        "results/stages/stage=scan/phases.parquet",
     output:
         "results/boundary.yaml",
     log:
@@ -118,7 +118,7 @@ checkpoint boundary:
 
 rule join:
     input:
-        events="results/stages/scan/events.parquet",
+        events="results/stages/stage=scan/events.parquet",
         boundary=rules.boundary.output[0],
     output:
         "results/join.duckdb",
@@ -151,7 +151,7 @@ rule database:
     input:
         **{
             table: [
-                f"results/stages/{stage}/{table}.parquet"
+                f"results/stages/stage={stage}/{table}.parquet"
                 for stage in stages()
                 if stage != "scan" or table in scan_tables
             ]
@@ -212,7 +212,7 @@ rule broken_line:
 rule equivalence:
     input:
         sql="workflow/sql/equivalence.sql",
-        tables=expand("results/stages/1/{table}.parquet", table=tables),
+        tables=expand("results/stages/stage=1/{table}.parquet", table=tables),
     output:
         "results/equivalence/stage1.duckdb",
     log:

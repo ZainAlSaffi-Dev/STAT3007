@@ -23,9 +23,14 @@ with (
     redirect_stderr(log),
     duckdb.connect(snakemake.output[0]) as con,
 ):
-    # Scan runs measure no kernel, so their metrics lack the kernel columns.
+    # Scan runs measure no kernel, so their metrics lack the kernel columns. The
+    # stage directory is a Hive partition key, typed as the stage of cells.
     for table in snakemake.params.tables:
-        con.read_parquet(list(snakemake.input[table]), union_by_name=True).create(table)
+        con.sql(
+            "FROM read_parquet($files, union_by_name = true,"
+            " hive_types = {'stage': VARCHAR})",
+            params={"files": list(snakemake.input[table])},
+        ).create(table)
     con.from_df(snakemake.params.cells).cross(
         con.from_df(pd.DataFrame([snakemake.params.fixed]))
     ).create("cells")
@@ -161,15 +166,20 @@ with (
     """)
     con.sql("""
         CREATE VIEW design_runs AS
+        SELECT DISTINCT ON (seed, alpha, eta_0, eta_lambda, event, level) *
         FROM events NATURAL JOIN cells
         WHERE eta_lambda BETWEEN (SELECT lower FROM design)
             AND (SELECT upper FROM design)
+        ORDER BY stage
     """)
     con.sql("""
         COMMENT ON VIEW design_runs IS
-        'One row per cell, seed, event and level of the runs with eta*lambda in
-        the design range, from lower to upper of design, stage-2 and scan runs
-        alike, all at the baseline cell''s alpha. The timing models in log(eta*lambda) are fitted to them alone,
-        since an accelerated test model is valid over a limited range of
-        stress, Nelson (1990), Chapter 1.'
+        'One row per seed, setting, event and level of the runs with eta*lambda
+        in the design range, from lower to upper of design, stage-2 and scan
+        runs alike, all at the baseline cell''s alpha. The level at x = -1 is
+        the scan''s lowest point, so the scan''s run there is stage 2''s run of
+        the same seed and setting, kept once. The timing models in
+        log(eta*lambda) are fitted to them alone, since an accelerated test
+        model is valid over a limited range of stress, Nelson (1990),
+        Chapter 1.'
     """)

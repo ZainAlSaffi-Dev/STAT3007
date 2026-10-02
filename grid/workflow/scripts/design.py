@@ -39,7 +39,9 @@ with Path(snakemake.log[0]).open("w", buffering=1) as log, redirect_stderr(log):
                 "join": x,
                 "levels": {
                     "x": points.tolist(),
-                    "eta_lambda": np.exp(centre + points * (high - centre)).tolist(),
+                    "eta_lambda": (
+                        lower ** ((1 - points) / 2) * upper ** ((1 + points) / 2)
+                    ).tolist(),
                 },
             }
         ),
