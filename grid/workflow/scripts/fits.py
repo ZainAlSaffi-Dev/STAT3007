@@ -11,8 +11,11 @@ values of alpha with at least one event, since the estimate for a level
 without failures does not exist (Nelson 1990, Ch. 5, Eq. 2.6 and Sec. 3.3),
 and the runs of the view ``design_runs``, with the single covariate
 log(eta*lambda). ``aalen``
-holds the cumulative regression functions of Aalen (1989) on the alpha
-indicators and eta*lambda over all runs, with intervals from the
+holds the cumulative regression functions of Aalen (1989) on eta*lambda over
+the runs at the baseline's alpha, eta*lambda = 0 included. Indicators of alpha
+would stop the estimator when the first alpha group leaves the risk set, the
+final censoring time at which the design loses rank (Aalen 1989, Sec. 4.1);
+alpha is compared in the AFT arm. The intervals come from the
 bias-corrected and accelerated bootstrap (Efron and Tibshirani 1993) over
 seeds, each drawn with all its runs and their censoring, which keeps the runs
 that share a split and initial weights together (Davison and Hinkley 1997,
@@ -104,8 +107,9 @@ with (
     con.from_df(pd.concat(aft, ignore_index=True)).create("aft")
 
     aalen = []
-    for (event, level), group in runs.groupby(["event", "level"]):
-        design = model_matrix(f"{alpha} + eta_lambda", group)
+    baseline = runs[runs.alpha == base]
+    for (event, level), group in baseline.groupby(["event", "level"]):
+        design = model_matrix("eta_lambda", group)
         seeds, cluster = np.unique(group.seed, return_inverse=True)
         fit = partial(
             cumulative_regression,
