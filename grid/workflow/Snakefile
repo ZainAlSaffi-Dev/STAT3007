@@ -194,6 +194,8 @@ rule fits:
         "results/fits.duckdb",
     log:
         "logs/fits.log",
+    benchmark:
+        "results/benchmarks/fits.tsv"
     script:
         "scripts/fits.py"
 
