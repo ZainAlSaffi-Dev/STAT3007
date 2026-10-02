@@ -95,10 +95,10 @@ with (
         seeds, cluster = np.unique(group.seed, return_inverse=True)
         fit = partial(
             cumulative_regression,
-            torch.from_numpy(design.to_numpy(dtype=np.float64)),
-            torch.from_numpy(group.time.to_numpy()),
-            torch.from_numpy(group.observed.to_numpy()),
-            torch.from_numpy(cluster),
+            torch.tensor(design.to_numpy(dtype=np.float64)),
+            torch.tensor(group.time.to_numpy()),
+            torch.tensor(group.observed.to_numpy()),
+            torch.tensor(cluster),
         )
 
         def statistic(
