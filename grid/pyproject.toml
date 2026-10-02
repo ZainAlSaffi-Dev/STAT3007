@@ -71,6 +71,7 @@ grid = [
 ]
 analysis = [
     { include-group = "grid" },
+    "formulaic>=1.2.2",
     "lifelines>=0.30.0",
     "matplotlib>=3.11.1",
     "scipy>=1.18.0",
