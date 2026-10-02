@@ -295,6 +295,15 @@ def train(cell: Cell) -> dict[str, pd.DataFrame]:
         msg = "the split must leave both training and test pairs"
         raise ValueError(msg)
     labels = y.argmax(1)
+    # The mean of MSELoss divides the summed squared errors of the training
+    # pairs by their number of elements (PyTorch, MSELoss), so each element of
+    # a training pair weighs one over that number and of a test pair zero. The
+    # weighted sum of the unreduced loss is that mean, with an elementwise
+    # backward, where indexing the outputs by the pairs backpropagates through
+    # an index_put_ with accumulation that sorts the indices on every step.
+    weight = torch.zeros(len(train_idx), len(y), 1, dtype=DTYPE).scatter_(
+        1, train_idx[..., None], 1 / (train_idx.shape[1] * y.shape[1])
+    )
     models = [
         TwoLayer(
             2 * cell.p,
@@ -317,8 +326,8 @@ def train(cell: Cell) -> dict[str, pd.DataFrame]:
     params = {
         k: v.detach().to(device) for k, v in stack_module_state(models)[0].items()
     }
-    y, tokens, train_idx, test_idx, labels, members = (
-        t.to(device) for t in (y, tokens, train_idx, test_idx, labels, members)
+    y, tokens, train_idx, test_idx, labels, members, weight = (
+        t.to(device) for t in (y, tokens, train_idx, test_idx, labels, members, weight)
     )
     base = copy.deepcopy(models[0]).to("meta")
 
@@ -363,6 +372,7 @@ def train(cell: Cell) -> dict[str, pd.DataFrame]:
             "labels": labels,
             "train_idx": train_idx,
             "test_idx": test_idx,
+            "weight": weight,
             "alpha": alpha,
             "lr": lr,
             "decay": decay,
@@ -375,14 +385,14 @@ def train(cell: Cell) -> dict[str, pd.DataFrame]:
         state.register_buffer(name, value)
 
     def loss(
-        prm: kernels.Params, f0: torch.Tensor, pairs: torch.Tensor, a: torch.Tensor
+        prm: kernels.Params, f0: torch.Tensor, w: torch.Tensor, a: torch.Tensor
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """Training loss of the centred, rescaled predictor.
 
         Args:
             prm: Parameters of one model.
             f0: That model's initial logits on every pair.
-            pairs: That model's training pairs.
+            w: That model's weight of each pair's squared errors.
             a: That model's output scale ``alpha``.
 
         Returns:
@@ -391,7 +401,9 @@ def train(cell: Cell) -> dict[str, pd.DataFrame]:
         """
         out = a * (fnet(prm, state.get_buffer("tokens")) - f0)
         return (
-            nn.functional.mse_loss(out[pairs], state.get_buffer("y")[pairs]),
+            (
+                nn.functional.mse_loss(out, state.get_buffer("y"), reduction="none") * w
+            ).sum(),
             out.detach(),
         )
 
@@ -405,7 +417,7 @@ def train(cell: Cell) -> dict[str, pd.DataFrame]:
         grads, out = vmap(grad(loss, has_aux=True))(
             {name: state.get_buffer(name) for name in params},
             state.get_buffer("f_0"),
-            state.get_buffer("train_idx"),
+            state.get_buffer("weight"),
             state.get_buffer("alpha"),
         )
         for name, value in grads.items():
