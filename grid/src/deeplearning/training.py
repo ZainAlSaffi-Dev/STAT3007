@@ -516,11 +516,6 @@ def train(cell: Cell) -> dict[str, pd.DataFrame]:
             )
         return row, spectra
 
-    # Inductor fuses the measurement's elementwise and reduction operations,
-    # which ran as separate eager kernels, and calls the eigensolver as an
-    # external kernel (PyTorch, torch.compile).
-    statistics = torch.compile(statistics)
-
     def measure(
         step: int, out: torch.Tensor
     ) -> tuple[pd.DataFrame, list[pd.DataFrame]]:
