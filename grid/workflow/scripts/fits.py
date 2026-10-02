@@ -42,7 +42,7 @@ with (
     duckdb.connect(snakemake.input[0], read_only=True) as grid,
     duckdb.connect(snakemake.output[0]) as con,
 ):
-    base = grid.sql("SELECT alpha FROM exemplar").fetchone()[0]
+    [(base,)] = grid.sql("SELECT alpha FROM exemplar").fetchall()
     alpha = f"C(alpha, contr.treatment(base={base!r}))"
     runs = grid.sql("""
         SELECT cell, seed, event, level, time, observed, alpha, eta_lambda
