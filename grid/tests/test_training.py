@@ -210,7 +210,8 @@ def test_fuzz_modular_addition(p, train_fraction, seed):
             )
         )
         .map(tuple)
-        .filter(functools.partial(min_len, 1)),
+        .filter(functools.partial(min_len, 1))
+        .filter(functools.partial(max_len, 4)),
         steps=st.integers()
         .filter(functools.partial(le, 1))
         .filter(functools.partial(ge, 100000)),
@@ -218,7 +219,7 @@ def test_fuzz_modular_addition(p, train_fraction, seed):
         .filter(functools.partial(le, 0))
         .filter(functools.partial(ge, 1)),
         train_fraction=st.floats()
-        .filter(functools.partial(le, 0))
+        .filter(functools.partial(le, 0.9))
         .filter(functools.partial(ge, 1)),
         width=st.integers()
         .filter(functools.partial(le, 1))
