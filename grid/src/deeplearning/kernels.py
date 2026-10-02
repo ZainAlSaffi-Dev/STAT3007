@@ -133,15 +133,49 @@ def entk_ntk_vps(
     """
 
     def get_ntk(x_1: torch.Tensor, x_2: torch.Tensor) -> torch.Tensor:
+        """NTK between a single pair of data points.
+
+        Args:
+            x_1: One data point.
+            x_2: The other data point.
+
+        Returns:
+            The ``O x O`` kernel block, one NTK-vector product per column.
+        """
+
         def func_x1(p: Params) -> torch.Tensor:
+            """Network at ``x_1`` as a function of its parameters.
+
+            Args:
+                p: Parameters.
+
+            Returns:
+                The output at ``x_1``.
+            """
             return fnet_single(p, x_1)
 
         def func_x2(p: Params) -> torch.Tensor:
+            """Network at ``x_2`` as a function of its parameters.
+
+            Args:
+                p: Parameters.
+
+            Returns:
+                The output at ``x_2``.
+            """
             return fnet_single(p, x_2)
 
         output, vjp_fn = vjp(func_x1, params)[:2]
 
         def get_ntk_slice(vec: torch.Tensor) -> torch.Tensor:
+            """NTK-vector product ``J(x_2) J(x_1)^T vec`` for one basis vector.
+
+            Args:
+                vec: A column of the identity matrix.
+
+            Returns:
+                The kernel block applied to ``vec``.
+            """
             vjps = vjp_fn(vec)
             jvps: torch.Tensor = jvp(func_x2, (params,), vjps)[1]
             return jvps
