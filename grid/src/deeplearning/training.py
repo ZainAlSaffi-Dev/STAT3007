@@ -541,13 +541,12 @@ def train(cell: Cell) -> dict[str, pd.DataFrame]:
         # The tangent kernel of all c outputs on the n test pairs, nc x nc, and
         # its CKA with the class label kernel of the stacked one-hot targets,
         # the alignment of Baratin et al. (2021, supplement, Sampled Versions),
-        # from the full Jacobian contraction of Novak et al. (2022), Sec. 3.2.
+        # from the structured derivatives of Novak et al. (2022), Secs. 3.4
+        # and 4.1.
         if cell.kernels:
-            full = vmap(
-                lambda prm, inputs: kernels.entk_jacobian_contraction(
-                    lambda p, xi: fnet(p, xi[None])[0], prm, inputs, inputs, "full"
-                )
-            )(params, x[test_idx])
+            full = kernels.two_layer_entk_full(
+                params["w1"], params["w2"], x[test_idx], base.hidden, base.readout
+            )
             stacked = y[test_idx].flatten(1)
             row["A_full"] = kernels.alignment(
                 full.permute(0, 1, 3, 2, 4).flatten(3).flatten(1, 2),

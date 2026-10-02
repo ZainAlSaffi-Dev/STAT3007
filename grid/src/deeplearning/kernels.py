@@ -267,6 +267,73 @@ def two_layer_entk(
 
 
 @icontract.ensure(
+    lambda w1, w2, x, hidden, readout, result: (
+        torch.testing.assert_close(
+            result,
+            vmap(
+                lambda prm, inputs: entk_jacobian_contraction(
+                    lambda p, xi: (
+                        readout * (p["w2"] @ torch.relu(hidden * (xi @ p["w1"].mT)))
+                    ),
+                    prm,
+                    inputs,
+                    inputs,
+                    "full",
+                )
+            )(
+                {
+                    "w1": w1.reshape(-1, *w1.shape[-2:]),
+                    "w2": w2.reshape(-1, *w2.shape[-2:]),
+                },
+                x.expand(*w1.shape[:-2], *x.shape[-2:]).reshape(-1, *x.shape[-2:]),
+            ).reshape(result.shape),
+        )
+        is None
+    ),
+    "the closed form is the full Jacobian contraction of f",
+    enabled=icontract.SLOW,
+)
+def two_layer_entk_full(
+    w1: torch.Tensor,
+    w2: torch.Tensor,
+    x: torch.Tensor,
+    hidden: float,
+    readout: float,
+) -> torch.Tensor:
+    """Empirical NTK of every logit pair of ``f(x) = c W2 relu(s W1 x)``.
+
+    The structured derivatives of :func:`two_layer_entk` with the output
+    weights ``u = e_a`` and ``u' = e_b`` (Novak et al. 2022, Sections 3.4 and
+    4.1): the second layer contributes ``c^2 delta_ab r^T r'`` and the first
+    ``c^2 s^2 (x^T x') sum_k W2[a, k] W2[b, k] relu'(z_k) relu'(z'_k)``, with
+    ``z``, ``r`` and ``relu'`` as there. The postcondition checks it against
+    the full Jacobian contraction.
+
+    Args:
+        w1: First-layer weights ``(..., N, D)``, one matrix per leading index.
+        w2: Readout weights ``(..., O, N)``, with the leading shape of ``w1``.
+        x: One-hot inputs ``(..., n, D)``, shared or one batch per leading
+            index.
+        hidden: Hidden scale ``s``.
+        readout: Readout scale ``c``.
+
+    Returns:
+        The kernel ``(..., n, n, O, O)`` per leading index, in the layout of
+        the ``"full"`` contraction.
+    """
+    z = hidden * (x @ w1.mT)
+    r = z.relu()
+    delta = (z > 0).to(z.dtype)[..., :, None, :] * w2[..., None, :, :]
+    eye = torch.eye(w2.shape[-2], dtype=z.dtype, device=z.device)
+    return readout**2 * (
+        (r @ r.mT)[..., None, None] * eye
+        + hidden**2
+        * (x @ x.mT)[..., None, None]
+        * torch.einsum("...nah,...mbh->...nmab", delta, delta)
+    )
+
+
+@icontract.ensure(
     lambda result: torch.allclose(result.sum(-1), torch.zeros_like(result.sum(-1))),
     "every row sums to zero, since H 1 = 0",
     enabled=icontract.SLOW,

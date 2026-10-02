@@ -144,6 +144,21 @@ def test_fuzz_two_layer_entk(
     )
 
 
+@given(
+    w1=first_layers,
+    w2=readouts,
+    x=inputs,
+    hidden=layer_scales,
+    readout=layer_scales,
+)
+def test_fuzz_two_layer_entk_full(
+    w1: torch.Tensor, w2: torch.Tensor, x: torch.Tensor, hidden: float, readout: float
+) -> None:
+    deeplearning.kernels.two_layer_entk_full(
+        w1=w1, w2=w2, x=x, hidden=hidden, readout=readout
+    )
+
+
 @given(k=kernels)
 def test_fuzz_centre(k: torch.Tensor) -> None:
     deeplearning.kernels.centre(k=k)
