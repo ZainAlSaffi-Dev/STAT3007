@@ -17,8 +17,9 @@ bias-corrected and accelerated bootstrap (Efron and Tibshirani 1993) over
 seeds, each drawn with all its runs and their censoring, which keeps the runs
 that share a split and initial weights together (Davison and Hinkley 1997,
 Secs. 3.5.2 and 3.8). ``cox`` holds the relative risk model with time-dependent covariates of
-Kalbfleisch and Prentice (2002, Eq. 6.14) on the scale, shape and alignment of
-the sum-of-logits kernel.
+Kalbfleisch and Prentice (2002, Eq. 6.14) on the scale and shape of the
+sum-of-logits kernel and the alignment of the tangent kernel of all outputs
+(Baratin et al. 2021).
 """
 
 from contextlib import redirect_stderr
@@ -164,7 +165,7 @@ with (
     intervals = grid.sql("""
         SELECT
             concat_ws('/', cell, seed) AS run,
-            event, level, start, stop, occurred, S_sum, R_sum, A_sum
+            event, level, start, stop, occurred, S_sum, R_sum, A_full
         FROM intervals
         WHERE stage != 'scan'
     """).df()
