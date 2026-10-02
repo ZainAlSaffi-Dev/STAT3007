@@ -468,21 +468,21 @@ def train(cell: Cell) -> dict[str, pd.DataFrame]:
             for name, u in outputs.items()
         }
 
-    def statistics(
-        out: torch.Tensor,
-    ) -> tuple[dict[str, torch.Tensor], dict[str, tuple[torch.Tensor, torch.Tensor]]]:
-        """Losses, accuracies, norms, kernel statistics and spectra.
+    def measure(
+        step: int, out: torch.Tensor
+    ) -> tuple[pd.DataFrame, list[pd.DataFrame]]:
+        """Measure losses, accuracies, norms, kernel statistics and spectra.
 
         Args:
+            step: The step being measured.
             out: The predictor's outputs on every pair, one block per model.
 
         Returns:
-            One value per model for each statistic, and for each kernel its
-            eigenvalues and the power of the centred target along each
-            eigenvector, one row per model.
+            One row per model, and one spectrum per kernel, with one row per
+            model and eigenvector.
         """
         variants = kernel_matrices()
-        spectra: dict[str, tuple[torch.Tensor, torch.Tensor]] = {}
+        spectra = []
         theta = torch.cat([v.flatten(1) for v in params.values()], 1)
         out_train = torch.take_along_dim(out, train_idx[..., None], dim=1)
         out_test = torch.take_along_dim(out, test_idx[..., None], dim=1)
@@ -510,44 +510,27 @@ def train(cell: Cell) -> dict[str, pd.DataFrame]:
                 ),
             }
             eigenvalues, eigenvectors = torch.linalg.eigh(kernels.centre(k))
-            spectra[name] = (
-                eigenvalues,
-                (eigenvectors.mT @ centred_target).square().sum(-1),
+            spectra.append(
+                pd.DataFrame(
+                    {
+                        "step": step,
+                        "kernel": name,
+                        "eigenvalue": eigenvalues.flatten().numpy(force=True),
+                        "power": (eigenvectors.mT @ centred_target)
+                        .square()
+                        .sum(-1)
+                        .flatten()
+                        .numpy(force=True),
+                    },
+                    index=pd.MultiIndex.from_product(
+                        [keys.index, range(k.shape[-1])], names=["member", "order"]
+                    ),
+                )
             )
-        return row, spectra
-
-    def measure(
-        step: int, out: torch.Tensor
-    ) -> tuple[pd.DataFrame, list[pd.DataFrame]]:
-        """Measure losses, accuracies, norms, kernel statistics and spectra.
-
-        Args:
-            step: The step being measured.
-            out: The predictor's outputs on every pair, one block per model.
-
-        Returns:
-            One row per model, and one spectrum per kernel, with one row per
-            model and eigenvector.
-        """
-        row, spectra = statistics(out)
         return pd.DataFrame(
             {"step": step} | {k: v.numpy(force=True) for k, v in row.items()},
             index=keys.index,
-        ), [
-            pd.DataFrame(
-                {
-                    "step": step,
-                    "kernel": name,
-                    "eigenvalue": eigenvalues.flatten().numpy(force=True),
-                    "power": power.flatten().numpy(force=True),
-                },
-                index=pd.MultiIndex.from_product(
-                    [keys.index, range(eigenvalues.shape[-1])],
-                    names=["member", "order"],
-                ),
-            )
-            for name, (eigenvalues, power) in spectra.items()
-        ]
+        ), spectra
 
     initial = kernel_matrices()
     grid = set(checkpoints(cell.steps).tolist())
