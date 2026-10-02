@@ -4,8 +4,9 @@ The view ``exemplar`` holds the first cell, which the report's figures draw.
 The views ``target_power``, ``spectral_summary`` and ``intervals`` compute the
 report's spectral and timing quantities in SQL, and each carries the equations
 it implements in its DuckDB comment, as the ``events`` table carries the
-lifelines reading of its columns. The tables ``design``, ``boundary`` and
-``design_levels`` hold the stage-2 design and its sources, and ``phases`` the
+lifelines reading of its columns. The tables ``design``, ``boundary``,
+``join_estimate`` and ``design_levels`` hold the stage-2 design and its
+sources, and ``phases`` the
 phase of every run. The view ``design_runs`` holds the runs that the timing
 models in log(eta*lambda) are fitted to.
 """
@@ -30,35 +31,40 @@ with (
     ).create("cells")
     con.sql("CREATE VIEW exemplar AS FROM cells ORDER BY cell LIMIT 1")
     designed = yaml.safe_load(Path(snakemake.input.design).read_text(encoding="utf-8"))
-    designed.pop("levels")
+    con.from_df(pd.DataFrame(designed.pop("levels"))).create("design_levels")
     con.from_df(pd.DataFrame([snakemake.params.design | designed])).create("design")
     bounded = yaml.safe_load(Path(snakemake.input.boundary).read_text(encoding="utf-8"))
-    con.from_df(pd.DataFrame(bounded.pop("levels"))).create("design_levels")
     con.from_df(pd.DataFrame([bounded])).create("boundary")
+    con.sql(f"ATTACH '{snakemake.input.join}' AS first_stage (READ_ONLY)")
+    con.sql("CREATE TABLE join_estimate AS FROM first_stage.join_estimate")
+    con.sql("DETACH first_stage")
     con.sql("""
         COMMENT ON TABLE design IS
-        'The first placement of the stage-2 design. level is the test accuracy
-        of the grokking time; constant and updates are the inverse-decay
-        asymptote of the boundary calibration of Pracher et al. (2026), panel
-        (a), and the updates after which it was fitted; range is the
-        eta*lambda range rescaled to [-1, 1] by Berger and Wong (2009),
-        Equation 2.1; t_0 is the baseline''s Kaplan-Meier median time to level,
-        Kalbfleisch and Prentice (2002), Section 1.4.1; join is the rescaled
-        ln(constant * updates / t_0).'
+        'The stage-2 design, the second stage of a sequential design, Berger
+        and Wong (2009), Section 5.4. level is the test accuracy of the
+        grokking time; lower and upper are the ends of the eta*lambda range,
+        the scan''s lowest point and the upper end of boundary, which Berger
+        and Wong (2009), Equation 2.1, rescale to [-1, 1]; join is the
+        break of join_estimate on that axis.'
     """)
     con.sql("""
         COMMENT ON TABLE boundary IS
         'The upper end of the eta*lambda range, the geometric midpoint upper of
         the last grokking scan point last and the first other scan point first,
-        Pracher et al. (2026), app:protocol-mlp-calibration, and the join
-        rescaled on the range from the lower end of design up to it.'
+        Pracher et al. (2026), app:protocol-mlp-calibration.'
+    """)
+    con.sql("""
+        COMMENT ON TABLE join_estimate IS
+        'The first stage''s estimate: the break psi in log(eta*lambda) of the
+        broken line of Muggeo (2003) fitted to the scan runs below the upper
+        end, with its delta method interval psi_low to psi_high, and the number
+        of runs.'
     """)
     con.sql("""
         COMMENT ON TABLE design_levels IS
         'The stage-2 eta*lambda levels at the points x of the D-optimal design
-        of Park (1978), Section 4.1, for a constant joined to a quadratic: -1,
-        the join, the midpoint of the join and 1, and 1, on the range up to the
-        upper end of boundary.'
+        of Park (1978), Section 4.1, for a line joined to a quadratic: -1, the
+        join, the midpoint of the join and 1, and 1.'
     """)
     con.sql("""
         COMMENT ON TABLE phases IS
@@ -156,15 +162,14 @@ with (
     con.sql("""
         CREATE VIEW design_runs AS
         FROM events NATURAL JOIN cells
-        WHERE eta_lambda BETWEEN (SELECT range[1] FROM design)
-            AND (SELECT upper FROM boundary)
+        WHERE eta_lambda BETWEEN (SELECT lower FROM design)
+            AND (SELECT upper FROM design)
     """)
     con.sql("""
         COMMENT ON VIEW design_runs IS
         'One row per cell, seed, event and level of the runs with eta*lambda in
-        the design range, from the lower end of design to the upper end of
-        boundary, stage-2 and scan runs alike, all at the baseline cell''s
-        alpha. The timing models in log(eta*lambda) are fitted to them alone,
+        the design range, from lower to upper of design, stage-2 and scan runs
+        alike, all at the baseline cell''s alpha. The timing models in log(eta*lambda) are fitted to them alone,
         since an accelerated test model is valid over a limited range of
         stress, Nelson (1990), Chapter 1.'
     """)

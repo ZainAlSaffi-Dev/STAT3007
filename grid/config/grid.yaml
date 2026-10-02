@@ -37,32 +37,24 @@ cells:
     alpha: 2.0
 
 # Stage 2: the baseline at the eta*lambda levels of the D-optimal design of Park
-# (1978, Sec. 4.1) for a constant joined to a quadratic: -1, the join, the
-# midpoint of the join and 1, and 1, on ln(eta*lambda) rescaled to [-1, 1]
-# (Berger and Wong 2009, Eq. 2.1), each with every seed (Park 1978, Sec. 3).
-# The join is where the weight decay clock of Pracher et al. (2026, Eq. clock)
-# reaches the baseline's Kaplan-Meier median time t_0 to test accuracy level:
-# eta*lambda = constant * updates / t_0, where constant is the inverse-decay
-# asymptote of their boundary calibration, panel (a), after the given updates.
-# The first placement over range trains every point below its upper end.
+# (1978, Sec. 4.1) for a line joined to a quadratic: -1, the join, the midpoint
+# of the join and 1, and 1, on ln(eta*lambda) rescaled to [-1, 1] (Berger and
+# Wong 2009, Eq. 2.1), each with every seed (Park 1978, Sec. 3). The design is
+# sequential (Berger and Wong 2009, Sec. 5.4): the scan is its first stage, the
+# join is the break of Muggeo's (2003) broken line fitted to the scan runs'
+# times to test accuracy level, and the range runs from the scan's lower end to
+# its upper end.
 design:
   level: 0.9
-  constant: 1.0916395e-4
-  updates: 24000
-  range: [5.0e-7, 2.0e-1]
 
-# The scan that locates the upper end, the sequential step of Berger and Wong
-# (2009, Sec. 5.4). It trains the baseline at eta*lambda = eta_0 * lambda for
-# the count log-spaced lambda over the given range of the grid of Pracher et al.
-# (2026, app:protocol-mlp), continued below the range at the same log step, at
-# every point above the highest stage-2 level whose Kaplan-Meier
-# median time to design level exists within the budget (Kalbfleisch and
-# Prentice 2002, Sec. 1.4.1). Its runs replace the fixed settings with one model
-# seed per point, as Pracher et al. use, and measure accuracies alone, since
-# the phase needs nothing else and their grid computes no kernel. The upper end
-# is the geometric midpoint of the last grokking and the first other point
-# (app:protocol-mlp-calibration), and Park's midpoint and upper end are placed
-# again on the range up to it.
+# The scan, the first stage. It trains the baseline at eta*lambda = eta_0 *
+# lambda for the count log-spaced lambda over the range of the weight decays of
+# the grid of Pracher et al. (2026, app:protocol-mlp), the column of their grid
+# at the baseline's learning rate. Its runs replace the fixed settings with one
+# model seed per point, as Pracher et al. use, and measure accuracies alone,
+# since the phase needs nothing else and their grid computes no kernel. The
+# upper end of the range is the geometric midpoint of the last grokking and the
+# first other point (app:protocol-mlp-calibration).
 scan:
   lambda: [5.0e-6, 2.0e-3]
   count: 90

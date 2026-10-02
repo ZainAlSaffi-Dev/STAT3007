@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import yaml
 from snakemake.utils import Paramspace
@@ -31,24 +32,20 @@ def at(levels):
     )
 
 
+scanned = at(
+    baseline.dataframe.eta_0.item()
+    * np.geomspace(*config["scan"]["lambda"], config["scan"]["count"])
+)
+
+
 def placed():
-    """Stage 2a: the first placement below its upper end."""
-    return at(written(rules.design)["levels"]["eta_lambda"][:-1])
-
-
-def scanned():
-    """The scan points above the highest stage-2a level that groks."""
-    return at(written(rules.scan)["eta_lambda"])
-
-
-def replaced():
-    """Stage 2b: Park's midpoint and upper end placed again."""
-    return at(written(rules.boundary)["levels"]["eta_lambda"][2:])
+    """Stage 2: Park's levels at the break the scan estimates."""
+    return at(written(rules.design)["levels"]["eta_lambda"])
 
 
 def stages():
-    """Every stage's cells, each behind the checkpoint that places them."""
-    return {"1": lambda: cells, "2a": placed, "scan": scanned, "2b": replaced}
+    """Every stage's cells, stage 2 behind the checkpoint that places it."""
+    return {"1": lambda: cells, "scan": lambda: scanned, "2": placed}
 
 
 localrules:
@@ -73,15 +70,13 @@ rule train:
     input:
         training="src/deeplearning/training.py",
         kernels="src/deeplearning/kernels.py",
-        placement=lambda wildcards: {
-            "1": [],
-            "2a": "results/design.yaml",
-            "2b": "results/boundary.yaml",
-        }[wildcards.stage],
+        placement=lambda wildcards: {"1": [], "2": "results/design.yaml"}[
+            wildcards.stage
+        ],
     output:
         **{table: f"results/stages/{{stage}}/{table}.parquet" for table in tables},
     wildcard_constraints:
-        stage="1|2a|2b",
+        stage="1|2",
     log:
         "logs/train/{stage}.log",
     benchmark:
@@ -98,7 +93,6 @@ use rule train as scan_train with:
     input:
         training="src/deeplearning/training.py",
         kernels="src/deeplearning/kernels.py",
-        placement="results/scan.yaml",
     output:
         **{table: f"results/stages/scan/{table}.parquet" for table in scan_tables},
     log:
@@ -106,53 +100,51 @@ use rule train as scan_train with:
     benchmark:
         "results/benchmarks/train/scan.tsv"
     params:
-        cells=lambda wildcards: scanned().dataframe,
+        cells=scanned.dataframe,
         fixed=config["fixed"] | config["scan"]["fixed"],
         tables=scan_tables,
 
 
+checkpoint boundary:
+    input:
+        "results/stages/scan/phases.parquet",
+    output:
+        "results/boundary.yaml",
+    log:
+        "logs/boundary.log",
+    script:
+        "scripts/boundary.py"
+
+
+rule join:
+    input:
+        events="results/stages/scan/events.parquet",
+        boundary=rules.boundary.output[0],
+    output:
+        "results/join.duckdb",
+    log:
+        "logs/join.log",
+    params:
+        level=config["design"]["level"],
+        upper=lambda wildcards: written(rules.boundary)["upper"],
+    conda:
+        "envs/segmented.yaml"
+    script:
+        "scripts/join.R"
+
+
 checkpoint design:
     input:
-        "results/stages/1/events.parquet",
+        boundary=rules.boundary.output[0],
+        join=rules.join.output[0],
     output:
         "results/design.yaml",
     log:
         "logs/design.log",
     params:
-        design=config["design"],
-        alpha=baseline.dataframe.alpha.item(),
+        lower=scanned.dataframe.eta_lambda.min(),
     script:
         "scripts/design.py"
-
-
-checkpoint scan:
-    input:
-        "results/stages/2a/events.parquet",
-    output:
-        "results/scan.yaml",
-    log:
-        "logs/scan.log",
-    params:
-        design=config["design"],
-        scan=config["scan"],
-        eta_0=baseline.dataframe.eta_0.item(),
-    script:
-        "scripts/scan.py"
-
-
-checkpoint boundary:
-    input:
-        design=rules.design.output[0],
-        scan=rules.scan.output[0],
-        phases="results/stages/scan/phases.parquet",
-    output:
-        "results/boundary.yaml",
-    log:
-        "logs/boundary.log",
-    params:
-        design=config["design"],
-    script:
-        "scripts/boundary.py"
 
 
 rule database:
@@ -166,8 +158,8 @@ rule database:
             for table in tables
         },
         design=rules.design.output[0],
-        scan=rules.scan.output[0],
         boundary=rules.boundary.output[0],
+        join=rules.join.output[0],
     output:
         "results/grid.duckdb",
     log:
