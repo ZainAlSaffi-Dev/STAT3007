@@ -122,7 +122,13 @@ class Setting:
         ),
     ]
     eta_0: Annotated[float, Gt(0), Le(max(c["eta_0"] for c in GRID["cells"]))]
-    eta_lambda: Annotated[float, Interval(ge=0, le=max(GRID["design"]["range"]))]
+    eta_lambda: Annotated[
+        float,
+        Interval(
+            ge=0,
+            le=max(c["eta_0"] for c in GRID["cells"]) * max(GRID["scan"]["lambda"]),
+        ),
+    ]
 
 
 @dataclass(frozen=True)
