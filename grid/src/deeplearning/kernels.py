@@ -157,18 +157,18 @@ def entk_ntk_vps(
 @icontract.ensure(
     # assert_close raises with the mismatched count and the greatest differences
     # and their indices, which icontract cannot recompute for this condition.
-    lambda w1, w2, tokens, u, hidden, readout, result: (
+    lambda w1, w2, x, u, hidden, readout, result: (
         torch.testing.assert_close(
             result,
             vmap(
                 lambda prm: entk_jacobian_contraction(
-                    lambda p, ti: (
+                    lambda p, xi: (
                         readout
-                        * (u @ (p["w2"] @ torch.relu(hidden * p["w1"].mT[ti].sum(-2))))
+                        * (u @ (p["w2"] @ torch.relu(hidden * (xi @ p["w1"].mT))))
                     )[None],
                     prm,
-                    tokens,
-                    tokens,
+                    x,
+                    x,
                     "trace",
                 )
             )(
@@ -186,7 +186,7 @@ def entk_ntk_vps(
 def two_layer_entk(
     w1: torch.Tensor,
     w2: torch.Tensor,
-    tokens: torch.Tensor,
+    x: torch.Tensor,
     u: torch.Tensor,
     hidden: float,
     readout: float,
@@ -208,16 +208,15 @@ def two_layer_entk(
 
     The kernel jumps where a preactivation crosses zero, and mathematically
     identical products need not round alike (PyTorch, Numerical accuracy), so
-    ``z`` is computed as the network's forward computes it: ``W1 x`` is the sum
-    of the columns of ``W1`` at the hot positions (Gromov, 2023, Claim I), then
-    scaled by ``s``. A preactivation within rounding of zero then falls on the
-    same side as in training.
+    ``z`` is computed as the network's forward computes it: ``W1 x`` is the
+    matrix product with the one-hot inputs (Gromov, 2023, Eq. 1), then scaled
+    by ``s``. A preactivation within rounding of zero then falls on the same
+    side as in training.
 
     Args:
         w1: First-layer weights ``(..., N, D)``, one matrix per leading index.
         w2: Readout weights ``(..., O, N)``, with the leading shape of ``w1``.
-        tokens: Positions of the ones of each input ``(n, k)``, one example per
-            row.
+        x: One-hot inputs ``(n, D)``, one example per row.
         u: Weights of the scalar output ``u^T f`` over the ``O`` logits.
         hidden: Hidden scale ``s``.
         readout: Readout scale ``c``.
@@ -225,8 +224,7 @@ def two_layer_entk(
     Returns:
         The ``n x n`` kernel per leading index.
     """
-    z = hidden * w1.mT[..., tokens, :].sum(-2)
-    x = torch.nn.functional.one_hot(tokens, w1.shape[-1]).sum(-2).to(z.dtype)
+    z = hidden * (x @ w1.mT)
     r = z.relu()
     delta = (z > 0).to(z.dtype) * (u @ w2)[..., None, :]
     return readout**2 * (

@@ -53,7 +53,13 @@ probes = st.tuples(models, array_shapes(min_dims=1, max_dims=1)).flatmap(
         np.int64,
         (mp[1][0], 2),
         elements=st.integers(min_value=0, max_value=mp[0].w1.shape[1] - 1),
-    ).map(torch.from_numpy)
+    ).map(
+        lambda t: (
+            torch.nn.functional.one_hot(torch.from_numpy(t), mp[0].w1.shape[1])
+            .sum(-2)
+            .to(torch.float64)
+        )
+    )
 )
 computes = st.sampled_from(sorted(deeplearning.kernels.CONTRACTIONS))
 network = st.shared(
@@ -68,16 +74,18 @@ first_layers = network.flatmap(
 readouts = network.flatmap(
     lambda s: arrays(np.float64, (*s[0], s[1][2], s[1][0]), elements=UNIT)
 ).map(torch.from_numpy)
-positions = (
-    st.tuples(network, array_shapes(min_dims=1, max_dims=1))
-    .flatmap(
-        lambda t: arrays(
-            np.int64,
-            (t[1][0], 2),
-            elements=st.integers(min_value=0, max_value=t[0][1][1] - 1),
+inputs = st.tuples(network, array_shapes(min_dims=1, max_dims=1)).flatmap(
+    lambda t: arrays(
+        np.int64,
+        (t[1][0], 2),
+        elements=st.integers(min_value=0, max_value=t[0][1][1] - 1),
+    ).map(
+        lambda h: (
+            torch.nn.functional.one_hot(torch.from_numpy(h), t[0][1][1])
+            .sum(-2)
+            .to(torch.float64)
         )
     )
-    .map(torch.from_numpy)
 )
 logit_weights = network.flatmap(
     lambda s: arrays(np.float64, (s[1][2],), elements=UNIT)
@@ -118,7 +126,7 @@ def test_fuzz_entk_ntk_vps(
 @given(
     w1=first_layers,
     w2=readouts,
-    tokens=positions,
+    x=inputs,
     u=logit_weights,
     hidden=layer_scales,
     readout=layer_scales,
@@ -126,13 +134,13 @@ def test_fuzz_entk_ntk_vps(
 def test_fuzz_two_layer_entk(
     w1: torch.Tensor,
     w2: torch.Tensor,
-    tokens: torch.Tensor,
+    x: torch.Tensor,
     u: torch.Tensor,
     hidden: float,
     readout: float,
 ) -> None:
     deeplearning.kernels.two_layer_entk(
-        w1=w1, w2=w2, tokens=tokens, u=u, hidden=hidden, readout=readout
+        w1=w1, w2=w2, x=x, u=u, hidden=hidden, readout=readout
     )
 
 
