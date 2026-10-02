@@ -145,6 +145,9 @@ ICONTRACT_SLOW = "true"
 # The tests import torch, which mutmut's documentation names as unsafe to fork
 # after importing, so each mutant forks from a clean fork server.
 process_isolation = "forkserver"
+# mutmut runs the tests from a copy of the sources and the tests, and the
+# training module bounds its fields by config/grid.yaml beside them.
+also_copy = ["config/"]
 
 
 [tool.coverage]

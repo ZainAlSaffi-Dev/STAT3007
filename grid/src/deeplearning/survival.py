@@ -42,7 +42,7 @@ def cumulative_regression(
     event_times = torch.unique(time[observed])
     at_risk = (time[:, None] >= event_times).to(covariates.dtype)
     events = (observed[:, None] & (time[:, None] == event_times)).to(covariates.dtype)
-    scale = covariates.std(0)
+    scale = covariates.std(0, correction=0)
     scale = torch.where(scale > 0, scale, 1)
     x = covariates / scale
     members = torch.nn.functional.one_hot(cluster, counts.shape[-1]).to(x.dtype)
