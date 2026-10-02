@@ -77,9 +77,9 @@ with (
     arms = {
         "alpha": (
             without_decay[
-                without_decay.groupby(["event", "level", "alpha"]).observed.transform(
-                    "any"
-                )
+                without_decay.groupby(["event", "level", "alpha"])[
+                    "observed"
+                ].transform("any")
             ],
             alpha,
         ),
