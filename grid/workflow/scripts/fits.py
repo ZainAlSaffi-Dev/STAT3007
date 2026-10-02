@@ -13,8 +13,10 @@ and the runs of the view ``design_runs``, with the single covariate
 log(eta*lambda). ``aalen``
 holds the cumulative regression functions of Aalen (1989) on the alpha
 indicators and eta*lambda over all runs, with intervals from the
-bias-corrected and accelerated bootstrap over seeds (Efron and Tibshirani
-1993). ``cox`` holds the relative risk model with time-dependent covariates of
+bias-corrected and accelerated bootstrap (Efron and Tibshirani 1993) over
+seeds, each drawn with all its runs and their censoring, which keeps the runs
+that share a split and initial weights together (Davison and Hinkley 1997,
+Secs. 3.5.2 and 3.8). ``cox`` holds the relative risk model with time-dependent covariates of
 Kalbfleisch and Prentice (2002, Eq. 6.14) on the scale, shape and alignment of
 the sum-of-logits kernel.
 """
