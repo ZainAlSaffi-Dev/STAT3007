@@ -617,8 +617,8 @@ poorly, in part because $\operatorname{SE}(\hat\psi)$ may understate its
 variability \citep{muggeoIntervalEstimationBreakpoint2017}. The break
 depends on constants that
 the grid itself estimates, so a design for it is also only locally optimal; a
-sequential design takes the guesses from a first stage, which here consists of
-the pilot runs, and updates the design with their estimates
+sequential design takes the guesses from a first stage, which here is a scan
+of weight decays, and updates the design with their estimates
 \citep{bergerIntroductionOptimalDesigns2009}.
 
 \citet{parkExperimentalDesignsFitting1978a} constructs D-optimal designs for
@@ -630,11 +630,12 @@ therefore have the design $x\in\{-1,\psi,(1+\psi)/2,1\}$ on the rescaled axis.
 The quadratic is one degree above the line expected above the break, as
 \citet{parkExperimentalDesignsFitting1978a} advises when lack of fit is to be
 tested, with equal numbers of runs at each level. The design is locally optimal
-at the guessed break. The guess is the product $\eta\lambda$ at which the
-inverse-decay boundary that \citet{pracherSpectralTheoryGrokking2026}
-calibrate for a network on the same task, scaled by their clock, gives a
-grokking time equal to the pilot's time without weight decay. A second stage
-places the design again at the estimated break.
+at the estimated break. The first stage is the column of the grid of
+\citet{pracherSpectralTheoryGrokking2026} at the baseline's learning rate, one
+run at each weight decay, and its last grokking and first other point bound the
+range above, as their boundary is placed. The broken line fitted to its runs
+below that bound estimates the break, and the second stage places the design
+at the estimate on the range from the column's lowest point to the bound.
 
 \section{Experiments}
 
