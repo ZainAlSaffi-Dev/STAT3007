@@ -61,6 +61,10 @@ import duckdb
 database = "../../../results/grid.duckdb"
 pytex.add_dependencies(database)
 con = duckdb.connect(database, read_only=True)
+for name in ("fits", "broken_line"):
+    attached = f"../../../results/{name}.duckdb"
+    pytex.add_dependencies(attached)
+    con.sql(f"ATTACH '{attached}' AS {name} (READ_ONLY)")
 query = con.sql("""
     SELECT *,
         (SELECT count(DISTINCT seed) FROM metrics NATURAL JOIN exemplar) AS n_seeds
@@ -328,8 +332,12 @@ pairs. Following \citet{cortesAlgorithmsLearningKernels2024}, the Frobenius
 product is $\langle A,B\rangle_F=\operatorname{tr}(A^\top B)$ with norm
 $\lVert A\rVert_F=\sqrt{\langle A,A\rangle_F}$, and $K_c=CKC$ centres an
 $r\times r$ kernel matrix with $C=I_r-\frac{1}{r}\mathbf{1}\mathbf{1}^\top$.
-All four statistics are measured on the kernel of the test pairs of a seed,
-$K_t=K_t[\mathcal{V}]$ and $Y=Y[\mathcal{V}]$ in this subsection. We record
+All four statistics are measured on the test pairs of a seed. The first three
+take the kernel $K_t=K_t[\mathcal{V}]$ of the summed logits; the alignment takes
+the tangent kernel $\Theta_t$ of all $c$ logits on the same $n$ pairs, an
+$nc\times nc$ matrix, and the vector $y\in\{0,1\}^{nc}$ that stacks their
+one-hot targets $Y[\mathcal{V}]$ \citep[supplement, Sampled
+Versions]{baratinImplicitRegularizationNeural2021}. We record
 \begin{equation}
   \begin{aligned}
     S_t &= \frac{\lVert K_t\rVert_F}{\lVert K_0\rVert_F}, &
@@ -337,7 +345,7 @@ $K_t=K_t[\mathcal{V}]$ and $Y=Y[\mathcal{V}]$ in this subsection. We record
     {\sqrt{\operatorname{tr}\bigl(K_tK_t^\top\bigr)}\,
     \sqrt{\operatorname{tr}\bigl(K_0K_0^\top\bigr)}},\\
     D_t &= \frac{\lVert K_t-K_0\rVert_F}{\lVert K_0\rVert_F}, &
-    A_t &= \mathrm{CKA}\bigl(K_t,YY^\top\bigr),\quad
+    A_t &= \mathrm{CKA}\bigl(\Theta_t,yy^\top\bigr),\quad
     \mathrm{CKA}(K,K') = \frac{\operatorname{tr}(K_c{K'}_c)}
     {\lVert K_c\rVert_F\,\lVert {K'}_c\rVert_F}.
   \end{aligned}
@@ -353,11 +361,14 @@ between the kernels at step $t$ and at initialisation, which compares two
 kernel matrices in a scale-invariant manner. The variation $D_t$ is the total
 relative variation of the kernel that \citet{geigerDisentanglingFeatureLazy2020}
 measure on the test set to quantify feature training. The alignment $A_t$ is
-the centred kernel alignment (CKA) of the kernel with the class label kernel
-$YY^\top$ on a held-out set, as \citet{baratinImplicitRegularizationNeural2021}
+the centred kernel alignment (CKA) of the tangent kernel with the class label
+kernel $yy^\top$ on a held-out set, as
+\citet{baratinImplicitRegularizationNeural2021}
 measure it after \citet{cortesAlgorithmsLearningKernels2024}; its normalisation
 makes it invariant under isotropic rescaling
-\citep{baratinImplicitRegularizationNeural2021}.
+\citep{baratinImplicitRegularizationNeural2021}. It takes all the logits
+rather than their sum because the sum's kernel approximates the full one less
+well as training proceeds \citep{mohamadiFastWellFoundedApproximation2022}.
 
 Because the first three statistics are taken on one matrix, the variation is a
 function of the scale and the shape,
@@ -505,8 +516,12 @@ $\log(\eta\lambda)$ is undefined at $\eta\lambda=0$, \eqref{eq:aft} is fitted
 twice: to the cells without weight decay, with indicators of the levels of
 $\alpha$, and to the cells with $\eta\lambda>0$, all at the $\alpha$ of the
 pilot cell, with the single covariate $\log(\eta\lambda)$, while
-\eqref{eq:aalen} takes all cells together, with the indicators of $\alpha$ and
-$\eta\lambda$ itself.
+\eqref{eq:aalen} takes the cells at the $\alpha$ of the pilot cell together,
+$\eta\lambda=0$ included, with $\eta\lambda$ itself. The estimator is defined
+only while $Y(t)$ has full rank, and the step at which the rank falls is a
+final censoring time \citep[Sec.~4.1]{aalenLinearRegressionModel1989}; with
+indicators of $\alpha$ it would stop when the first group of runs at one
+$\alpha$ has left the risk set.
 \citet{aalenLinearRegressionModel1989} states his results for covariates fixed
 in time, and lifelines fits \eqref{eq:aalen} only for such covariates. The
 statistics of \cref{sec:statistics} change along training, so they enter a
@@ -521,10 +536,10 @@ whose coefficients maximise the partial likelihood
   \frac{\exp\bigl[Z_j(t_j)^\top\gamma\bigr]}
   {\sum_{l=1}^{n}Y_l(t_j)\exp\bigl[Z_l(t_j)^\top\gamma\bigr]} ,
 \end{equation}
-where $t_1<\cdots<t_k$ are the event times, $Z_j$ belongs to the seed whose
-event occurs at $t_j$, and $Y_l(t)$ is one while seed $l$ is at risk.
+where $t_1<\cdots<t_k$ are the event times, $Z_j$ belongs to the run whose
+event occurs at $t_j$, and $Y_l(t)$ is one while run $l$ is at risk.
 \Citet{kalbfleischStatisticalAnalysisFailure2002} write it for untied event
-times; seeds can reach an event at the same step, and the lifelines fitter
+times; runs can reach an event at the same step, and the lifelines fitter
 handles such ties by Efron's method. Here
 $Z(t)=(S_t,R_t,A_t)$ is held from each checkpoint to the next, so its paths
 are left-continuous as the model requires. These covariates are internal:
@@ -655,7 +670,7 @@ $\eta_0=\pys{\num{!{cell["eta_0"]}}}$,
 $\eta\lambda=\pys{\num{!{cell["eta_lambda"]}}}$ and a budget of
 \pys{\num{!{cell["steps"]}}} steps, for \pys{!{cell["n_seeds"]}} seeds.
 \Cref{tab:events} gives the steps at which the seeds memorise and grok,
-\cref{fig:dynamics} the losses and the statistics of the sum kernel along
+\cref{fig:dynamics} the losses and the statistics \eqref{eq:statistics} along
 training, and \cref{tab:kernel} those statistics and the spectral measures at
 initialisation and at the last step.
 \fxfatal{Describe the pilot against the questions of the introduction once the
@@ -683,8 +698,8 @@ print(events.style.hide(axis="index").to_latex(hrules=True, siunitx=True))
 
 \begin{table}[t]
   \centering
-  \caption{Statistics \eqref{eq:statistics} and spectral measures
-    \eqref{eq:erank} of the sum kernel of the pilot cell at
+  \caption{Statistics \eqref{eq:statistics}, and spectral measures
+    \eqref{eq:erank} of the sum kernel, of the pilot cell at
     initialisation and at the last step, and the share of the centred target's
     power on the $2(p-1)$ leading eigenvectors. Minimum, median and maximum over
   seeds.}
@@ -695,10 +710,10 @@ kernel = con.sql("""
         median(value) AS Median, max(value) AS Maximum
     FROM (
         UNPIVOT (
-            SELECT seed, step, S_sum, R_sum, A_sum, D_sum
+            SELECT seed, step, S_sum, R_sum, A_full, D_sum
             FROM metrics NATURAL JOIN exemplar
             WHERE step IN (0, steps)
-        ) ON S_sum, R_sum, A_sum, D_sum INTO NAME statistic VALUE value
+        ) ON S_sum, R_sum, A_full, D_sum INTO NAME statistic VALUE value
         UNION ALL BY NAME
         UNPIVOT (
             SELECT seed, step, erank, trace_ratio, target_share
@@ -712,7 +727,7 @@ kernel = con.sql("""
 labels = {
     "S_sum": "$S_t$",
     "R_sum": "$R_t$",
-    "A_sum": "$A_t$",
+    "A_full": "$A_t$",
     "D_sum": "$D_t$",
     "erank": r"$\operatorname{erank}_t$",
     "trace_ratio": "$T_{t,2(p-1)}$",
@@ -732,7 +747,7 @@ source, and the timing fits.}
 \begin{figure}[t]
   \centering
 \begin{pycode}
-series = "'^(train_loss|test_loss|S_sum|R_sum|A_sum)$'"
+series = "'^(train_loss|test_loss|S_sum|R_sum|A_full)$'"
 con.sql(rf"""
     SELECT step,
         median(COLUMNS({series})) AS '\0',
@@ -746,12 +761,231 @@ con.sql(rf"""
 pytex.add_created("dynamics.csv")
 print(r"\input{figures/dynamics}")
 \end{pycode}
-  \caption{Train and test MSE and the statistics $S_t$, $R_t$ and $A_t$ of the
-    sum-over-logits kernel against step $t$, at the baseline cell of
+  \caption{Train and test MSE, the statistics $S_t$ and $R_t$ of the
+    sum-over-logits kernel and the alignment $A_t$ of the tangent kernel of all
+    logits \eqref{eq:statistics} against step $t$, at the baseline cell of
     \citet{kumarGrokkingTransitionLazy2024}. Points are medians over
   \py{cell["n_seeds"]} seeds and error bars span their range.}
   \label{fig:dynamics}
 \end{figure}
+
+\begin{figure}[t]
+  \centering
+\begin{pycode}
+con.sql("""
+    SELECT alpha, step, median(test_acc) AS test_acc
+    FROM metrics NATURAL JOIN cells
+    WHERE stage = '1' AND step > 0
+    GROUP BY ALL
+    ORDER BY alpha, step
+""").to_csv("arms.csv")
+pytex.add_created("arms.csv")
+arms = [a for (a,) in con.sql(
+    "SELECT alpha FROM cells WHERE stage = '1' ORDER BY alpha"
+).fetchall()]
+print(r"\def\armvalues{" + ",".join(map(str, arms)) + "}")
+print(r"\input{figures/arms}")
+\end{pycode}
+  \caption{Test accuracy against step $t$ for each output scale $\alpha$ of
+    the first stage, the sweep of
+    \citet[Fig.~2c]{kumarGrokkingTransitionLazy2024},
+  as the median over \py{cell["n_seeds"]} seeds.}
+  \label{fig:arms}
+\end{figure}
+
+\begin{table}[t]
+  \centering
+  \caption{The sequential design
+    \citep[Sec.~5.4]{bergerIntroductionOptimalDesigns2009}. The scan's last
+    grokking point, its first other point and their geometric midpoint, the
+    upper end of the range
+    \citep[App.~G.2.1]{pracherSpectralTheoryGrokking2026};
+    the join $\hat\psi$ of the broken line fitted to the scan runs, with its
+    interval \citep{muggeoSegmentedPackageFit2008}; the lower end of the scan;
+    and the four levels of \citet[Sec.~4.1]{parkExperimentalDesignsFitting1978a}
+  at $x$, $\ln\eta\lambda$ rescaled to $[-1,1]$.}
+  \label{tab:design}
+\begin{pycode}
+design = con.sql(r"""
+    UNPIVOT (
+        SELECT b.last AS "last grokking scan point",
+            b.first AS "first other scan point",
+            b.upper AS "upper end",
+            exp(j.psi_low) AS "join, lower limit",
+            exp(j.psi) AS "join $\hat\psi$",
+            exp(j.psi_high) AS "join, upper limit",
+            d.lower AS "lower end"
+        FROM boundary b, join_estimate j, design d
+    ) ON COLUMNS(*) INTO NAME Quantity VALUE "$\eta\lambda$"
+    UNION ALL BY NAME
+    SELECT 'level ' || row_number() OVER (ORDER BY x) AS Quantity,
+        eta_lambda AS "$\eta\lambda$", x AS "$x$"
+    FROM design_levels
+""").df()
+print(design.style.hide(axis="index").format(na_rep="").to_latex(
+    hrules=True, siunitx=True,
+))
+\end{pycode}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+\begin{pycode}
+con.sql("""
+    SELECT eta_lambda, phase
+    FROM phases NATURAL JOIN cells
+    WHERE stage = 'scan'
+    ORDER BY eta_lambda
+""").to_csv("phases.csv")
+pytex.add_created("phases.csv")
+outcomes = [p for (p,) in con.sql(
+    "SELECT DISTINCT phase FROM phases ORDER BY phase"
+).fetchall()]
+print(r"\def\phasenames{" + ",".join(outcomes) + "}")
+print(r"\def\boundaryupper{" + str(con.sql("SELECT upper FROM boundary").fetchone()[0]) + "}")
+print(r"\input{figures/phases}")
+\end{pycode}
+  \caption{Outcome of each scan run at the last step against $\eta\lambda$,
+    the phases of \citet[Fig.~3a, App.~G.2]{pracherSpectralTheoryGrokking2026}
+    along one column of their optimiser plane. The dashed line is the upper end
+  of the range in \cref{tab:design}.}
+  \label{fig:phases}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+\begin{pycode}
+panels = {
+    "memorised": ("memorised", cell["memorised"]),
+    "grokked": ("grokked", cell["threshold"]),
+}
+for name, (event, level) in panels.items():
+    con.sql("""
+        SELECT ln(eta_lambda) AS x, ln(time) AS y, observed::INTEGER AS observed
+        FROM design_runs
+        WHERE event = $event AND level = $level
+        ORDER BY x
+    """, params={"event": event, "level": level}).to_csv(f"broken-{name}.csv")
+    pytex.add_created(f"broken-{name}.csv")
+    [fit] = con.sql("""
+        SELECT a0, a1, b, psi, psi_low, psi_high, x_min, x_max, model
+        FROM broken_line.broken_line
+        WHERE event = $event AND level = $level
+        QUALIFY row_number() OVER (ORDER BY aic) = 1
+    """, params={"event": event, "level": level}).fetchall()
+    for key, value in zip(
+        ("A", "B", "U", "Psi", "Low", "High", "Min", "Max", "Model"), fit
+    ):
+        print(rf"\def\{name}{key}{{{value}}}")
+    print(rf"\def\{name}Level{{{level}}}")
+print(r"\input{figures/broken}")
+\end{pycode}
+  \caption{Log event time against $\ln\eta\lambda$ for the runs of the design,
+    with the broken line of \citet{muggeoEstimatingRegressionModels2003} chosen
+    by AIC between a free and a zero left slope, and its join $\hat\psi$ with
+    the delta-method interval drawn as a bar, as in
+    \citet[Fig.~1]{muggeoSegmentedPackageFit2008}. Filled marks are observed
+  events and open marks runs censored at the budget.}
+  \label{fig:broken}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+\begin{pycode}
+con.sql("""
+    SELECT c.cell, c.stage, s.time, s.survival, s.lower, s.upper
+    FROM fits.survival s JOIN cells c USING (cell)
+    WHERE s.event = 'grokked'
+        AND s.level = (SELECT threshold FROM exemplar)
+        AND c.stage IN ('1', '2')
+    ORDER BY c.cell, s.time
+""").to_csv("survival.csv")
+pytex.add_created("survival.csv")
+arms = con.sql(
+    "SELECT cell, alpha FROM cells WHERE stage = '1' ORDER BY alpha"
+).fetchall()
+levels = con.sql(
+    "SELECT cell FROM cells WHERE stage = '2' ORDER BY eta_lambda"
+).fetchall()
+print(r"\def\armcells{" + ",".join(str(c) for c, _ in arms) + "}")
+print(r"\def\armlegend{" + ",".join(rf"{{$\alpha={a}$}}" for _, a in arms) + "}")
+print(r"\def\levelcells{" + ",".join(str(c) for (c,) in levels) + "}")
+print(r"\def\levellegend{"
+      + ",".join(f"{{level {k}}}" for k in range(1, len(levels) + 1)) + "}")
+print(r"\input{figures/survival}")
+\end{pycode}
+  \caption{Kaplan--Meier estimates of the probability of not yet having grokked
+    at level \py{cell["threshold"]}, by output scale in the first stage and by
+    weight decay level in the second, with Greenwood's exponential interval
+  dashed \citep[Sec.~1.4.1]{kalbfleischStatisticalAnalysisFailure2002}.}
+  \label{fig:survival}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+\begin{pycode}
+con.sql("""
+    SELECT rank, (step = 0)::INTEGER AS initial,
+        median(cumulative_share) AS share
+    FROM target_power NATURAL JOIN exemplar
+    WHERE kernel = 'sum' AND step IN (0, steps)
+    GROUP BY ALL
+    ORDER BY initial DESC, rank
+""").to_csv("spectrum.csv")
+pytex.add_created("spectrum.csv")
+print(rf"\def\leading{{{2 * (cell['p'] - 1)}}}")
+print(r"\input{figures/spectrum}")
+\end{pycode}
+  \caption{Cumulative share $C(\rho)$ of the centred target's power on the
+    leading $\rho$ eigenvectors of the sum kernel of the pilot cell, at
+    initialisation and at the last step, the curve of
+    \citet[Eq.~6, Fig.~1e]{canatarSpectralBiasTaskModel2021}. Medians over
+  \py{cell["n_seeds"]} seeds; the dotted line marks $\rho=2(p-1)$.}
+  \label{fig:spectrum}
+\end{figure}
+
+\begin{table}[t]
+  \centering
+  \caption{Coefficients of the log-normal accelerated failure time model
+    \eqref{eq:aft} with their \qty{95}{\percent} intervals, for the output
+    scale arm against $\alpha=\py{cell["alpha"]}$ and the weight decay arm on
+  $\ln\eta\lambda$.}
+  \label{tab:aft}
+\begin{pycode}
+aft = con.sql(r"""
+    SELECT arm AS Arm, event AS Event, level AS Level,
+        CASE WHEN covariate LIKE 'C(alpha%'
+            THEN '$\alpha=' || regexp_extract(covariate, 'T\.([0-9.]+)', 1) || '$'
+            ELSE '$\ln\eta\lambda$' END AS Covariate,
+        coef AS Coefficient, "coef lower 95%" AS Lower, "coef upper 95%" AS Upper
+    FROM fits.aft
+    WHERE param = 'mu_' AND covariate != 'Intercept'
+    ORDER BY arm, event DESC, level, covariate
+""").df()
+print(aft.style.hide(axis="index").to_latex(hrules=True, siunitx=True))
+\end{pycode}
+\end{table}
+
+\begin{table}[t]
+  \centering
+  \caption{Coefficients of the relative risk model with time-dependent
+    covariates \citep[Eq.~6.14]{kalbfleischStatisticalAnalysisFailure2002} on
+    $S_t$, $R_t$ and $A_t$ \eqref{eq:statistics}, with their
+    \qty{95}{\percent} intervals
+  and $p$-values.}
+  \label{tab:cox}
+\begin{pycode}
+cox = con.sql(r"""
+    SELECT event AS Event, level AS Level,
+        '$' || left(covariate, 1) || '_t$' AS Covariate,
+        coef AS Coefficient, "coef lower 95%" AS Lower,
+        "coef upper 95%" AS Upper, p AS "$p$"
+    FROM fits.cox
+    ORDER BY event DESC, level, covariate
+""").df()
+print(cox.style.hide(axis="index").to_latex(hrules=True, siunitx=True))
+\end{pycode}
+\end{table}
 
 \section{Conclusion}
 
@@ -826,6 +1060,70 @@ by the last result above, exactly when one of $K_t$ and $K_0$ is a
 nonnegative real multiple of the other. Neither is zero, so the multiple is
 positive, and $R_t=0$ exactly when $K_t=cK_0$ for some $c>0$. Then
 $S_t=c$, and \eqref{eq:identity} gives $D_t^2=(S_t-1)^2$.
+
+\section{Model checks}
+
+\begin{figure}[t]
+  \centering
+\begin{pycode}
+from scipy.stats import norm
+
+plot = con.sql("""
+    SELECT alpha, time, observed,
+        row_number() OVER (PARTITION BY alpha ORDER BY time) AS i,
+        count(*) OVER (PARTITION BY alpha) AS n
+    FROM events NATURAL JOIN cells
+    WHERE stage = '1' AND event = 'grokked'
+        AND level = (SELECT threshold FROM exemplar)
+""").df()
+plot = plot[plot.observed]
+plot["position"] = norm.ppf((plot.i - 0.5) / plot.n)
+plot.to_csv("probability.csv", index=False)
+pytex.add_created("probability.csv")
+print(r"\def\armvalues{" + ",".join(map(str, sorted(plot.alpha.unique()))) + "}")
+print(r"\input{figures/probability}")
+\end{pycode}
+  \caption{Log-normal probability plot of the grokking times at level
+    \py{cell["threshold"]} for each output scale of the first stage, each
+    observed time at the normal quantile of its plotting position
+    $(i-0.5)/n$ and runs censored at the budget left out
+    \citep[Ch.~3, Sec.~4.2]{nelsonAcceleratedTestingStatistical1990}. Parallel
+  straight lines support the log-normal model \eqref{eq:aft}.}
+  \label{fig:probability}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+\begin{pycode}
+aalen = con.sql(r"""
+    SELECT dense_rank() OVER (ORDER BY covariate) AS panel,
+        CASE WHEN covariate LIKE 'C(alpha%'
+            THEN '$\alpha=' || regexp_extract(covariate, 'T\.([0-9.]+)', 1) || '$'
+            WHEN covariate = 'Intercept' THEN 'intercept'
+            ELSE '$\eta\lambda$' END AS title,
+        time, estimate, low, high
+    FROM fits.aalen
+    WHERE event = 'grokked' AND level = (SELECT threshold FROM exemplar)
+    ORDER BY panel, time
+""")
+aalen.select("panel, time, estimate, low, high").to_csv("aalen.csv")
+pytex.add_created("aalen.csv")
+titles = aalen.select("panel, title").distinct().order("panel").fetchall()
+for panel, title in titles:
+    print(rf"\expandafter\def\csname aalentitle{panel}\endcsname{{{title}}}")
+print(r"\def\aalenpanels{" + ",".join(str(p) for p, _ in titles) + "}")
+print(rf"\def\aalencount{{{len(titles)}}}")
+print(rf"\def\aalengroup{{{len(titles)} by 1}}")
+print(r"\input{figures/aalen}")
+\end{pycode}
+  \caption{Cumulative regression functions of
+    \citet{aalenLinearRegressionModel1989}
+    for grokking at level \py{cell["threshold"]}, with the bias-corrected and
+    accelerated bootstrap interval over seeds dashed, drawn as in
+    \citet[Fig.~7]{aalenLinearRegressionModel1989}. A slope that changes along
+  $t$ is an effect that changes with time.}
+  \label{fig:aalen}
+\end{figure}
 
 \smaller
 \printbibliography
