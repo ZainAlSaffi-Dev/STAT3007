@@ -57,7 +57,9 @@ giveninits=true, uniquename=init]{biblatex}
 
 \begin{pycode}
 import duckdb
+import pandas as pd
 
+pd.set_option("styler.format.formatter", str)
 database = "../../../results/grid.duckdb"
 pytex.add_dependencies(database)
 con = duckdb.connect(database, read_only=True)
