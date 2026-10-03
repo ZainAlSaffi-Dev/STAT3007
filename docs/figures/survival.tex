@@ -1,0 +1,41 @@
+\pgfplotstableread{pythontex-files-\jobname/survival.csv}\survival
+\begin{nomemoize}
+  \begin{tikzpicture}
+    \begin{groupplot}[
+        group style={group size=2 by 1, ylabels at=edge left},
+        width=\linewidth/2,
+        xlabel={step $t$},
+        ylabel={$\hat F(t)$},
+        ymin=0, ymax=1,
+      ]
+      \nextgroupplot[title={$\alpha$ sweep},
+      legend entries/.expand once=\armlegend, legend to name=survivalarms]
+      \expandafter\pgfplotsinvokeforeach\expandafter{\armcells}{
+        \addplot+[const plot, mark=none, dashed, forget plot,
+        restrict expr to domain={\thisrow{cell}}{#1:#1}]
+        table [x=time, y=lower] {\survival};
+        \addplot+[const plot, mark=none, dashed, forget plot,
+        restrict expr to domain={\thisrow{cell}}{#1:#1}]
+        table [x=time, y=upper] {\survival};
+        \addplot+[const plot, mark=none,
+        restrict expr to domain={\thisrow{cell}}{#1:#1}]
+        table [x=time, y=survival] {\survival};
+      }
+      \nextgroupplot[title={weight-decay sweep},
+      legend entries/.expand once=\levellegend, legend to name=survivallevels]
+      \expandafter\pgfplotsinvokeforeach\expandafter{\levelcells}{
+        \addplot+[const plot, mark=none, dashed, forget plot,
+        restrict expr to domain={\thisrow{cell}}{#1:#1}]
+        table [x=time, y=lower] {\survival};
+        \addplot+[const plot, mark=none, dashed, forget plot,
+        restrict expr to domain={\thisrow{cell}}{#1:#1}]
+        table [x=time, y=upper] {\survival};
+        \addplot+[const plot, mark=none,
+        restrict expr to domain={\thisrow{cell}}{#1:#1}]
+        table [x=time, y=survival] {\survival};
+      }
+    \end{groupplot}
+  \end{tikzpicture}
+
+  \ref{survivalarms}\quad\ref{survivallevels}
+\end{nomemoize}

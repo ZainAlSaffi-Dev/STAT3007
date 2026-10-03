@@ -1,0 +1,79 @@
+\pgfplotstableread{pythontex-files-\jobname/dynamics.csv}\dynamics
+\mmznext{
+  context={%
+    \csname pdf@filemdfivesum\endcsname{pythontex-files-\jobname/dynamics.csv}%
+  },
+}
+\begin{tikzpicture}
+  \begin{groupplot}[
+      group style={
+        group size=3 by 2,
+        xlabels at=edge bottom,
+        horizontal sep=3.2em,
+        vertical sep=4.5em,
+      },
+      width=0.34\linewidth,
+      height=0.26\linewidth,
+      tick label style={font=\footnotesize},
+      title style={font=\small},
+      label style={font=\footnotesize},
+      legend style={font=\footnotesize},
+      xmode=log,
+      xlabel={step $t$},
+      error bars/y dir=both,
+      error bars/y explicit,
+      % report2, 3 October: the range bars are drawn faint so the medians stay readable
+      error bars/error bar style={opacity=0.25, line width=0.4pt},
+      error bars/error mark options={opacity=0.25, rotate=90, mark size=1pt},
+    ]
+    % report2: an accuracy panel added before the MSE panel, from the same seeds
+    \nextgroupplot[
+      title={accuracy},
+      ymin=-0.03, ymax=1.03,
+    ]
+    \addplot table [
+      x=step, y=train_acc,
+      y error plus expr=\thisrow{train_acc_hi}-\thisrow{train_acc},
+      y error minus expr=\thisrow{train_acc}-\thisrow{train_acc_lo},
+    ] {\dynamics};
+    \addplot table [
+      x=step, y=test_acc,
+      y error plus expr=\thisrow{test_acc_hi}-\thisrow{test_acc},
+      y error minus expr=\thisrow{test_acc}-\thisrow{test_acc_lo},
+    ] {\dynamics};
+    \nextgroupplot[
+      ymode=log,
+      title={MSE},
+      legend entries={train, test},
+      legend pos=south west,
+    ]
+    \addplot table [
+      x=step, y=train_loss,
+      y error plus expr=\thisrow{train_loss_hi}-\thisrow{train_loss},
+      y error minus expr=\thisrow{train_loss}-\thisrow{train_loss_lo},
+    ] {\dynamics};
+    \addplot table [
+      x=step, y=test_loss,
+      y error plus expr=\thisrow{test_loss_hi}-\thisrow{test_loss},
+      y error minus expr=\thisrow{test_loss}-\thisrow{test_loss_lo},
+    ] {\dynamics};
+    \nextgroupplot[title={$S_t$}]
+    \addplot table [
+      x=step, y=S_sum,
+      y error plus expr=\thisrow{S_sum_hi}-\thisrow{S_sum},
+      y error minus expr=\thisrow{S_sum}-\thisrow{S_sum_lo},
+    ] {\dynamics};
+    \nextgroupplot[title={$R_t$}]
+    \addplot table [
+      x=step, y=R_sum,
+      y error plus expr=\thisrow{R_sum_hi}-\thisrow{R_sum},
+      y error minus expr=\thisrow{R_sum}-\thisrow{R_sum_lo},
+    ] {\dynamics};
+    \nextgroupplot[title={$A_t$}]
+    \addplot table [
+      x=step, y=A_full,
+      y error plus expr=\thisrow{A_full_hi}-\thisrow{A_full},
+      y error minus expr=\thisrow{A_full}-\thisrow{A_full_lo},
+    ] {\dynamics};
+  \end{groupplot}
+\end{tikzpicture}

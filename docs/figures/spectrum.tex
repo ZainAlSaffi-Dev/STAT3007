@@ -1,0 +1,24 @@
+\pgfplotstableread{pythontex-files-\jobname/spectrum.csv}\spectrum
+\mmznext{
+  context={%
+    \csname pdf@filemdfivesum\endcsname{pythontex-files-\jobname/spectrum.csv}%
+  },
+}
+\begin{tikzpicture}
+  \begin{axis}[
+      xmode=log,
+      xlabel={rank $\rho$},
+      ylabel={$C(\rho)$},
+      ymin=0, ymax=1,
+      legend pos=outer north east,
+    ]
+    \addplot+[mark=none, restrict expr to domain={\thisrow{initial}}{1:1}]
+    table [x=rank, y=share] {\spectrum};
+    \addlegendentry{initialisation}
+    \addplot+[mark=none, restrict expr to domain={\thisrow{initial}}{0:0}]
+    table [x=rank, y=share] {\spectrum};
+    \addlegendentry{last step}
+    \draw[dotted] ({axis cs:\leading,0}|-{rel axis cs:0,0})
+    -- ({axis cs:\leading,0}|-{rel axis cs:0,1});
+  \end{axis}
+\end{tikzpicture}

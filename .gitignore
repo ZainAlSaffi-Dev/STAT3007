@@ -238,3 +238,6 @@ model_fitting/data/logs/
 model_fitting/data/check/
 model_fitting/data/pilot/
 model_fitting/data/checkpoints.parquet
+
+# Zac's grid databases, downloaded from the grid-v0.1.0 release
+results/*.duckdb
