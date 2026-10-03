@@ -1,0 +1,26 @@
+\pgfplotstableread{pythontex-files-\jobname/aalen.csv}\aalen
+\mmznext{
+  context={%
+    \csname pdf@filemdfivesum\endcsname{pythontex-files-\jobname/aalen.csv}%
+  },
+}
+\begin{tikzpicture}
+  \begin{groupplot}[
+      group style={group size/.expand once=\aalengroup, xlabels at=edge bottom},
+      width=\linewidth/\aalencount,
+      xlabel={step $t$},
+    ]
+    \expandafter\pgfplotsinvokeforeach\expandafter{\aalenpanels}{
+      \nextgroupplot[title={\csname aalentitle#1\endcsname}]
+      \addplot+[const plot, mark=none, dashed, forget plot,
+      restrict expr to domain={\thisrow{panel}}{#1:#1}]
+      table [x=time, y=low] {\aalen};
+      \addplot+[const plot, mark=none, dashed, forget plot,
+      restrict expr to domain={\thisrow{panel}}{#1:#1}]
+      table [x=time, y=high] {\aalen};
+      \addplot+[const plot, mark=none,
+      restrict expr to domain={\thisrow{panel}}{#1:#1}]
+      table [x=time, y=estimate] {\aalen};
+    }
+  \end{groupplot}
+\end{tikzpicture}

@@ -241,3 +241,6 @@ model_fitting/data/checkpoints.parquet
 # The dataset before each seed had its own split (29 September 2026). Its tables are in git history.
 model_fitting/data/runs_seed42/
 model_fitting/data/seed42_tables/
+
+# Zac's grid databases, downloaded from the grid-v0.1.0 release
+results/*.duckdb

@@ -1,0 +1,21 @@
+\pgfplotstableread{pythontex-files-\jobname/probability.csv}\probability
+\mmznext{
+  context={%
+    \csname
+    pdf@filemdfivesum\endcsname{pythontex-files-\jobname/probability.csv}%
+  },
+}
+\begin{tikzpicture}
+  \begin{axis}[
+      xmode=log,
+      xlabel={grokking step $T$},
+      ylabel={$\Phi^{-1}\bigl((i-0.5)/n\bigr)$},
+      legend pos=outer north east,
+    ]
+    \expandafter\pgfplotsinvokeforeach\expandafter{\armvalues}{
+      \addplot+[only marks, restrict expr to domain={\thisrow{alpha}}{#1:#1}]
+      table [x=time, y=position] {\probability};
+      \addlegendentry{$\alpha=#1$}
+    }
+  \end{axis}
+\end{tikzpicture}
