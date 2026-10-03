@@ -42,7 +42,7 @@ from RepoducedCode import make_modular_addition_dataset
 # Raise this when a column is added, removed or computed differently. The
 # runner compares it with the version saved next to each run, so a changed
 # feature set is never mixed silently with an old one.
-FEATURE_VERSION = 1
+FEATURE_VERSION = 2
 # The ridge of the kernel regressions, as a fraction of the mean diagonal of
 # the training block of the kernel.
 KRR_RIDGE = 1e-3
@@ -232,6 +232,15 @@ col("W1_kernel_share", "layer_kernels", "Share of the trace of the centred probe
 for term, word in (("S", "scale term"), ("R", "rotation term"), ("A", "centred alignment")):
     col(f"{term}_first_logit", "first_logit", f"The {word} of the centred kernel of the first output alone. The "
         "report names this kernel as a robustness check.", source=REPORT + "; ntk_lib.entk_closed_form")
+
+GOLDEN = "docs/report_golden.pdf, Equations 5 and 6"
+for term, word in (("S", "Scale, the plain ratio of Frobenius norms to step 0"),
+                   ("R", "Shape change, one minus the uncentred cosine to step 0"),
+                   ("D", "Variation, the Frobenius norm of the change from step 0 over the norm at step 0"),
+                   ("A", "Centred alignment with Y Y^T")):
+    col(f"{term}_sum", "report_kernel", f"{word}, of the kernel of the sum of the logits divided by sqrt(p), "
+        "on the test pairs of the run. These are the S_t, R_t, D_t and A_t of the golden report.",
+        source=GOLDEN + "; ntk_lib.sum_kernel")
 
 col("eig_trace", "spectrum", "Trace of the centred probe kernel.", source=OWN)
 col("eig_top1", "spectrum", "Largest eigenvalue of the centred probe kernel.", source=OWN)
@@ -428,6 +437,8 @@ class FeatureLogger:
         self.X = dict(train=X_train, test=X_test)
         self.y = dict(train=y_train, test=y_test)
         self.labels = dict(train=y_train.argmax(1), test=y_test.argmax(1))
+        self.X_test64, self.Y_test64 = X_test.double().numpy(), y_test.double().numpy()
+        self.K_sum_0 = None
 
         # The probe, exactly as train_run takes it, and the tier x tracer on it.
         self.x_probe, y_probe, is_test = L.select_probe(X_train, y_train, X_test, y_test, cfg["probe"],
@@ -680,6 +691,14 @@ class FeatureLogger:
         F1, F2 = L.closed_form_terms(model.W1, model.W2, self.x_probe, c1, c2, output=0)
         out["S_first_logit"], out["R_first_logit"], out["A_first_logit"] = self.terms(
             "first_logit", centre((F1 + F2).numpy()), self.G_unit)
+
+        # The kernel of the golden report, Equations 5 and 6, on the test pairs.
+        K_sum = L.sum_kernel(model.W1.detach().double().cpu().numpy(), model.W2.detach().double().cpu().numpy(),
+                             self.X_test64)
+        if self.K_sum_0 is None:
+            self.K_sum_0 = K_sum
+        for k, v in L.report_statistics(K_sum, self.K_sum_0, self.Y_test64).items():
+            out[f"{k[0]}_sum"] = float(v)
 
         # The full grid of p^2 pairs.
         A1, A2 = L.closed_form_terms(model.W1, model.W2, self.X_all, c1, c2)

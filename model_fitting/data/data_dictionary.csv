@@ -109,6 +109,10 @@ checkpoints,W1_kernel_share,layer_kernels,Share of the trace of the centred prob
 checkpoints,S_first_logit,first_logit,The scale term of the centred kernel of the first output alone. The report names this kernel as a robustness check.,-,"docs/report.tex, Kernel metrics section; ntk_lib.entk_closed_form",-
 checkpoints,R_first_logit,first_logit,The rotation term of the centred kernel of the first output alone. The report names this kernel as a robustness check.,-,"docs/report.tex, Kernel metrics section; ntk_lib.entk_closed_form",-
 checkpoints,A_first_logit,first_logit,The centred alignment of the centred kernel of the first output alone. The report names this kernel as a robustness check.,-,"docs/report.tex, Kernel metrics section; ntk_lib.entk_closed_form",-
+checkpoints,S_sum,report_kernel,"Scale, the plain ratio of Frobenius norms to step 0, of the kernel of the sum of the logits divided by sqrt(p), on the test pairs of the run. These are the S_t, R_t, D_t and A_t of the golden report.",-,"docs/report_golden.pdf, Equations 5 and 6; ntk_lib.sum_kernel",-
+checkpoints,R_sum,report_kernel,"Shape change, one minus the uncentred cosine to step 0, of the kernel of the sum of the logits divided by sqrt(p), on the test pairs of the run. These are the S_t, R_t, D_t and A_t of the golden report.",-,"docs/report_golden.pdf, Equations 5 and 6; ntk_lib.sum_kernel",-
+checkpoints,D_sum,report_kernel,"Variation, the Frobenius norm of the change from step 0 over the norm at step 0, of the kernel of the sum of the logits divided by sqrt(p), on the test pairs of the run. These are the S_t, R_t, D_t and A_t of the golden report.",-,"docs/report_golden.pdf, Equations 5 and 6; ntk_lib.sum_kernel",-
+checkpoints,A_sum,report_kernel,"Centred alignment with Y Y^T, of the kernel of the sum of the logits divided by sqrt(p), on the test pairs of the run. These are the S_t, R_t, D_t and A_t of the golden report.",-,"docs/report_golden.pdf, Equations 5 and 6; ntk_lib.sum_kernel",-
 checkpoints,eig_trace,spectrum,Trace of the centred probe kernel.,-,The group's own definition,-
 checkpoints,eig_top1,spectrum,Largest eigenvalue of the centred probe kernel.,-,The group's own definition,-
 checkpoints,eig_top1_share,spectrum,Largest eigenvalue over the trace.,-,The group's own definition,-
@@ -146,6 +150,7 @@ runs,alpha,run,The laziness knob alpha.,-,"Kumar et al. (2024), Appendix 8.1, Eq
 runs,width,run,The hidden width N.,-,-,-
 runs,eta_kappa,run,The weight decay eta lambda.,-,"docs/report.tex, The laziness and weight-decay knobs",-
 runs,seed,run,The model seed.,-,-,-
+runs,data_seed,run,"The seed of the split of the pairs into training and test sets, 42 + seed.",-,"docs/report_golden.pdf, section 3.1",-
 runs,lr,run,The learning rate eta_0 / alpha^2.,-,ntk_lib.train_run,-
 runs,weight_decay,run,The decay coefficient eta_kappa / lr passed to torch.optim.SGD.,-,ntk_lib.train_run,-
 runs,status,run,"ok, diverged (the training loss stopped being finite) or failed (an exception).",-,-,-

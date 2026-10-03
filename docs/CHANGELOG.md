@@ -108,3 +108,14 @@ The regeneration of 3 October 2026 changed these files.
 - `model_fitting/report_kernel.py` uses each run's own test pairs.
 - `model_fitting/report_runs.py` writes `data/report_runs.csv` (one row per run, report events and kernel statistics) and `data/report_kernel.csv` (the 48 saved steps of each run).
 - The old dataset is kept. The old per-run files are in `model_fitting/data/runs_seed42/`, and the old tables are in `model_fitting/data/seed42_tables/`.
+
+## 10. Findings that changed with the regenerated data
+
+The sweep was rerun on 3 October 2026 with a separate split for each seed. All 720 runs finished, and every validation check passed. The pilot cell still agrees with Table 2 of the golden report. Its median A_t at step 0 is 0.39 against 0.40, and its median S_t at step 100,000 is 4.07 against 4. Notebooks 1 to 4 were rerun, and their text was rewritten from the new outputs. These findings changed.
+
+- **The time-varying Cox model fails without weight decay.** In notebook 1, the report's model (Eq. 13 and 14) has no finite estimate for the cells without weight decay, at any grokking level. The fit fails to converge whenever R_t is in it. The notebook records the failure and adds a check with a ridge penalty of 0.01, which is not in the report. The report should say how it handles this case.
+- **The kernel no longer predicts within a cell.** In notebook 2, the stratified Cox model gave S_t a clear effect inside a cell (p = 0.001). With a split for each seed, no statistic has an effect inside a cell (joint p = 0.97).
+- **The pooled AFT gains nothing from the kernel.** The likelihood ratio test of the kernel on top of the settings went from p = 0.02 to p = 0.34.
+- **Interactions matter less among grokked runs.** In notebook 4, the gain in held-out R² from interaction terms fell from 0.08 to 0.02, and kernel ridge fell from 0.69 to 0.55. Interactions still help to predict whether a run groks at all.
+- **A_t has much more seed noise.** The within-cell share of the spread of A_t rose from 11% to 44%. A_t is measured on the test pairs, and these now differ between seeds.
+- **The history of the kernel helps more.** In notebook 3, a GRU on the history scores 0.768 against 0.705 for XGBoost at the prediction time, a gain of 0.06 (before, 0.02). The settings alone still score 0.780.

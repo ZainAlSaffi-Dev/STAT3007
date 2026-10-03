@@ -272,6 +272,34 @@ def compute_centred_scale_and_rotation(K_0, K_t):
     return compute_scale_and_rotation(centre_kernel(K_0), centre_kernel(K_t))
 
 
+def sum_kernel(W1, W2, X):
+    """Kernel of g = sum_c f_c / sqrt(p) for f = W2 relu(W1 x / sqrt(D)) / sqrt(N), in closed form.
+
+    This is the kernel of golden report Equation 5. g has one output whose
+    second-layer weight is u = W2.sum(0) / sqrt(p). Its gradient with respect
+    to W2[c, i] is relu(h_i) / sqrt(N p) for every c, which sums to Z Z^T / N
+    over c. Its gradient with respect to row i of W1 is u_i 1[h_i > 0] x / sqrt(D N).
+    Takes and returns float64 numpy arrays.
+    """
+    D, N = X.shape[1], W1.shape[0]
+    h = X @ W1.T / np.sqrt(D)
+    Z, M = np.maximum(h, 0), (h > 0).astype(float)
+    u = W2.sum(0) / np.sqrt(W2.shape[0])
+    return Z @ Z.T / N + (X @ X.T) * ((M * u ** 2) @ M.T) / (D * N)
+
+
+def report_statistics(K_t, K_0, Y):
+    """S_t, R_t, D_t and A_t of golden report Equation 6 for one pair of kernels on the test pairs."""
+    r = len(K_t)
+    C = np.eye(r) - 1 / r
+    n_t, n_0 = np.linalg.norm(K_t), np.linalg.norm(K_0)
+    Kc, Gc = C @ K_t @ C, C @ Y @ Y.T @ C
+    return {"S_t": n_t / n_0,
+            "R_t": 1 - np.sum(K_t * K_0) / (n_t * n_0),
+            "D_t": np.linalg.norm(K_t - K_0) / n_0,
+            "A_t": np.sum(Kc * Gc) / (np.linalg.norm(Kc) * np.linalg.norm(Gc))}
+
+
 # =====================================================================
 # Training
 # =====================================================================

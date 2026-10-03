@@ -238,3 +238,6 @@ model_fitting/data/logs/
 model_fitting/data/check/
 model_fitting/data/pilot/
 model_fitting/data/checkpoints.parquet
+# The dataset before each seed had its own split (29 September 2026). Its tables are in git history.
+model_fitting/data/runs_seed42/
+model_fitting/data/seed42_tables/
