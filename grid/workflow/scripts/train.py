@@ -8,7 +8,7 @@ import duckdb
 
 from deeplearning.training import Cell, Setting, train
 
-cells = snakemake.params.cells
+cells = snakemake.params["cells"]
 settings = cells[[field.name for field in fields(Setting)]]
 # The cells of a stage share every column but their settings.
 shared = cells.drop(columns=settings.columns).drop_duplicates().squeeze().to_dict()
@@ -17,9 +17,11 @@ with (
     redirect_stderr(log),
 ):
     frames = train(
-        Cell(**shared, settings=settings.to_dict("records"), **snakemake.params.fixed)
+        Cell(
+            **shared, settings=settings.to_dict("records"), **snakemake.params["fixed"]
+        )
     )
-    for table in snakemake.params.tables:
+    for table in snakemake.params["tables"]:
         duckdb.from_df(frames[table].assign(**shared)).to_parquet(
             snakemake.output[table]
         )

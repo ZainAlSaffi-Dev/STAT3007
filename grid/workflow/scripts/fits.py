@@ -6,30 +6,42 @@ table ``survival`` holds the Kaplan-Meier estimate of each cell with
 Greenwood's exponential interval, and ``medians`` its median with the
 median's interval (Kalbfleisch and Prentice 2002, Sec. 1.4.1). ``aft`` holds the log-normal
 accelerated failure time model in two arms: the output scales without weight
-decay, with indicators of alpha against the baseline cell's, and the runs of
-the view ``design_runs``, with the single covariate log(eta*lambda). ``aalen``
-holds the cumulative regression functions of Aalen (1989) on the alpha
-indicators and eta*lambda over all runs, with intervals from the
-bias-corrected and accelerated bootstrap over seeds (Efron and Tibshirani
-1993). ``cox`` holds the relative risk model with time-dependent covariates of
-Kalbfleisch and Prentice (2002, Eq. 6.14) on the scale, shape and alignment of
-the sum-of-logits kernel.
+decay, with indicators of alpha against the baseline cell's, fitted to the
+values of alpha with at least one event, since the estimate for a level
+without failures does not exist (Nelson 1990, Ch. 5, Eq. 2.6 and Sec. 3.3),
+and the runs of the view ``design_runs``, with the single covariate
+log(eta*lambda). ``aalen``
+holds the cumulative regression functions of Aalen (1989) on eta*lambda over
+the runs of the baseline cell and of the second stage, eta*lambda = 0
+included. Indicators of alpha
+would stop the estimator when the first alpha group leaves the risk set, the
+final censoring time at which the design loses rank (Aalen 1989, Sec. 4.1);
+alpha is compared in the AFT arm. The intervals come from the
+bias-corrected and accelerated bootstrap (Efron and Tibshirani 1993) over
+seeds, each drawn with all its runs and their censoring, which keeps the runs
+that share a split and initial weights together (Davison and Hinkley 1997,
+Secs. 3.5.2 and 3.8). Every seed has one run in each of these cells, the
+balanced structure for which Davison and Hinkley (1997, Sec. 3.8) justify
+resampling whole groups, while the scan trains a single seed. ``cox`` holds the relative risk model with time-dependent covariates of
+Kalbfleisch and Prentice (2002, Eq. 6.14) on the scale and shape of the
+sum-of-logits kernel and the alignment of the tangent kernel of all outputs
+(Baratin et al. 2021).
 """
 
 from contextlib import redirect_stderr
+from functools import partial
 from pathlib import Path
 
 import duckdb
 import numpy as np
 import pandas as pd
-from lifelines import (
-    AalenAdditiveFitter,
-    CoxTimeVaryingFitter,
-    KaplanMeierFitter,
-    LogNormalAFTFitter,
-)
+import torch
+from formulaic import model_matrix
+from lifelines import CoxTimeVaryingFitter, KaplanMeierFitter, LogNormalAFTFitter
 from lifelines.utils import median_survival_times
 from scipy.stats import bootstrap
+
+from deeplearning.survival import cumulative_regression
 
 with (
     Path(snakemake.log[0]).open("w", buffering=1) as log,
@@ -37,10 +49,10 @@ with (
     duckdb.connect(snakemake.input[0], read_only=True) as grid,
     duckdb.connect(snakemake.output[0]) as con,
 ):
-    base = grid.sql("SELECT alpha FROM exemplar").fetchone()[0]
+    [(base,)] = grid.sql("SELECT alpha FROM exemplar").fetchall()
     alpha = f"C(alpha, contr.treatment(base={base!r}))"
     runs = grid.sql("""
-        SELECT cell, seed, event, level, time, observed, alpha, eta_lambda
+        SELECT cell, seed, event, level, time, observed, alpha, eta_lambda, stage
         FROM events NATURAL JOIN cells
     """).df()
 
@@ -70,8 +82,16 @@ with (
     con.from_df(pd.concat(survival, ignore_index=True)).create("survival")
     con.from_df(pd.DataFrame(medians)).create("medians")
 
+    without_decay = runs[runs.eta_lambda == 0]
     arms = {
-        "alpha": (runs[runs.eta_lambda == 0], alpha),
+        "alpha": (
+            without_decay[
+                without_decay.groupby(["event", "level", "alpha"])[
+                    "observed"
+                ].transform("any")
+            ],
+            alpha,
+        ),
         "decay": (grid.sql("FROM design_runs").df(), "log(eta_lambda)"),
     }
     aft = [
@@ -89,57 +109,50 @@ with (
     ]
     con.from_df(pd.concat(aft, ignore_index=True)).create("aft")
 
-    def cumulative(group: pd.DataFrame) -> pd.DataFrame:
-        """Aalen's cumulative regression functions, one column per covariate.
-
-        Args:
-            group: The runs of one event and level.
-
-        Returns:
-            The estimates at each event time of the fit.
-        """
-        fitted: pd.DataFrame = (
-            AalenAdditiveFitter()
-            .fit(
-                group[["time", "observed", "alpha", "eta_lambda"]],
-                "time",
-                "observed",
-                formula=f"{alpha} + eta_lambda",
-            )
-            .cumulative_hazards_
-        )
-        return fitted
-
     aalen = []
-    for (event, level), group in runs.groupby(["event", "level"]):
-        estimate = cumulative(group)
-        by_seed = dict(tuple(group.groupby("seed")))
+    baseline = runs[(runs.alpha == base) & (runs.stage != "scan")]
+    for (event, level), group in baseline.groupby(["event", "level"]):
+        design = model_matrix("eta_lambda", group)
+        seeds, cluster = np.unique(group.seed, return_inverse=True)
+        fit = partial(
+            cumulative_regression,
+            torch.tensor(design.to_numpy(dtype=np.float64)),
+            torch.tensor(group.time.to_numpy()),
+            torch.tensor(group.observed.to_numpy()),
+            torch.tensor(cluster),
+        )
 
         def statistic(
             sample: np.ndarray,
-            estimate: pd.DataFrame = estimate,
-            by_seed: dict[int, pd.DataFrame] = by_seed,
+            axis: int,
+            fit: partial[torch.Tensor] = fit,
+            seeds: np.ndarray = seeds,
         ) -> np.ndarray:
-            """The cumulative functions of a resample of seeds.
+            """The cumulative functions of resamples of seeds.
 
             Args:
-                sample: The seeds drawn.
-                estimate: The fit to every seed, whose event times the
-                    resample's step functions are read at.
-                by_seed: The runs of each seed.
+                sample: The seeds drawn, one resample along ``axis``.
+                axis: The axis of ``sample`` holding each resample's draws.
+                fit: Aalen's estimator on this event and level's runs.
+                seeds: The distinct seeds.
 
             Returns:
-                The estimates at the event times of ``estimate``, zero before
-                the resample's first event.
+                The estimates at the event times of all runs, with the
+                resamples along the last axis.
             """
-            resampled = cumulative(pd.concat([by_seed[s] for s in sample]))
+            counts = (np.moveaxis(sample, axis, -1)[..., None] == seeds).sum(-2)
             return (
-                resampled.reindex(estimate.index, method="ffill").fillna(0).to_numpy()
+                fit(torch.from_numpy(counts).to(torch.float64))
+                .movedim((-2, -1), (0, 1))
+                .numpy()
             )
 
-        interval = bootstrap(
-            (np.array(list(by_seed)),), statistic, vectorized=False
-        ).confidence_interval
+        estimate = pd.DataFrame(
+            statistic(seeds, axis=-1),
+            index=np.unique(group.time[group.observed]),
+            columns=design.columns,
+        )
+        interval = bootstrap((seeds,), statistic, vectorized=True).confidence_interval
         # melt lists each covariate's times in turn, the column-major order.
         aalen.append(
             estimate.melt(
@@ -159,7 +172,7 @@ with (
     intervals = grid.sql("""
         SELECT
             concat_ws('/', cell, seed) AS run,
-            event, level, start, stop, occurred, S_sum, R_sum, A_sum
+            event, level, start, stop, occurred, S_sum, R_sum, A_full
         FROM intervals
         WHERE stage != 'scan'
     """).df()

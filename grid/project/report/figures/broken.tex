@@ -1,0 +1,34 @@
+\mmznext{
+  context={%
+    \csname
+    pdf@filemdfivesum\endcsname{pythontex-files-\jobname/broken-memorised.csv}%
+    \csname
+    pdf@filemdfivesum\endcsname{pythontex-files-\jobname/broken-grokked.csv}%
+  },
+}
+\begin{tikzpicture}
+  \begin{groupplot}[
+      group style={group size=2 by 1, ylabels at=edge left},
+      width=\linewidth/2,
+      xlabel={$\ln\eta\lambda$},
+      ylabel={$\ln T$},
+      scatter/classes={0={mark=o}, 1={mark=*}},
+    ]
+    \nextgroupplot[title={memorised, level \memorisedLevel}]
+    \addplot[scatter, only marks, scatter src=explicit symbolic]
+    table [x=x, y=y, meta=observed]
+    {pythontex-files-\jobname/broken-memorised.csv};
+    \addplot[samples at={\memorisedMin,\memorisedPsi,\memorisedMax}, thick]
+    {\memorisedA + \memorisedB*x + \memorisedU*max(x-\memorisedPsi, 0)};
+    \draw[|-|] ({axis cs:\memorisedLow,0}|-{rel axis cs:0,0.05})
+    -- ({axis cs:\memorisedHigh,0}|-{rel axis cs:0,0.05});
+    \nextgroupplot[title={grokked, level \grokkedLevel}]
+    \addplot[scatter, only marks, scatter src=explicit symbolic]
+    table [x=x, y=y, meta=observed]
+    {pythontex-files-\jobname/broken-grokked.csv};
+    \addplot[samples at={\grokkedMin,\grokkedPsi,\grokkedMax}, thick]
+    {\grokkedA + \grokkedB*x + \grokkedU*max(x-\grokkedPsi, 0)};
+    \draw[|-|] ({axis cs:\grokkedLow,0}|-{rel axis cs:0,0.05})
+    -- ({axis cs:\grokkedHigh,0}|-{rel axis cs:0,0.05});
+  \end{groupplot}
+\end{tikzpicture}

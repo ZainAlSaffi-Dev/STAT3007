@@ -133,15 +133,49 @@ def entk_ntk_vps(
     """
 
     def get_ntk(x_1: torch.Tensor, x_2: torch.Tensor) -> torch.Tensor:
+        """NTK between a single pair of data points.
+
+        Args:
+            x_1: One data point.
+            x_2: The other data point.
+
+        Returns:
+            The ``O x O`` kernel block, one NTK-vector product per column.
+        """
+
         def func_x1(p: Params) -> torch.Tensor:
+            """Network at ``x_1`` as a function of its parameters.
+
+            Args:
+                p: Parameters.
+
+            Returns:
+                The output at ``x_1``.
+            """
             return fnet_single(p, x_1)
 
         def func_x2(p: Params) -> torch.Tensor:
+            """Network at ``x_2`` as a function of its parameters.
+
+            Args:
+                p: Parameters.
+
+            Returns:
+                The output at ``x_2``.
+            """
             return fnet_single(p, x_2)
 
         output, vjp_fn = vjp(func_x1, params)[:2]
 
         def get_ntk_slice(vec: torch.Tensor) -> torch.Tensor:
+            """NTK-vector product ``J(x_2) J(x_1)^T vec`` for one basis vector.
+
+            Args:
+                vec: A column of the identity matrix.
+
+            Returns:
+                The kernel block applied to ``vec``.
+            """
             vjps = vjp_fn(vec)
             jvps: torch.Tensor = jvp(func_x2, (params,), vjps)[1]
             return jvps
@@ -157,18 +191,18 @@ def entk_ntk_vps(
 @icontract.ensure(
     # assert_close raises with the mismatched count and the greatest differences
     # and their indices, which icontract cannot recompute for this condition.
-    lambda w1, w2, tokens, u, hidden, readout, result: (
+    lambda w1, w2, x, u, hidden, readout, result: (
         torch.testing.assert_close(
             result,
             vmap(
                 lambda prm: entk_jacobian_contraction(
-                    lambda p, ti: (
+                    lambda p, xi: (
                         readout
-                        * (u @ (p["w2"] @ torch.relu(hidden * p["w1"].mT[ti].sum(-2))))
+                        * (u @ (p["w2"] @ torch.relu(hidden * (xi @ p["w1"].mT))))
                     )[None],
                     prm,
-                    tokens,
-                    tokens,
+                    x,
+                    x,
                     "trace",
                 )
             )(
@@ -186,7 +220,7 @@ def entk_ntk_vps(
 def two_layer_entk(
     w1: torch.Tensor,
     w2: torch.Tensor,
-    tokens: torch.Tensor,
+    x: torch.Tensor,
     u: torch.Tensor,
     hidden: float,
     readout: float,
@@ -208,16 +242,15 @@ def two_layer_entk(
 
     The kernel jumps where a preactivation crosses zero, and mathematically
     identical products need not round alike (PyTorch, Numerical accuracy), so
-    ``z`` is computed as the network's forward computes it: ``W1 x`` is the sum
-    of the columns of ``W1`` at the hot positions (Gromov, 2023, Claim I), then
-    scaled by ``s``. A preactivation within rounding of zero then falls on the
-    same side as in training.
+    ``z`` is computed as the network's forward computes it: ``W1 x`` is the
+    matrix product with the one-hot inputs (Gromov, 2023, Eq. 1), then scaled
+    by ``s``. A preactivation within rounding of zero then falls on the same
+    side as in training.
 
     Args:
         w1: First-layer weights ``(..., N, D)``, one matrix per leading index.
         w2: Readout weights ``(..., O, N)``, with the leading shape of ``w1``.
-        tokens: Positions of the ones of each input ``(n, k)``, one example per
-            row.
+        x: One-hot inputs ``(n, D)``, one example per row.
         u: Weights of the scalar output ``u^T f`` over the ``O`` logits.
         hidden: Hidden scale ``s``.
         readout: Readout scale ``c``.
@@ -225,8 +258,7 @@ def two_layer_entk(
     Returns:
         The ``n x n`` kernel per leading index.
     """
-    z = hidden * w1.mT[..., tokens, :].sum(-2)
-    x = torch.nn.functional.one_hot(tokens, w1.shape[-1]).sum(-2).to(z.dtype)
+    z = hidden * (x @ w1.mT)
     r = z.relu()
     delta = (z > 0).to(z.dtype) * (u @ w2)[..., None, :]
     return readout**2 * (
@@ -235,12 +267,81 @@ def two_layer_entk(
 
 
 @icontract.ensure(
+    lambda w1, w2, x, hidden, readout, result: (
+        torch.testing.assert_close(
+            result,
+            vmap(
+                lambda prm, inputs: entk_jacobian_contraction(
+                    lambda p, xi: (
+                        readout * (p["w2"] @ torch.relu(hidden * (xi @ p["w1"].mT)))
+                    ),
+                    prm,
+                    inputs,
+                    inputs,
+                    "full",
+                )
+            )(
+                {
+                    "w1": w1.reshape(-1, *w1.shape[-2:]),
+                    "w2": w2.reshape(-1, *w2.shape[-2:]),
+                },
+                x.expand(*w1.shape[:-2], *x.shape[-2:]).reshape(-1, *x.shape[-2:]),
+            ).reshape(result.shape),
+        )
+        is None
+    ),
+    "the closed form is the full Jacobian contraction of f",
+    enabled=icontract.SLOW,
+)
+def two_layer_entk_full(
+    w1: torch.Tensor,
+    w2: torch.Tensor,
+    x: torch.Tensor,
+    hidden: float,
+    readout: float,
+) -> torch.Tensor:
+    """Empirical NTK of every logit pair of ``f(x) = c W2 relu(s W1 x)``.
+
+    The structured derivatives of :func:`two_layer_entk` with the output
+    weights ``u = e_a`` and ``u' = e_b`` (Novak et al. 2022, Sections 3.4 and
+    4.1): the second layer contributes ``c^2 delta_ab r^T r'`` and the first
+    ``c^2 s^2 (x^T x') sum_k W2[a, k] W2[b, k] relu'(z_k) relu'(z'_k)``, with
+    ``z``, ``r`` and ``relu'`` as there. The postcondition checks it against
+    the full Jacobian contraction.
+
+    Args:
+        w1: First-layer weights ``(..., N, D)``, one matrix per leading index.
+        w2: Readout weights ``(..., O, N)``, with the leading shape of ``w1``.
+        x: One-hot inputs ``(..., n, D)``, shared or one batch per leading
+            index.
+        hidden: Hidden scale ``s``.
+        readout: Readout scale ``c``.
+
+    Returns:
+        The kernel ``(..., n, n, O, O)`` per leading index, in the layout of
+        the ``"full"`` contraction.
+    """
+    z = hidden * (x @ w1.mT)
+    r = z.relu()
+    delta = (z > 0).to(z.dtype)[..., :, None, :] * w2[..., None, :, :]
+    eye = torch.eye(w2.shape[-2], dtype=z.dtype, device=z.device)
+    return readout**2 * (
+        (r @ r.mT)[..., None, None] * eye
+        + hidden**2
+        * (x @ x.mT)[..., None, None]
+        * torch.einsum("...nah,...mbh->...nmab", delta, delta)
+    )
+
+
+@icontract.ensure(
     lambda result: torch.allclose(result.sum(-1), torch.zeros_like(result.sum(-1))),
     "every row sums to zero, since H 1 = 0",
+    enabled=icontract.SLOW,
 )
 @icontract.ensure(
     lambda result: torch.allclose(result.sum(-2), torch.zeros_like(result.sum(-2))),
     "every column sums to zero, since 1^T H = 0",
+    enabled=icontract.SLOW,
 )
 def centre(k: torch.Tensor) -> torch.Tensor:
     """Centre kernel matrices in feature space, Cortes et al. (2012), Equation 1.
@@ -267,6 +368,7 @@ def centre(k: torch.Tensor) -> torch.Tensor:
         result, torch.linalg.vecdot(a.flatten(-2), b.flatten(-2)), equal_nan=True
     ),
     "Tr[a^T b] is the dot product of the flattened matrices",
+    enabled=icontract.SLOW,
 )
 def frobenius(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     """Frobenius product ``Tr[a^T b]`` over the last two dimensions.
@@ -289,6 +391,7 @@ def frobenius(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
         torch.frexp(result).mantissa, torch.full_like(result, 0.5)
     ),
     "the result is a power of 2",
+    enabled=icontract.SLOW,
 )
 @icontract.ensure(
     lambda a, result: bool(
@@ -298,6 +401,7 @@ def frobenius(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
         ).all()
     ),
     "the result is the largest power of 2 not above max |a_ij|",
+    enabled=icontract.SLOW,
 )
 def base_power(a: torch.Tensor) -> torch.Tensor:
     """Largest power of 2 not above ``max |a_ij|``, the scale of each matrix.

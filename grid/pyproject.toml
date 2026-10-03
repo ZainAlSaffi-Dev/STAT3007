@@ -51,6 +51,7 @@ test = [
 dev = [
   { include-group = "test" },
   "deptry>=0.25",
+  "pandas-stubs>=3.0.5.260914",
 ]
 docs = [
   "sphinx>=7.0",
@@ -71,6 +72,7 @@ grid = [
 ]
 analysis = [
     { include-group = "grid" },
+    "formulaic>=1.2.2",
     "lifelines>=0.30.0",
     "matplotlib>=3.11.1",
     "scipy>=1.18.0",
@@ -144,6 +146,9 @@ ICONTRACT_SLOW = "true"
 # The tests import torch, which mutmut's documentation names as unsafe to fork
 # after importing, so each mutant forks from a clean fork server.
 process_isolation = "forkserver"
+# mutmut runs the tests from a copy of the sources and the tests, and the
+# training module bounds its fields by config/grid.yaml beside them.
+also_copy = ["config/"]
 
 
 [tool.coverage]

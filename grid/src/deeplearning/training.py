@@ -122,7 +122,13 @@ class Setting:
         ),
     ]
     eta_0: Annotated[float, Gt(0), Le(max(c["eta_0"] for c in GRID["cells"]))]
-    eta_lambda: Annotated[float, Interval(ge=0, le=max(GRID["design"]["range"]))]
+    eta_lambda: Annotated[
+        float,
+        Interval(
+            ge=0,
+            le=max(c["eta_0"] for c in GRID["cells"]) * max(GRID["scan"]["lambda"]),
+        ),
+    ]
 
 
 @dataclass(frozen=True)
@@ -193,23 +199,23 @@ class TwoLayer(nn.Module):
             parameterisation
         ]
 
-    def forward(self, tokens: torch.Tensor) -> torch.Tensor:
-        """Evaluate the network on one-hot inputs, given by their hot positions.
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Evaluate the network on one-hot inputs.
 
-        For an input with ones at ``tokens``, ``W1 x`` is the sum of the columns
-        of ``W1`` at those positions, Gromov (2023), Claim I, where ``W1`` is a
-        row of two ``N x p`` matrices. ``embedding`` looks the columns up, so the
-        product with the dense one-hot matrix is never formed; ``embedding_bag``
-        would sum them in one call but has no ``vmap`` batching rule.
+        ``W1 x`` is the matrix product of Gromov (2023), Eq. 1, with each pair
+        encoded as two one-hot vectors stacked into one. Its backward is a matrix
+        product, where the backward of looking up the hot columns with
+        ``embedding`` scatters into them with the deterministic algorithm that
+        PyTorch uses for ``nn.Embedding`` on CUDA (PyTorch,
+        torch.use_deterministic_algorithms), which sorts the positions.
 
         Args:
-            tokens: Positions of the ones of each input, one row per example.
+            x: One-hot inputs, one row per example.
 
         Returns:
             Logits, one row per example.
         """
-        preactivation = nn.functional.embedding(tokens, self.w1.T).sum(-2)
-        return self.readout * torch.relu(self.hidden * preactivation) @ self.w2.T
+        return self.readout * torch.relu(self.hidden * (x @ self.w1.T)) @ self.w2.T
 
 
 def modular_addition(
@@ -223,9 +229,8 @@ def modular_addition(
         seed: Seed of the split.
 
     Returns:
-        Inputs ``(p^2, 2p)``, one-hot targets ``(p^2, p)``, the indices of the
-        training and test pairs, and the positions ``(a, p + b)`` of the ones of
-        each input, ``(p^2, 2)``.
+        Inputs ``(p^2, 2p)``, one-hot targets ``(p^2, p)``, and the indices of
+        the training and test pairs.
     """
     eye = torch.eye(p, dtype=DTYPE)
     a, b = torch.cartesian_prod(torch.arange(p), torch.arange(p)).T
@@ -233,7 +238,7 @@ def modular_addition(
     y = eye[(a + b) % p]
     order = torch.randperm(p * p, generator=torch.Generator().manual_seed(seed))
     cut = int(train_fraction * p * p)
-    return x, y, order[:cut], order[cut:], torch.stack([a, p + b], 1)
+    return x, y, order[:cut], order[cut:]
 
 
 def checkpoints(
@@ -275,7 +280,7 @@ def train(cell: Cell) -> dict[str, pd.DataFrame]:
     torch.use_deterministic_algorithms(True)
     splits = [modular_addition(cell.p, cell.train_fraction, s) for s in cell.seeds]
     y = splits[0][1]
-    tokens = splits[0][4]
+    x = splits[0][0]
     # Every setting trains every seed, settings outermost: the models of the
     # repeated jobs fused into one, Wang et al. (2021), Section 3.
     keys = pd.DataFrame(
@@ -289,6 +294,15 @@ def train(cell: Cell) -> dict[str, pd.DataFrame]:
         msg = "the split must leave both training and test pairs"
         raise ValueError(msg)
     labels = y.argmax(1)
+    # The mean of MSELoss divides the summed squared errors of the training
+    # pairs by their number of elements (PyTorch, MSELoss), so each element of
+    # a training pair weighs one over that number and of a test pair zero. The
+    # weighted sum of the unreduced loss is that mean, with an elementwise
+    # backward, where indexing the outputs by the pairs backpropagates through
+    # an index_put_ with accumulation that sorts the indices on every step.
+    weight = torch.zeros(len(train_idx), len(y), 1, dtype=DTYPE).scatter_(
+        1, train_idx[..., None], 1 / (train_idx.shape[1] * y.shape[1])
+    )
     models = [
         TwoLayer(
             2 * cell.p,
@@ -311,8 +325,8 @@ def train(cell: Cell) -> dict[str, pd.DataFrame]:
     params = {
         k: v.detach().to(device) for k, v in stack_module_state(models)[0].items()
     }
-    y, tokens, train_idx, test_idx, labels, members = (
-        t.to(device) for t in (y, tokens, train_idx, test_idx, labels, members)
+    y, x, train_idx, test_idx, labels, members, weight = (
+        t.to(device) for t in (y, x, train_idx, test_idx, labels, members, weight)
     )
     base = copy.deepcopy(models[0]).to("meta")
 
@@ -321,7 +335,7 @@ def train(cell: Cell) -> dict[str, pd.DataFrame]:
 
         Args:
             prm: Parameters of one seed.
-            inputs: Positions of the ones of each input, one row per example.
+            inputs: One-hot inputs, one row per example.
 
         Returns:
             Logits, one row per example.
@@ -329,7 +343,7 @@ def train(cell: Cell) -> dict[str, pd.DataFrame]:
         logits: torch.Tensor = functional_call(base, (dict(prm),), (inputs,))
         return logits
 
-    f_0 = vmap(fnet, (0, None))(params, tokens)
+    f_0 = vmap(fnet, (0, None))(params, x)
     theta_0 = torch.cat([v.flatten(1) for v in params.values()], 1)
     # The fused optimiser broadcasts a vector of learning rates eta_0 / alpha^2
     # over the models' gradients, Wang et al. (2021), Section 3, in the coupled
@@ -352,11 +366,12 @@ def train(cell: Cell) -> dict[str, pd.DataFrame]:
         | {f"grad_{name}": torch.empty_like(value) for name, value in params.items()}
         | {
             "f_0": f_0,
-            "tokens": tokens,
+            "x": x,
             "y": y,
             "labels": labels,
             "train_idx": train_idx,
             "test_idx": test_idx,
+            "weight": weight,
             "alpha": alpha,
             "lr": lr,
             "decay": decay,
@@ -369,23 +384,25 @@ def train(cell: Cell) -> dict[str, pd.DataFrame]:
         state.register_buffer(name, value)
 
     def loss(
-        prm: kernels.Params, f0: torch.Tensor, pairs: torch.Tensor, a: torch.Tensor
+        prm: kernels.Params, f0: torch.Tensor, w: torch.Tensor, a: torch.Tensor
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """Training loss of the centred, rescaled predictor.
 
         Args:
             prm: Parameters of one model.
             f0: That model's initial logits on every pair.
-            pairs: That model's training pairs.
+            w: That model's weight of each pair's squared errors.
             a: That model's output scale ``alpha``.
 
         Returns:
             The mean squared error over the training pairs, and the predictor's
             outputs on every pair.
         """
-        out = a * (fnet(prm, state.get_buffer("tokens")) - f0)
+        out = a * (fnet(prm, state.get_buffer("x")) - f0)
         return (
-            nn.functional.mse_loss(out[pairs], state.get_buffer("y")[pairs]),
+            (
+                nn.functional.mse_loss(out, state.get_buffer("y"), reduction="none") * w
+            ).sum(),
             out.detach(),
         )
 
@@ -399,7 +416,7 @@ def train(cell: Cell) -> dict[str, pd.DataFrame]:
         grads, out = vmap(grad(loss, has_aux=True))(
             {name: state.get_buffer(name) for name in params},
             state.get_buffer("f_0"),
-            state.get_buffer("train_idx"),
+            state.get_buffer("weight"),
             state.get_buffer("alpha"),
         )
         for name, value in grads.items():
@@ -457,7 +474,7 @@ def train(cell: Cell) -> dict[str, pd.DataFrame]:
         """
         return {
             name: kernels.two_layer_entk(
-                params["w1"], params["w2"], tokens, u, base.hidden, base.readout
+                params["w1"], params["w2"], x, u, base.hidden, base.readout
             )
             for name, u in outputs.items()
         }
@@ -520,6 +537,20 @@ def train(cell: Cell) -> dict[str, pd.DataFrame]:
                         [keys.index, range(k.shape[-1])], names=["member", "order"]
                     ),
                 )
+            )
+        # The tangent kernel of all c outputs on the n test pairs, nc x nc, and
+        # its CKA with the class label kernel of the stacked one-hot targets,
+        # the alignment of Baratin et al. (2021, supplement, Sampled Versions),
+        # from the structured derivatives of Novak et al. (2022), Secs. 3.4
+        # and 4.1.
+        if cell.kernels:
+            full = kernels.two_layer_entk_full(
+                params["w1"], params["w2"], x[test_idx], base.hidden, base.readout
+            )
+            stacked = y[test_idx].flatten(1)
+            row["A_full"] = kernels.alignment(
+                full.permute(0, 1, 3, 2, 4).flatten(3).flatten(1, 2),
+                stacked[:, :, None] * stacked[:, None, :],
             )
         return pd.DataFrame(
             {"step": step} | {k: v.numpy(force=True) for k, v in row.items()},

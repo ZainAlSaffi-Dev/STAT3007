@@ -1,0 +1,20 @@
+\pgfplotstableread{pythontex-files-\jobname/arms.csv}\arms
+\mmznext{
+  context={%
+    \csname pdf@filemdfivesum\endcsname{pythontex-files-\jobname/arms.csv}%
+  },
+}
+\begin{tikzpicture}
+  \begin{axis}[
+      xmode=log,
+      xlabel={step $t$},
+      ylabel={test accuracy},
+      legend pos=outer north east,
+    ]
+    \expandafter\pgfplotsinvokeforeach\expandafter{\armvalues}{
+      \addplot+[mark=none, restrict expr to domain={\thisrow{alpha}}{#1:#1}]
+      table [x=step, y=test_acc] {\arms};
+      \addlegendentry{$\alpha=#1$}
+    }
+  \end{axis}
+\end{tikzpicture}

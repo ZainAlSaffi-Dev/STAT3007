@@ -47,9 +47,9 @@
     ] {\dynamics};
     \nextgroupplot[title={$A_t$}]
     \addplot table [
-      x=step, y=A_sum,
-      y error plus expr=\thisrow{A_sum_hi}-\thisrow{A_sum},
-      y error minus expr=\thisrow{A_sum}-\thisrow{A_sum_lo},
+      x=step, y=A_full,
+      y error plus expr=\thisrow{A_full_hi}-\thisrow{A_full},
+      y error minus expr=\thisrow{A_full}-\thisrow{A_full_lo},
     ] {\dynamics};
   \end{groupplot}
 \end{tikzpicture}
