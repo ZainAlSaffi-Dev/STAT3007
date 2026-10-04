@@ -1,0 +1,239 @@
+table,name,group,meaning,formula,source,units
+checkpoints,run_id,ids,"The name of the run, the grid cell name of ntk_lib.cell_name.",-,ntk_lib.cell_name,-
+checkpoints,alpha,ids,The laziness knob alpha of the rescaled predictor alpha (f - f_0).,-,"Kumar et al. (2024), Appendix 8.1, Equation 7, arXiv v3",-
+checkpoints,width,ids,The hidden width N.,-,-,-
+checkpoints,eta_kappa,ids,"The weight decay as the product of learning rate and decay, eta lambda in the report.",-,"docs/report.tex, The laziness and weight-decay knobs",-
+checkpoints,seed,ids,The model seed. The data seed is 42 for every run.,-,-,-
+checkpoints,step,grid,The checkpoint step.,-,-,steps
+checkpoints,log10_step1,grid,Base 10 logarithm of the step plus one.,log10(step + 1),-,-
+checkpoints,dt_prev,grid,Steps since the previous checkpoint. NaN at step 0.,-,-,steps
+checkpoints,on_linear_grid,grid,"True if the step is a multiple of the linear checkpoint interval of 1,000 steps.",-,-,-
+checkpoints,on_log_grid,grid,True if the step is one of the log-spaced checkpoints.,-,-,-
+checkpoints,wall_seconds,grid,Wall-clock seconds since the run started. It depends on the machine and the load.,-,-,s
+checkpoints,train_loss,performance,Mean squared error of the predictor on the train set.,-,"ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,train_acc,performance,"Accuracy of the predictor on the train set, by the largest output.",-,"ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,test_loss,performance,Mean squared error of the predictor on the test set.,-,"ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,test_acc,performance,"Accuracy of the predictor on the test set, by the largest output.",-,"ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,train_margin_mean,performance,Mean over the train set of the correct output minus the largest other output.,mean_i (f_i[y_i] - max_{c != y_i} f_i[c]),The group's own definition,-
+checkpoints,train_margin_min,performance,Smallest margin over the train set.,-,The group's own definition,-
+checkpoints,train_correct_out_mean,performance,Mean output at the correct class on the train set. The MSE target there is one.,-,The group's own definition,-
+checkpoints,train_wrong_out_rms,performance,Root mean square output at the wrong classes on the train set. The MSE target there is zero.,-,The group's own definition,-
+checkpoints,train_out_rms,performance,"Root mean square of all outputs on the train set, the output scale.",-,The group's own definition,-
+checkpoints,train_out_max_mean,performance,Mean over the train set of the largest output.,-,The group's own definition,-
+checkpoints,test_margin_mean,performance,Mean over the test set of the correct output minus the largest other output.,mean_i (f_i[y_i] - max_{c != y_i} f_i[c]),The group's own definition,-
+checkpoints,test_margin_min,performance,Smallest margin over the test set.,-,The group's own definition,-
+checkpoints,test_correct_out_mean,performance,Mean output at the correct class on the test set. The MSE target there is one.,-,The group's own definition,-
+checkpoints,test_wrong_out_rms,performance,Root mean square output at the wrong classes on the test set. The MSE target there is zero.,-,The group's own definition,-
+checkpoints,test_out_rms,performance,"Root mean square of all outputs on the test set, the output scale.",-,The group's own definition,-
+checkpoints,test_out_max_mean,performance,Mean over the test set of the largest output.,-,The group's own definition,-
+checkpoints,grad_norm,optimisation,"Norm of the gradient of the training loss, without the decay term.",||dL/dtheta||,The group's own definition,-
+checkpoints,grad_norm_W1,optimisation,Norm of the gradient of the training loss with respect to W1.,-,The group's own definition,-
+checkpoints,grad_norm_W2,optimisation,Norm of the gradient of the training loss with respect to W2.,-,The group's own definition,-
+checkpoints,update_norm,optimisation,"Norm of the next gradient-descent step, decay included.",lr ||g + wd theta|| with lr = eta_0 / alpha^2 and wd = eta_kappa / lr,ntk_lib.train_run,-
+checkpoints,grad_weight_cos,optimisation,Cosine between the loss gradient and the weights. Near minus one at a point where decay and gradient cancel.,"<g, theta> / (||g|| ||theta||)",The group's own definition,-
+checkpoints,grad_decay_ratio,optimisation,Size of the loss gradient over the size of the decay pull. NaN without decay.,||g|| / (wd ||theta||),The group's own definition,-
+checkpoints,decay_residual,optimisation,"How far the gradient and the decay pull are from cancelling. Zero at a fixed point of gradient descent with decay, one when the two are orthogonal.",||g + wd theta|| / (||g|| + wd ||theta||),The group's own definition,-
+checkpoints,stationary,optimisation,True if the run has decay and decay_residual is below 0.001.,-,The group's own definition,-
+checkpoints,sharpness,optimisation,"Largest eigenvalue of the Hessian of the training loss, without the decay term, by 20 power iterations with Hessian-vector products, warm started.",lambda_max(d^2 L / d theta^2),The group's own definition,-
+checkpoints,lr_sharpness,optimisation,Learning rate times sharpness. Gradient descent on a quadratic with this curvature is stable when it is below 2.,lr lambda_max,The group's own definition,-
+checkpoints,weight_norm,weights,Norm of all the parameters.,-,"ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,param_dist,weights,Relative parameter movement.,||theta_t - theta_0|| / ||theta_0||,"ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,log_weight_norm_ratio,weights,"Log of the weight norm over its value at step 0. The kernel of a 2-homogeneous network rescaled by c has norm c^2 times larger, so twice this value is the scale term a uniform rescaling of the weights would give.",log(||theta_t|| / ||theta_0||),The group's own definition,-
+checkpoints,W1_norm,weights,Frobenius norm of W1.,-,The group's own definition,-
+checkpoints,W1_dist,weights,Relative movement of W1.,||W1_t - W1_0|| / ||W1_0||,The group's own definition,-
+checkpoints,W1_stable_rank,weights,Stable rank of W1.,||W||_F^2 / sigma_max^2,The group's own definition,-
+checkpoints,W1_eff_rank,weights,"Effective rank of W1, the exponential of the entropy of its singular values normalised to sum to one.","exp(-sum q log q), q = sigma / sum sigma",The group's own definition,-
+checkpoints,W2_norm,weights,Frobenius norm of W2.,-,The group's own definition,-
+checkpoints,W2_dist,weights,Relative movement of W2.,||W2_t - W2_0|| / ||W2_0||,The group's own definition,-
+checkpoints,W2_stable_rank,weights,Stable rank of W2.,||W||_F^2 / sigma_max^2,The group's own definition,-
+checkpoints,W2_eff_rank,weights,"Effective rank of W2, the exponential of the entropy of its singular values normalised to sum to one.","exp(-sum q log q), q = sigma / sum sigma",The group's own definition,-
+checkpoints,layer_imbalance,weights,"Difference of the squared layer norms over the squared total norm. Gradient flow without decay keeps ||W1||^2 - ||W2||^2 fixed for this bias-free ReLU network. With decay it shrinks by (1 - eta_kappa)^2 per step, so it mostly records decay.",(||W1||^2 - ||W2||^2) / ||theta||^2,The group's own definition,-
+checkpoints,dead_frac,weights,Fraction of hidden units that are inactive on every training input.,-,The group's own definition,-
+checkpoints,active_frac,weights,Mean over training inputs of the fraction of hidden units that are active.,-,The group's own definition,-
+checkpoints,fourier_W_a_topshare,fourier,"Mean over hidden units, weighted by the unit's norm, of the share of nonzero-frequency power at the unit's largest frequency, for the a-half of W1 along the token axis, in the weights. Frequencies k and p - k are folded together.",sum_i w_i max_k P_ik / sum_k P_ik / sum_i w_i,"Gromov (2023), arXiv:2301.02679v1, Equations 6, 7 and 12, as motivation",-
+checkpoints,fourier_W_a_neff,fourier,"Effective number of nonzero frequencies in the pooled power of the a-half of W1 along the token axis, in the weights.",exp(entropy of sum_i P_ik / sum_ik P_ik),"Gromov (2023), arXiv:2301.02679v1, Equations 6, 7 and 12, as motivation",-
+checkpoints,fourier_W_a_dcshare,fourier,"Share of the power at frequency zero for the a-half of W1 along the token axis, in the weights.",sum_i P_i0 / sum_ik P_ik over all k,The group's own definition,-
+checkpoints,fourier_W_b_topshare,fourier,"Mean over hidden units, weighted by the unit's norm, of the share of nonzero-frequency power at the unit's largest frequency, for the b-half of W1 along the token axis, in the weights. Frequencies k and p - k are folded together.",sum_i w_i max_k P_ik / sum_k P_ik / sum_i w_i,"Gromov (2023), arXiv:2301.02679v1, Equations 6, 7 and 12, as motivation",-
+checkpoints,fourier_W_b_neff,fourier,"Effective number of nonzero frequencies in the pooled power of the b-half of W1 along the token axis, in the weights.",exp(entropy of sum_i P_ik / sum_ik P_ik),"Gromov (2023), arXiv:2301.02679v1, Equations 6, 7 and 12, as motivation",-
+checkpoints,fourier_W_b_dcshare,fourier,"Share of the power at frequency zero for the b-half of W1 along the token axis, in the weights.",sum_i P_i0 / sum_ik P_ik over all k,The group's own definition,-
+checkpoints,fourier_W_c_topshare,fourier,"Mean over hidden units, weighted by the unit's norm, of the share of nonzero-frequency power at the unit's largest frequency, for W2 along the class axis, in the weights. Frequencies k and p - k are folded together.",sum_i w_i max_k P_ik / sum_k P_ik / sum_i w_i,"Gromov (2023), arXiv:2301.02679v1, Equations 6, 7 and 12, as motivation",-
+checkpoints,fourier_W_c_neff,fourier,"Effective number of nonzero frequencies in the pooled power of W2 along the class axis, in the weights.",exp(entropy of sum_i P_ik / sum_ik P_ik),"Gromov (2023), arXiv:2301.02679v1, Equations 6, 7 and 12, as motivation",-
+checkpoints,fourier_W_c_dcshare,fourier,"Share of the power at frequency zero for W2 along the class axis, in the weights.",sum_i P_i0 / sum_ik P_ik over all k,The group's own definition,-
+checkpoints,fourier_W_match,fourier,"Weighted fraction of hidden units whose largest frequency is the same for a, b and the output class, in the weights.",-,"Gromov (2023), arXiv:2301.02679v1, Equations 6, 7 and 12, as motivation",-
+checkpoints,fourier_W_phase,fourier,"Weighted mean of cos(phi_a + phi_b - phi_c) over the matched units, with the phases of the DFT at the shared frequency, in the weights. Equation 12 of Gromov (2023) makes this one for the exact solution. NaN if no unit matches.",-,"Gromov (2023), arXiv:2301.02679v1, Equations 6, 7 and 12, as motivation",-
+checkpoints,fourier_dW_a_topshare,fourier,"Mean over hidden units, weighted by the unit's norm, of the share of nonzero-frequency power at the unit's largest frequency, for the a-half of W1 along the token axis, in the change of the weights since step 0. Frequencies k and p - k are folded together.",sum_i w_i max_k P_ik / sum_k P_ik / sum_i w_i,"Gromov (2023), arXiv:2301.02679v1, Equations 6, 7 and 12, as motivation",-
+checkpoints,fourier_dW_a_neff,fourier,"Effective number of nonzero frequencies in the pooled power of the a-half of W1 along the token axis, in the change of the weights since step 0.",exp(entropy of sum_i P_ik / sum_ik P_ik),"Gromov (2023), arXiv:2301.02679v1, Equations 6, 7 and 12, as motivation",-
+checkpoints,fourier_dW_a_dcshare,fourier,"Share of the power at frequency zero for the a-half of W1 along the token axis, in the change of the weights since step 0.",sum_i P_i0 / sum_ik P_ik over all k,The group's own definition,-
+checkpoints,fourier_dW_b_topshare,fourier,"Mean over hidden units, weighted by the unit's norm, of the share of nonzero-frequency power at the unit's largest frequency, for the b-half of W1 along the token axis, in the change of the weights since step 0. Frequencies k and p - k are folded together.",sum_i w_i max_k P_ik / sum_k P_ik / sum_i w_i,"Gromov (2023), arXiv:2301.02679v1, Equations 6, 7 and 12, as motivation",-
+checkpoints,fourier_dW_b_neff,fourier,"Effective number of nonzero frequencies in the pooled power of the b-half of W1 along the token axis, in the change of the weights since step 0.",exp(entropy of sum_i P_ik / sum_ik P_ik),"Gromov (2023), arXiv:2301.02679v1, Equations 6, 7 and 12, as motivation",-
+checkpoints,fourier_dW_b_dcshare,fourier,"Share of the power at frequency zero for the b-half of W1 along the token axis, in the change of the weights since step 0.",sum_i P_i0 / sum_ik P_ik over all k,The group's own definition,-
+checkpoints,fourier_dW_c_topshare,fourier,"Mean over hidden units, weighted by the unit's norm, of the share of nonzero-frequency power at the unit's largest frequency, for W2 along the class axis, in the change of the weights since step 0. Frequencies k and p - k are folded together.",sum_i w_i max_k P_ik / sum_k P_ik / sum_i w_i,"Gromov (2023), arXiv:2301.02679v1, Equations 6, 7 and 12, as motivation",-
+checkpoints,fourier_dW_c_neff,fourier,"Effective number of nonzero frequencies in the pooled power of W2 along the class axis, in the change of the weights since step 0.",exp(entropy of sum_i P_ik / sum_ik P_ik),"Gromov (2023), arXiv:2301.02679v1, Equations 6, 7 and 12, as motivation",-
+checkpoints,fourier_dW_c_dcshare,fourier,"Share of the power at frequency zero for W2 along the class axis, in the change of the weights since step 0.",sum_i P_i0 / sum_ik P_ik over all k,The group's own definition,-
+checkpoints,fourier_dW_match,fourier,"Weighted fraction of hidden units whose largest frequency is the same for a, b and the output class, in the change of the weights since step 0.",-,"Gromov (2023), arXiv:2301.02679v1, Equations 6, 7 and 12, as motivation",-
+checkpoints,fourier_dW_phase,fourier,"Weighted mean of cos(phi_a + phi_b - phi_c) over the matched units, with the phases of the DFT at the shared frequency, in the change of the weights since step 0. Equation 12 of Gromov (2023) makes this one for the exact solution. NaN if no unit matches.",-,"Gromov (2023), arXiv:2301.02679v1, Equations 6, 7 and 12, as motivation",-
+checkpoints,S_t,kernel_raw,Scale term on the raw probe kernel.,log(||K_t||_F / ||K_0||_F),"ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,R_t,kernel_raw,Rotation term on the raw probe kernel.,"1 - <K_t / ||K_t||, K_0 / ||K_0||>","ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,K_norm,kernel_raw,"Frobenius norm of the raw probe kernel. K is the kernel of f, not of the rescaled predictor. With lr = eta_0 / alpha^2 the step in function space is eta_0 K at every alpha, so this can be compared across alpha.",-,"ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,yKy,kernel_raw,"y^T K^+ y on the probe set, summed over the label columns.",-,"ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,S_c,kernel_centred,Scale term on the centred probe kernel.,log(||Kc_t||_F / ||Kc_0||_F),"docs/report.tex, Kernel metrics section; ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,R_c,kernel_centred,Rotation term on the centred probe kernel.,"1 - <k_t, k_0>","docs/report.tex, Kernel metrics section; ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,A_t,kernel_centred,Centred kernel-target alignment on the probe.,"<Kc_t, G> / (||Kc_t|| ||G||), G = H Y Y^T H","Cortes, Mohri and Rostamizadeh (2012), Definition 4; docs/report.tex, Kernel metrics section; ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,A_u,kernel_centred,Uncentred alignment on the probe.,"<K_t, Y Y^T> / (||K_t|| ||Y Y^T||)","ntk_lib.uncentred_alignment; ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,S_c_train,kernel_centred,"The scale term on the train part of the probe, with the kernel restricted to those pairs.",-,"docs/report.tex, Kernel metrics section; ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,R_c_train,kernel_centred,"The rotation term on the train part of the probe, with the kernel restricted to those pairs.",-,"docs/report.tex, Kernel metrics section; ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,A_t_train,kernel_centred,"The centred alignment on the train part of the probe, with the kernel restricted to those pairs.",-,"docs/report.tex, Kernel metrics section; ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,A_u_train,kernel_centred,"The uncentred alignment on the train part of the probe, with the kernel restricted to those pairs.",-,"docs/report.tex, Kernel metrics section; ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,S_c_test,kernel_centred,"The scale term on the test part of the probe, with the kernel restricted to those pairs.",-,"docs/report.tex, Kernel metrics section; ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,R_c_test,kernel_centred,"The rotation term on the test part of the probe, with the kernel restricted to those pairs.",-,"docs/report.tex, Kernel metrics section; ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,A_t_test,kernel_centred,"The centred alignment on the test part of the probe, with the kernel restricted to those pairs.",-,"docs/report.tex, Kernel metrics section; ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,A_u_test,kernel_centred,"The uncentred alignment on the test part of the probe, with the kernel restricted to those pairs.",-,"docs/report.tex, Kernel metrics section; ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,K_norm_centred,kernel_centred,Frobenius norm of the centred probe kernel.,||Kc_t||_F,"Cortes, Mohri and Rostamizadeh (2012), Lemma 1, for H K H; ntk_trace.Tracer.measure",-
+checkpoints,inner_K0,kernel_centred,Inner product of the centred kernel with the centred kernel at step 0.,"<Kc_t, Kc_0>",ntk_trace.Tracer.measure,-
+checkpoints,inner_G,kernel_centred,Inner product of the centred kernel with the centred target Gram matrix.,"<Kc_t, G>",ntk_trace.Tracer.measure,-
+checkpoints,D,kernel_centred,The usual kernel movement statistic on the centred kernel.,||Kc_t - Kc_0||_F / ||Kc_0||_F,"docs/report.tex, Equation eq:decomp",-
+checkpoints,exp2S_term,kernel_centred,First piece of Equation eq:decomp. D^2 = exp2S_term + 1 - cross_term.,e^(2 S_c),"docs/report.tex, Equation eq:decomp, the group's own algebra",-
+checkpoints,cross_term,kernel_centred,Last piece of Equation eq:decomp.,2 e^S_c (1 - R_c),"docs/report.tex, Equation eq:decomp, the group's own algebra",-
+checkpoints,gamma,kernel_centred,The aim: the cosine between the part of k_t orthogonal to k_0 and the part of the unit target orthogonal to k_0. NaN at step 0.,"<v_t, g_perp> / ||v_t||, v_t = k_t - <k_t, k_0> k_0","term_dependence.py docstring, the group's own algebra; ntk_trace.Tracer.measure",-
+checkpoints,share_k0,kernel_centred,Share of the squared change of the unit kernel along k_0. It equals R_c / 2.,"<d_t, k_0>^2 / ||d_t||^2, d_t = k_t - k_0","docs/zain_tierx_plan.md, E3; ntk_trace.Tracer.measure",-
+checkpoints,share_gperp,kernel_centred,Share of the squared change of the unit kernel along g_perp.,"<d_t, g_perp>^2 / ||d_t||^2","docs/zain_tierx_plan.md, E3; ntk_trace.Tracer.measure",-
+checkpoints,share_residual,kernel_centred,Share of the squared change of the unit kernel orthogonal to both k_0 and g_perp. The three shares sum to one.,-,"docs/zain_tierx_plan.md, E3; ntk_trace.Tracer.measure",-
+checkpoints,kernel_degenerate,kernel_centred,True if the centred probe kernel norm is below 1e-30. The unit-kernel columns are then NaN.,-,The group's own definition,-
+checkpoints,S_W1,layer_kernels,Scale term of the centred kernel term from the gradient of W1 alone.,"log(||Kc_W1,t|| / ||Kc_W1,0||)","ntk_lib.entk_closed_form, The group's own definition",-
+checkpoints,R_W1,layer_kernels,Rotation term of the centred kernel term from W1 alone.,-,"ntk_lib.entk_closed_form, The group's own definition",-
+checkpoints,A_W1,layer_kernels,Centred alignment of the kernel term from W1 alone.,-,"ntk_lib.entk_closed_form, The group's own definition",-
+checkpoints,S_W2,layer_kernels,Scale term of the centred kernel term from the gradient of W2 alone.,"log(||Kc_W2,t|| / ||Kc_W2,0||)","ntk_lib.entk_closed_form, The group's own definition",-
+checkpoints,R_W2,layer_kernels,Rotation term of the centred kernel term from W2 alone.,-,"ntk_lib.entk_closed_form, The group's own definition",-
+checkpoints,A_W2,layer_kernels,Centred alignment of the kernel term from W2 alone.,-,"ntk_lib.entk_closed_form, The group's own definition",-
+checkpoints,W1_kernel_share,layer_kernels,Share of the trace of the centred probe kernel that comes from W1.,tr(Kc_W1) / (tr(Kc_W1) + tr(Kc_W2)),"ntk_lib.entk_closed_form, The group's own definition",-
+checkpoints,S_first_logit,first_logit,The scale term of the centred kernel of the first output alone. The report names this kernel as a robustness check.,-,"docs/report.tex, Kernel metrics section; ntk_lib.entk_closed_form",-
+checkpoints,R_first_logit,first_logit,The rotation term of the centred kernel of the first output alone. The report names this kernel as a robustness check.,-,"docs/report.tex, Kernel metrics section; ntk_lib.entk_closed_form",-
+checkpoints,A_first_logit,first_logit,The centred alignment of the centred kernel of the first output alone. The report names this kernel as a robustness check.,-,"docs/report.tex, Kernel metrics section; ntk_lib.entk_closed_form",-
+checkpoints,S_sum,report_kernel,"Scale, the plain ratio of Frobenius norms to step 0, of the kernel of the sum of the logits divided by sqrt(p), on the test pairs of the run. These are the S_t, R_t, D_t and A_t of the golden report.",-,"docs/report_golden.pdf, Equations 5 and 6; ntk_lib.sum_kernel",-
+checkpoints,R_sum,report_kernel,"Shape change, one minus the uncentred cosine to step 0, of the kernel of the sum of the logits divided by sqrt(p), on the test pairs of the run. These are the S_t, R_t, D_t and A_t of the golden report.",-,"docs/report_golden.pdf, Equations 5 and 6; ntk_lib.sum_kernel",-
+checkpoints,D_sum,report_kernel,"Variation, the Frobenius norm of the change from step 0 over the norm at step 0, of the kernel of the sum of the logits divided by sqrt(p), on the test pairs of the run. These are the S_t, R_t, D_t and A_t of the golden report.",-,"docs/report_golden.pdf, Equations 5 and 6; ntk_lib.sum_kernel",-
+checkpoints,A_sum,report_kernel,"Centred alignment with Y Y^T, of the kernel of the sum of the logits divided by sqrt(p), on the test pairs of the run. These are the S_t, R_t, D_t and A_t of the golden report.",-,"docs/report_golden.pdf, Equations 5 and 6; ntk_lib.sum_kernel",-
+checkpoints,eig_trace,spectrum,Trace of the centred probe kernel.,-,The group's own definition,-
+checkpoints,eig_top1,spectrum,Largest eigenvalue of the centred probe kernel.,-,The group's own definition,-
+checkpoints,eig_top1_share,spectrum,Largest eigenvalue over the trace.,-,The group's own definition,-
+checkpoints,eig_eff_rank,spectrum,"Exponential of the entropy of the eigenvalues normalised to sum to one. The zero eigenvalue that centring creates is left out, and so is every column below.",-,The group's own definition,-
+checkpoints,eig_participation,spectrum,Participation ratio of the eigenvalues.,(sum lambda)^2 / sum lambda^2,The group's own definition,-
+checkpoints,eig_n90,spectrum,Number of the largest eigenvalues that hold 90 percent of the trace.,-,The group's own definition,-
+checkpoints,eig_gap_ab,spectrum,"Ratio of eigenvalue 2(p - 1) to eigenvalue 2(p - 1) + 1, counting from one. In the tier x traces the functions of a alone and of b alone filled the top 2(p - 1) places.",-,"docs/zain_tierx_plan.md, E4",-
+checkpoints,eig_gap_top88,spectrum,"Ratio of eigenvalue 4(p - 1) to eigenvalue 4(p - 1) + 1, the edge of the eigenvectors that the tracking columns follow.",-,"docs/zain_tierx_plan.md, E4",-
+checkpoints,probe_energy_sum,subspaces,"Share of the trace of the centred probe kernel inside the centred functions of (a + b) mod p on the probe. The subspaces are not orthogonal on the probe, so the four shares need not sum to one. This is the label subspace.",tr(Q_s^T Kc Q_s) / tr(Kc),"docs/zain_tierx_plan.md, E3",-
+checkpoints,probe_energy_diff,subspaces,"Share of the trace of the centred probe kernel inside the centred functions of (a - b) mod p on the probe. The subspaces are not orthogonal on the probe, so the four shares need not sum to one.",tr(Q_s^T Kc Q_s) / tr(Kc),"docs/zain_tierx_plan.md, E3",-
+checkpoints,probe_energy_a,subspaces,"Share of the trace of the centred probe kernel inside the centred functions of a alone on the probe. The subspaces are not orthogonal on the probe, so the four shares need not sum to one.",tr(Q_s^T Kc Q_s) / tr(Kc),"docs/zain_tierx_plan.md, E3",-
+checkpoints,probe_energy_b,subspaces,"Share of the trace of the centred probe kernel inside the centred functions of b alone on the probe. The subspaces are not orthogonal on the probe, so the four shares need not sum to one.",tr(Q_s^T Kc Q_s) / tr(Kc),"docs/zain_tierx_plan.md, E3",-
+checkpoints,label_capture_22,eigvec_tracking,Share of the centred label matrix inside the top 22 eigenvectors of the centred probe kernel.,||V_22^T H Y||_F^2 / ||H Y||_F^2,The group's own definition,-
+checkpoints,label_capture_44,eigvec_tracking,Share of the centred label matrix inside the top 44 eigenvectors of the centred probe kernel.,||V_44^T H Y||_F^2 / ||H Y||_F^2,The group's own definition,-
+checkpoints,label_capture_88,eigvec_tracking,Share of the centred label matrix inside the top 88 eigenvectors of the centred probe kernel.,||V_88^T H Y||_F^2 / ||H Y||_F^2,The group's own definition,-
+checkpoints,topk_drift,eigvec_tracking,"Mean squared sine of the principal angles between the top 4(p - 1) eigenvectors and the same span at step 0. At large width the cut falls in a nearly degenerate bulk, so this is noisy there.",-,"docs/zain_tierx_plan.md, E4; ntk_trace.Tracer.measure",-
+checkpoints,overlap_zero_median,eigvec_tracking,Median over the tracked top eigenvectors of the absolute overlap with the step 0 vector their chain of matches leads back to. Noisy at large width for the same reason.,-,"docs/zain_tierx_plan.md, E4; ntk_trace.Tracer.measure",-
+checkpoints,S_full,full_grid,Scale term of the centred kernel on all p^2 pairs.,-,ntk_lib.entk_closed_form,-
+checkpoints,R_full,full_grid,Rotation term of the centred kernel on all p^2 pairs.,-,ntk_lib.entk_closed_form,-
+checkpoints,A_full,full_grid,"Centred alignment on all p^2 pairs, with the labels of every pair.",-,ntk_lib.entk_closed_form,-
+checkpoints,full_energy_sum,full_grid,Share of the trace of the centred full-grid kernel inside the centred functions of (a + b) mod p. On the full grid the four subspaces are orthogonal.,tr(Q_s^T Kc Q_s) / tr(Kc),The group's own definition,-
+checkpoints,full_energy_diff,full_grid,Share of the trace of the centred full-grid kernel inside the centred functions of (a - b) mod p. On the full grid the four subspaces are orthogonal.,tr(Q_s^T Kc Q_s) / tr(Kc),The group's own definition,-
+checkpoints,full_energy_a,full_grid,Share of the trace of the centred full-grid kernel inside the centred functions of a alone. On the full grid the four subspaces are orthogonal.,tr(Q_s^T Kc Q_s) / tr(Kc),The group's own definition,-
+checkpoints,full_energy_b,full_grid,Share of the trace of the centred full-grid kernel inside the centred functions of b alone. On the full grid the four subspaces are orthogonal.,tr(Q_s^T Kc Q_s) / tr(Kc),The group's own definition,-
+checkpoints,full_energy_rest,full_grid,Share of the trace of the centred full-grid kernel outside the four subspaces.,1 - sum of the four shares,The group's own definition,-
+checkpoints,krr_full_test_acc,full_grid,"Accuracy of kernel ridge regression with the current kernel from the real training pairs to the real test pairs, starting from a zero function as the predictor does. The ridge is 0.001 times the mean diagonal of the training block.","argmax K_te,tr (K_tr,tr + r I)^-1 Y_tr",The group's own definition,-
+checkpoints,krr_full_test_mse,full_grid,Mean squared error of the same kernel ridge regression on the real test pairs.,-,The group's own definition,-
+checkpoints,krr_probe_test_acc,probe_krr,"Accuracy of kernel ridge regression with the current kernel from the training part of the probe to its test part, starting from a zero function as the predictor does. The ridge is 0.001 times the mean diagonal of the training block.","argmax K_te,tr (K_tr,tr + r I)^-1 Y_tr",The group's own definition,-
+checkpoints,krr_probe_test_mse,probe_krr,Mean squared error of the same kernel ridge regression on its test part.,-,The group's own definition,-
+checkpoints,dS_step,instant_rates,"Change of the centred scale term over the next gradient-descent step, from a virtual step with the current gradient and decay, in float64.",S(K_{t+1}) - S(K_t),The group's own definition,-
+checkpoints,dA_step,instant_rates,"Change of the centred alignment over the next step, from the same virtual step.",A(K_{t+1}) - A(K_t),The group's own definition,-
+checkpoints,R_step,instant_rates,"Rotation of the centred unit kernel over the next step, from the same virtual step.","1 - <k_{t+1}, k_t>",The group's own definition,-
+runs,run_id,run,"The name of the run, the grid cell name of ntk_lib.cell_name.",-,ntk_lib.cell_name,-
+runs,alpha,run,The laziness knob alpha.,-,"Kumar et al. (2024), Appendix 8.1, Equation 7, arXiv v3",-
+runs,width,run,The hidden width N.,-,-,-
+runs,eta_kappa,run,The weight decay eta lambda.,-,"docs/report.tex, The laziness and weight-decay knobs",-
+runs,seed,run,The model seed.,-,-,-
+runs,data_seed,run,"The seed of the split of the pairs into training and test sets, 42 + seed.",-,"docs/report_golden.pdf, section 3.1",-
+runs,lr,run,The learning rate eta_0 / alpha^2.,-,ntk_lib.train_run,-
+runs,weight_decay,run,The decay coefficient eta_kappa / lr passed to torch.optim.SGD.,-,ntk_lib.train_run,-
+runs,status,run,"ok, diverged (the training loss stopped being finite) or failed (an exception).",-,-,-
+runs,error,run,"The traceback of a failed run, empty otherwise.",-,-,-
+runs,diverged_step,run,The checkpoint at which the training loss was first not finite.,-,-,-
+runs,steps,run,The step budget.,-,-,-
+runs,last_step,run,The last recorded checkpoint.,-,-,-
+runs,n_checkpoints,run,The number of recorded checkpoints.,-,-,-
+runs,seconds,run,"Wall-clock seconds for the run, logger included.",-,-,-
+runs,callback_seconds,run,Wall-clock seconds spent in the feature logger.,-,-,-
+runs,feature_version,run,dataset_features.FEATURE_VERSION when the run was made.,-,-,-
+runs,git_commit,run,The commit of the repository when the run was made.,-,-,-
+runs,git_dirty,run,True if repoduced-code had uncommitted changes when the run was made.,-,-,-
+runs,closed_form_check,run,Largest relative difference between the autograd and closed-form probe kernels at the first and last checkpoints.,-,ntk_lib.entk_closed_form,-
+runs,init_weight_norm,run,Weight norm at step 0.,-,ntk_lib.train_run,-
+runs,final_weight_norm,run,Weight norm at the last checkpoint.,-,-,-
+runs,weight_norm_growth,run,final_weight_norm / init_weight_norm.,-,-,-
+runs,A_t_final,run,A_t at the last checkpoint.,-,-,-
+runs,A_full_final,run,A_full at the last checkpoint.,-,-,-
+runs,S_c_final,run,S_c at the last checkpoint.,-,-,-
+runs,R_c_final,run,R_c at the last checkpoint.,-,-,-
+runs,train_acc_final,run,train_acc at the last checkpoint.,-,-,-
+runs,test_acc_final,run,test_acc at the last checkpoint.,-,-,-
+runs,train_loss_final,run,train_loss at the last checkpoint.,-,-,-
+runs,test_loss_final,run,test_loss at the last checkpoint.,-,-,-
+runs,A_0,run,A_t at step 0.,-,-,-
+runs,A_full_0,run,A_full at step 0.,-,-,-
+runs,A_peak,run,Largest A_t over the run.,-,-,-
+runs,A_peak_step,run,The step of A_peak.,-,-,-
+runs,memorised,run,"True if the training accuracy reached 1 at some checkpoint. A run that never memorises has no grokking time, which is different from a censored one.",-,-,-
+runs,t_mem,run,First checkpoint at which the training accuracy is 1.,-,ntk_lib.accuracy_crossings,-
+runs,t_mem_prev,run,"The checkpoint before t_mem, so the event lies in (t_mem_prev, t_mem].",-,-,-
+runs,t_gen_acc95,run,First checkpoint at which the test accuracy reaches 0.95.,-,ntk_lib.accuracy_crossings,-
+runs,t_gen_acc95_prev,run,The checkpoint before t_gen_acc95.,-,-,-
+runs,t_grok_acc95,run,"Grokking time under the accuracy definition at test level 0.95: t_gen_acc95 - t_mem, or last_step - t_mem if censored. Empty if the run never memorised.",-,ntk_lib.accuracy_crossings,-
+runs,censored_acc95,run,"True if the test accuracy never reached 0.95, or the run never memorised.",-,ntk_lib.accuracy_crossings,-
+runs,t_gen_acc99,run,First checkpoint at which the test accuracy reaches 0.99.,-,ntk_lib.accuracy_crossings,-
+runs,t_gen_acc99_prev,run,The checkpoint before t_gen_acc99.,-,-,-
+runs,t_grok_acc99,run,"Grokking time under the accuracy definition at test level 0.99: t_gen_acc99 - t_mem, or last_step - t_mem if censored. Empty if the run never memorised.",-,ntk_lib.accuracy_crossings,-
+runs,censored_acc99,run,"True if the test accuracy never reached 0.99, or the run never memorised.",-,ntk_lib.accuracy_crossings,-
+runs,t_gen_acc100,run,First checkpoint at which the test accuracy reaches 1.,-,ntk_lib.accuracy_crossings,-
+runs,t_gen_acc100_prev,run,The checkpoint before t_gen_acc100.,-,-,-
+runs,t_grok_acc100,run,"Grokking time under the accuracy definition at test level 1: t_gen_acc100 - t_mem, or last_step - t_mem if censored. Empty if the run never memorised.",-,ntk_lib.accuracy_crossings,-
+runs,censored_acc100,run,"True if the test accuracy never reached 1, or the run never memorised.",-,ntk_lib.accuracy_crossings,-
+runs,t_train_loss3e-2,run,First checkpoint at which the training loss is below 0.03.,-,ntk_lib.grokking_time,-
+runs,t_test_loss3e-2,run,First checkpoint at which the test loss is below 0.03.,-,ntk_lib.grokking_time,-
+runs,t_grok_loss3e-2,run,Grokking time under the pre-registered loss definition with both thresholds 0.03.,-,"ntk_lib.grokking_time; docs/report.tex, Defining t_grok",-
+runs,censored_loss3e-2,run,"True if the test loss never fell below 0.03, or the training loss never did.",-,ntk_lib.grokking_time,-
+runs,t_train_loss2e-2,run,First checkpoint at which the training loss is below 0.02.,-,ntk_lib.grokking_time,-
+runs,t_test_loss2e-2,run,First checkpoint at which the test loss is below 0.02.,-,ntk_lib.grokking_time,-
+runs,t_grok_loss2e-2,run,Grokking time under the pre-registered loss definition with both thresholds 0.02.,-,"ntk_lib.grokking_time; docs/report.tex, Defining t_grok",-
+runs,censored_loss2e-2,run,"True if the test loss never fell below 0.02, or the training loss never did.",-,ntk_lib.grokking_time,-
+runs,t_train_loss1e-2,run,First checkpoint at which the training loss is below 0.01.,-,ntk_lib.grokking_time,-
+runs,t_test_loss1e-2,run,First checkpoint at which the test loss is below 0.01.,-,ntk_lib.grokking_time,-
+runs,t_grok_loss1e-2,run,Grokking time under the pre-registered loss definition with both thresholds 0.01.,-,"ntk_lib.grokking_time; docs/report.tex, Defining t_grok",-
+runs,censored_loss1e-2,run,"True if the test loss never fell below 0.01, or the training loss never did.",-,ntk_lib.grokking_time,-
+runs,t_train_loss3e-3,run,First checkpoint at which the training loss is below 0.003.,-,ntk_lib.grokking_time,-
+runs,t_test_loss3e-3,run,First checkpoint at which the test loss is below 0.003.,-,ntk_lib.grokking_time,-
+runs,t_grok_loss3e-3,run,Grokking time under the pre-registered loss definition with both thresholds 0.003.,-,"ntk_lib.grokking_time; docs/report.tex, Defining t_grok",-
+runs,censored_loss3e-3,run,"True if the test loss never fell below 0.003, or the training loss never did.",-,ntk_lib.grokking_time,-
+runs,t_train_loss1e-3,run,First checkpoint at which the training loss is below 0.001.,-,ntk_lib.grokking_time,-
+runs,t_test_loss1e-3,run,First checkpoint at which the test loss is below 0.001.,-,ntk_lib.grokking_time,-
+runs,t_grok_loss1e-3,run,Grokking time under the pre-registered loss definition with both thresholds 0.001.,-,"ntk_lib.grokking_time; docs/report.tex, Defining t_grok",-
+runs,censored_loss1e-3,run,"True if the test loss never fell below 0.001, or the training loss never did.",-,ntk_lib.grokking_time,-
+runs,A_t_at_mem,run,A_t at t_mem. Empty if the event did not happen.,-,-,-
+runs,S_c_at_mem,run,S_c at t_mem. Empty if the event did not happen.,-,-,-
+runs,R_c_at_mem,run,R_c at t_mem. Empty if the event did not happen.,-,-,-
+runs,gamma_at_mem,run,gamma at t_mem. Empty if the event did not happen.,-,-,-
+runs,D_at_mem,run,D at t_mem. Empty if the event did not happen.,-,-,-
+runs,weight_norm_at_mem,run,weight_norm at t_mem. Empty if the event did not happen.,-,-,-
+runs,A_full_at_mem,run,A_full at t_mem. Empty if the event did not happen.,-,-,-
+runs,S_W1_at_mem,run,S_W1 at t_mem. Empty if the event did not happen.,-,-,-
+runs,S_W2_at_mem,run,S_W2 at t_mem. Empty if the event did not happen.,-,-,-
+runs,A_t_at_gen,run,A_t at t_gen_acc100. Empty if the event did not happen.,-,-,-
+runs,S_c_at_gen,run,S_c at t_gen_acc100. Empty if the event did not happen.,-,-,-
+runs,R_c_at_gen,run,R_c at t_gen_acc100. Empty if the event did not happen.,-,-,-
+runs,gamma_at_gen,run,gamma at t_gen_acc100. Empty if the event did not happen.,-,-,-
+runs,D_at_gen,run,D at t_gen_acc100. Empty if the event did not happen.,-,-,-
+runs,weight_norm_at_gen,run,weight_norm at t_gen_acc100. Empty if the event did not happen.,-,-,-
+runs,A_full_at_gen,run,A_full at t_gen_acc100. Empty if the event did not happen.,-,-,-
+runs,S_W1_at_gen,run,S_W1 at t_gen_acc100. Empty if the event did not happen.,-,-,-
+runs,S_W2_at_gen,run,S_W2 at t_gen_acc100. Empty if the event did not happen.,-,-,-
+runs,t_A08,run,First checkpoint at which A_t reaches 0.08. Empty if it never does.,-,-,-
+runs,t_A10,run,First checkpoint at which A_t reaches 0.1. Empty if it never does.,-,-,-
+runs,t_A12,run,First checkpoint at which A_t reaches 0.12. Empty if it never does.,-,-,-
+runs,t_A14,run,First checkpoint at which A_t reaches 0.14. Empty if it never does.,-,-,-

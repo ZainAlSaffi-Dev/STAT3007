@@ -174,6 +174,71 @@ def entk(model, x_probe, chunk_above=2_000_000):
     return compute_entk(model, params, x_probe, mode="trace").detach()
 
 
+def closed_form_scales(model):
+    """Return the factors c1 on the hidden preactivation and c2 on the output of a bias-free model."""
+    if isinstance(model, NTKMLP):
+        return 1.0 / math.sqrt(model.input_dim), 1.0 / math.sqrt(model.hidden_dim)
+    if isinstance(model, MeanFieldMLP):
+        return 1.0 / model.input_dim, 1.0 / model.hidden_dim
+    raise TypeError(f"the closed-form kernel needs NTKMLP or MeanFieldMLP, not {type(model).__name__}")
+
+
+def entk_closed_form(model, x_probe, parts=False, output=None):
+    """The sum-over-logits kernel of a bias-free one hidden layer ReLU network, from its weights.
+
+    Write h = c1 X W1^T for the hidden preactivations, Z = relu(h), M for the
+    mask of positive entries of h, and s_i for the sum over outputs of W2[c, i]
+    squared. The factors are c1 = 1 / sqrt(2p) and c2 = 1 / sqrt(N) for
+    NTKMLP, and 1 / (2p) and 1 / N for MeanFieldMLP. The gradient of output c
+    with respect to W2[c, i] is c2 Z_i, and with respect to row i of W1 it is
+    c2 W2[c, i] M_i c1 x. Summing the inner products over the outputs gives
+
+        K = p c2^2 Z Z^T + c1^2 c2^2 (X X^T) * (M diag(s) M^T),
+
+    where the star is the elementwise product. The first term comes from W2
+    and the second from W1. This is the group's own derivation from the
+    definition in RepoducedCode.compute_entk in mode "trace". No paper
+    states it. It costs O(n^2 N) instead of a Jacobian of n p rows.
+
+    The sums run in float64. With parts=False the result is returned in
+    float32, the precision train_run works in. With parts=True the two terms
+    are returned in float64 as (K_W1, K_W2). With output=c the kernel is that
+    of output c alone, the first-logit kernel of the report when c = 0.
+    """
+    if model.activation != "relu":
+        raise ValueError("the closed-form kernel is derived for the relu activation only")
+    c1, c2 = closed_form_scales(model)
+    K_W1, K_W2 = closed_form_terms(model.W1, model.W2, x_probe, c1, c2, output)
+    if parts:
+        return K_W1, K_W2
+    return (K_W1 + K_W2).float()
+
+
+def closed_form_terms(W1, W2, x, c1, c2, output=None):
+    """Return the two terms (K_W1, K_W2) of entk_closed_form in float64, from the weight matrices."""
+    X = x.detach().double()
+    W1, W2 = W1.detach().double(), W2.detach().double()
+    h = c1 * (X @ W1.T)
+    Z = torch.relu(h)
+    M = (h > 0).double()
+    if output is None:
+        s, n_out = (W2 ** 2).sum(0), W2.shape[0]
+    else:
+        s, n_out = W2[output] ** 2, 1
+    K_W2 = n_out * c2 ** 2 * (Z @ Z.T)
+    K_W1 = c1 ** 2 * c2 ** 2 * (X @ X.T) * ((M * s) @ M.T)
+    return K_W1, K_W2
+
+
+def probe_kernel(model, x_probe, method):
+    """Return the probe kernel by the chosen method, "autograd" or "closed_form"."""
+    if method == "autograd":
+        return entk(model, x_probe)
+    if method == "closed_form":
+        return entk_closed_form(model, x_probe)
+    raise ValueError(f"unknown kernel method {method!r}")
+
+
 # =====================================================================
 # Centred scale and rotation
 # =====================================================================
@@ -207,51 +272,174 @@ def compute_centred_scale_and_rotation(K_0, K_t):
     return compute_scale_and_rotation(centre_kernel(K_0), centre_kernel(K_t))
 
 
+def sum_kernel(W1, W2, X):
+    """Kernel of g = sum_c f_c / sqrt(p) for f = W2 relu(W1 x / sqrt(D)) / sqrt(N), in closed form.
+
+    This is the kernel of golden report Equation 5. g has one output whose
+    second-layer weight is u = W2.sum(0) / sqrt(p). Its gradient with respect
+    to W2[c, i] is relu(h_i) / sqrt(N p) for every c, which sums to Z Z^T / N
+    over c. Its gradient with respect to row i of W1 is u_i 1[h_i > 0] x / sqrt(D N).
+    Takes and returns float64 numpy arrays.
+    """
+    D, N = X.shape[1], W1.shape[0]
+    h = X @ W1.T / np.sqrt(D)
+    Z, M = np.maximum(h, 0), (h > 0).astype(float)
+    u = W2.sum(0) / np.sqrt(W2.shape[0])
+    return Z @ Z.T / N + (X @ X.T) * ((M * u ** 2) @ M.T) / (D * N)
+
+
+def report_statistics(K_t, K_0, Y):
+    """S_t, R_t, D_t and A_t of golden report Equation 6 for one pair of kernels on the test pairs."""
+    r = len(K_t)
+    C = np.eye(r) - 1 / r
+    n_t, n_0 = np.linalg.norm(K_t), np.linalg.norm(K_0)
+    Kc, Gc = C @ K_t @ C, C @ Y @ Y.T @ C
+    return {"S_t": n_t / n_0,
+            "R_t": 1 - np.sum(K_t * K_0) / (n_t * n_0),
+            "D_t": np.linalg.norm(K_t - K_0) / n_0,
+            "A_t": np.sum(Kc * Gc) / (np.linalg.norm(Kc) * np.linalg.norm(Gc))}
+
+
 # =====================================================================
 # Training
 # =====================================================================
 DEFAULTS = dict(parameterisation="mean_field", p=23, hidden_dim=100, alpha=1.0,
                 eta_0=100.0, eta_kappa=0.0, steps=60000, eval_interval=250,
                 probe_size=256, seed=0, data_seed=42, train_fraction=0.9,
-                activation="relu", init_scale=1.0, kernel_save_interval=5000, probe="train")
+                activation="relu", init_scale=1.0, kernel_save_interval=5000, probe="train",
+                checkpoint_steps=None, kernel_method="autograd")
+
+# Configuration keys added after some runs were saved, with the value those
+# runs were trained with. A saved run that lacks one of them is compared as if
+# it had that value.
+LEGACY_VALUES = dict(probe="train", checkpoint_steps=None, kernel_method="autograd")
+
+# The centred terms and the two alignments on the training part and on the
+# test part of the probe. A part with fewer than two pairs gives NaN.
+PART_KEYS = [f"{term}_{part}" for part in ("train", "test") for term in ("S_c", "R_c", "A_t", "A_u")]
 
 HISTORY_KEYS = ["step", "train_loss", "test_loss", "train_acc", "test_acc",
                 "S_t", "R_t", "S_c", "R_c", "A_t", "A_u", "param_dist", "weight_norm",
-                "yKy", "K_norm"]
+                "yKy", "K_norm"] + PART_KEYS
 
 
-def train_run(name, verbose=True, **overrides):
+def select_probe(X_train, y_train, X_test, y_test, probe, probe_size):
+    """Return the probe inputs, the probe labels, and a mask that is True at the test pairs.
+
+    "mixed" is the probe of the report's Kernel metrics section. It takes
+    test pairs, up to half of probe_size, and fills the rest with training
+    pairs, training pairs first. At p = 23 and a training fraction of 0.9
+    there are only 53 test pairs, so the probe holds all 53 and 203 training
+    pairs. "train" takes the first probe_size training pairs. Every run saved
+    before 24 September 2026 used it. "test" takes the first probe_size test
+    pairs. The first pairs of each set are a random draw, because the split
+    is a random permutation fixed by data_seed, and they are the same for
+    every run with the same data_seed.
+    """
+    if probe == "train":
+        n_train, n_test = min(probe_size, len(X_train)), 0
+    elif probe == "test":
+        n_train, n_test = 0, min(probe_size, len(X_test))
+    elif probe == "mixed":
+        n_test = min(probe_size // 2, len(X_test))
+        n_train = min(probe_size - n_test, len(X_train))
+    else:
+        raise ValueError(f"unknown probe {probe!r}")
+    x = torch.cat([X_train[:n_train], X_test[:n_test]])
+    y = torch.cat([y_train[:n_train], y_test[:n_test]])
+    is_test = torch.cat([torch.zeros(n_train, dtype=torch.bool, device=x.device),
+                         torch.ones(n_test, dtype=torch.bool, device=x.device)])
+    return x, y, is_test
+
+
+def probe_pairs(cfg):
+    """Return the probe pairs (a, b) of a configuration and the mask of test pairs, as numpy arrays."""
+    p = cfg["p"]
+    (X_train, y_train), (X_test, y_test) = make_modular_addition_dataset(
+        p=p, train_fraction=cfg["train_fraction"], seed=cfg["data_seed"])
+    x, _, is_test = select_probe(X_train, y_train, X_test, y_test, cfg["probe"], cfg["probe_size"])
+    x = x.numpy()
+    return x[:, :p].argmax(1), x[:, p:].argmax(1), is_test.numpy()
+
+
+def normalise_checkpoints(cfg):
+    """Return the configuration with checkpoint_steps as a sorted list of distinct integers.
+
+    Step 0 is always a checkpoint, so it is added if missing. The list form
+    is what train_run saves, so run_or_load can compare a requested list
+    with a saved one whatever sequence type the caller passed. None, the
+    default, is returned unchanged and means every eval_interval steps.
+    """
+    given = cfg["checkpoint_steps"]
+    if given is None:
+        return cfg
+    if any(s != int(s) for s in given):
+        raise ValueError("checkpoint steps must be whole numbers")
+    steps = sorted({0, *(int(s) for s in given)})
+    if steps[0] < 0 or steps[-1] > cfg["steps"]:
+        raise ValueError(f"checkpoint steps must lie between 0 and the run length {cfg['steps']}")
+    return {**cfg, "checkpoint_steps": steps}
+
+
+def train_run(name, verbose=True, on_checkpoint=None, results_dir=None, **overrides):
     """Train one run and return a dictionary with the configuration and history.
 
     The predictor is the centred and rescaled function of Kumar et al.
     (2024), Appendix 8.1, Equation 7, with learning rate eta_0 over alpha
     squared. Weight decay enters as a factor of one minus eta times kappa per
     step. The model seed is separate from the data seed. The train loss is
-    recorded after the update, at the same point as the test loss.
+    recorded after the update, at the same point as the test loss. The
+    initial function f_0 on the training and test sets is computed once,
+    since it never changes. This gives the same numbers bit for bit as
+    computing it at every step, and it saves a forward pass per step.
 
     At each checkpoint the history records the losses, the accuracies, the
     raw scale and rotation terms S_t and R_t, the centred versions S_c and
     R_c, the centred alignment A_t, the relative parameter movement, the
-    weight norm, y^T K^+ y on the probe set, and the kernel norm. The probe
+    weight norm, y^T K^+ y on the probe set, and the kernel norm. It also
+    records S_c, R_c, A_t and A_u on the training part and on the test part
+    of the probe, as the report's Kernel metrics section asks. The probe
     kernel itself is saved every kernel_save_interval steps to a compressed
     file next to the JSON so later analyses can use it.
+
+    The checkpoints are every eval_interval steps. If checkpoint_steps is
+    given, they are exactly those steps instead, with step 0 added. Either
+    way the kernel is saved only at checkpoints that are multiples of
+    kernel_save_interval.
+
+    If on_checkpoint is given, it is called at every checkpoint as
+    on_checkpoint(step, model, K_t, row). K_t is the probe kernel and row is
+    a dictionary of the history values just recorded. Training continues
+    from the same model afterwards, so the callback must not change it. The
+    callback is not part of the configuration and is not saved.
+
+    kernel_method chooses how the probe kernel is computed: "autograd" with
+    torch.func, or "closed_form" with entk_closed_form, which gives the same
+    kernel to float32 rounding for the bias-free ReLU models. results_dir
+    chooses where the files are written. It defaults to RESULTS and is not
+    part of the configuration.
+
+    If the training loss at a checkpoint is not finite, the run stops there
+    without recording that checkpoint. The returned dictionary then has
+    diverged set to True and diverged_step set to that step.
     """
     unknown = set(overrides) - set(DEFAULTS)
     if unknown:
         raise TypeError(f"unknown configuration keys: {sorted(unknown)}")
-    cfg = {**DEFAULTS, **overrides}
+    cfg = normalise_checkpoints({**DEFAULTS, **overrides})
     config = dict(name=name, **cfg)
     p, alpha = cfg["p"], cfg["alpha"]
+    out_dir = Path(results_dir) if results_dir is not None else RESULTS
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     (X_train, y_train), (X_test, y_test) = make_modular_addition_dataset(
         p=p, train_fraction=cfg["train_fraction"], seed=cfg["data_seed"])
     X_train, y_train, X_test, y_test = [t.to(DEVICE) for t in (X_train, y_train, X_test, y_test)]
 
-    # The probe set is fixed for the run. "train" takes the first probe_size training pairs, as in the
-    # script; "test" takes test pairs, which is one of the robustness variants the report lists.
-    source_X, source_y = (X_test, y_test) if cfg["probe"] == "test" else (X_train, y_train)
-    probe_size = min(cfg["probe_size"], source_X.shape[0])
-    x_probe, y_probe = source_X[:probe_size], source_y[:probe_size]
+    # The probe set is fixed for the run. select_probe says which pairs each choice of probe takes.
+    x_probe, y_probe, probe_is_test = select_probe(X_train, y_train, X_test, y_test,
+                                                   cfg["probe"], cfg["probe_size"])
+    parts = [~probe_is_test, probe_is_test]
 
     torch.manual_seed(cfg["seed"])
     model = build_model(cfg["parameterisation"], 2 * p, cfg["hidden_dim"], p,
@@ -265,27 +453,34 @@ def train_run(name, verbose=True, **overrides):
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, weight_decay=weight_decay)
     loss_fn = nn.MSELoss()
 
-    def predict(X):
-        return alpha * (model(X) - model_0(X))
+    with torch.no_grad():
+        f0_train, f0_test = model_0(X_train), model_0(X_test)
+
+    def predict(X, f0):
+        return alpha * (model(X) - f0)
 
     params_0 = torch.cat([q.detach().flatten() for q in model.parameters()]).clone()
     norm_0 = torch.linalg.norm(params_0).item()
-    K_0 = entk(model, x_probe)
+    K_0 = probe_kernel(model, x_probe, cfg["kernel_method"])
 
     history = {k: [] for k in HISTORY_KEYS}
     saved_steps, saved_kernels = [], []
 
     def evaluate(step):
+        """Record one checkpoint. Return False, and record nothing, if the training loss is not finite."""
         model.eval()
         with torch.no_grad():
-            tr, te = predict(X_train), predict(X_test)
+            tr, te = predict(X_train, f0_train), predict(X_test, f0_test)
             train_loss, test_loss = loss_fn(tr, y_train).item(), loss_fn(te, y_test).item()
+            if not math.isfinite(train_loss):
+                model.train()
+                return False
             train_acc = (tr.argmax(1) == y_train.argmax(1)).float().mean().item()
             test_acc = (te.argmax(1) == y_test.argmax(1)).float().mean().item()
             params_t = torch.cat([q.flatten() for q in model.parameters()])
             weight_norm = torch.linalg.norm(params_t).item()
             param_dist = (torch.linalg.norm(params_t - params_0) / norm_0).item()
-        K_t = entk(model, x_probe)
+        K_t = probe_kernel(model, x_probe, cfg["kernel_method"])
         S_t, R_t = compute_scale_and_rotation(K_0, K_t)
         S_c, R_c = compute_centred_scale_and_rotation(K_0, K_t)
         A_t = compute_task_alignment(K_t, y_probe)
@@ -295,58 +490,93 @@ def train_run(name, verbose=True, **overrides):
             yKy = torch.sum(y_probe * (torch.linalg.pinv(K_t, rtol=1e-6) @ y_probe)).item()
         else:
             yKy = float("nan")
+        # The same terms on the training part and on the test part of the probe, in the order of PART_KEYS.
+        part_terms = []
+        for mask in parts:
+            if int(mask.sum()) < 2:
+                part_terms += [float("nan")] * 4
+                continue
+            K_p, K_p0, y_p = K_t[mask][:, mask], K_0[mask][:, mask], y_probe[mask]
+            part_terms += [*compute_centred_scale_and_rotation(K_p0, K_p),
+                           compute_task_alignment(K_p, y_p), uncentred_alignment(K_p, y_p)]
         for k, v in zip(HISTORY_KEYS, [step, train_loss, test_loss, train_acc, test_acc,
                                        S_t, R_t, S_c, R_c, A_t, A_u, param_dist, weight_norm,
-                                       yKy, K_norm]):
+                                       yKy, K_norm, *part_terms]):
             history[k].append(v)
         if step % cfg["kernel_save_interval"] == 0:
             saved_steps.append(step)
             saved_kernels.append(K_t.cpu().numpy().astype(np.float32))
+        if on_checkpoint is not None:
+            on_checkpoint(step, model, K_t, {k: history[k][-1] for k in HISTORY_KEYS})
         model.train()
+        return True
+
+    checkpoints = None if cfg["checkpoint_steps"] is None else set(cfg["checkpoint_steps"])
+
+    def is_checkpoint(step):
+        if checkpoints is None:
+            return step % cfg["eval_interval"] == 0
+        return step in checkpoints
 
     t0 = time.time()
-    evaluate(0)
+    diverged_step = None
+    if not evaluate(0):
+        diverged_step = 0
     for step in range(1, cfg["steps"] + 1):
+        if diverged_step is not None:
+            break
         optimizer.zero_grad()
-        loss = loss_fn(predict(X_train), y_train)
+        loss = loss_fn(predict(X_train, f0_train), y_train)
         loss.backward()
         optimizer.step()
-        if step % cfg["eval_interval"] == 0:
-            evaluate(step)
+        if is_checkpoint(step):
+            if not evaluate(step):
+                diverged_step = step
+                break
             if verbose and step % (cfg["eval_interval"] * 40) == 0:
                 h = history
                 print(f"{name}: step {step:6d}  train {h['train_loss'][-1]:.2e}  "
                       f"test {h['test_loss'][-1]:.2e}  S {h['S_t'][-1]:+.2f}  "
                       f"R {h['R_t'][-1]:.3f}  Rc {h['R_c'][-1]:.3f}  A {h['A_t'][-1]:.3f}")
     run = dict(config=config, history=history, init_weight_norm=norm_0,
-               seconds=time.time() - t0)
-    (RESULTS / f"{name}.json").write_text(json.dumps(run))
-    np.savez_compressed(RESULTS / f"{name}_kernels.npz",
-                        steps=np.asarray(saved_steps), K=np.stack(saved_kernels))
+               seconds=time.time() - t0, diverged=diverged_step is not None, diverged_step=diverged_step)
+    (out_dir / f"{name}.json").write_text(json.dumps(run))
+    if saved_kernels:
+        np.savez_compressed(out_dir / f"{name}_kernels.npz",
+                            steps=np.asarray(saved_steps), K=np.stack(saved_kernels))
     if verbose:
-        print(f"{name}: done in {run['seconds']:.0f} s, saved to results/{name}.json")
+        note = f", diverged at step {diverged_step}" if diverged_step is not None else ""
+        print(f"{name}: done in {run['seconds']:.0f} s{note}, saved to {out_dir / name}.json")
     return run
 
 
-def run_or_load(name, rerun=False, verbose=True, **overrides):
-    """Load a saved run if its configuration matches, otherwise train it."""
-    path = RESULTS / f"{name}.json"
+def run_or_load(name, rerun=False, verbose=True, on_checkpoint=None, results_dir=None, **overrides):
+    """Load a saved run if its configuration matches, otherwise train it.
+
+    A saved run that lacks a key in LEGACY_VALUES is compared as if it had
+    the value given there, which is the value it was trained with.
+    on_checkpoint is passed to train_run, so it is called only when the run
+    is trained. Loading a saved run does not call it. results_dir is where
+    the run is looked for and written, RESULTS by default.
+    """
+    out_dir = Path(results_dir) if results_dir is not None else RESULTS
+    path = out_dir / f"{name}.json"
     if path.exists() and not rerun:
         run = json.loads(path.read_text())
-        saved = {**{"probe": "train"}, **{k: v for k, v in run["config"].items() if k != "name"}}
-        wanted = {**DEFAULTS, **overrides}
+        saved = {**LEGACY_VALUES, **{k: v for k, v in run["config"].items() if k != "name"}}
+        wanted = normalise_checkpoints({**DEFAULTS, **overrides})
         if saved == wanted and "R_c" in run["history"]:
             if verbose:
                 print(f"{name}: loaded from results/{name}.json")
             return run
         if verbose:
             print(f"{name}: saved run does not match, training again")
-    return train_run(name, verbose=verbose, **overrides)
+    return train_run(name, verbose=verbose, on_checkpoint=on_checkpoint, results_dir=results_dir, **overrides)
 
 
-def load_kernels(name):
+def load_kernels(name, results_dir=None):
     """Return the saved probe kernels of a run as (steps, K) arrays."""
-    data = np.load(RESULTS / f"{name}_kernels.npz")
+    data = np.load((Path(results_dir) if results_dir is not None else RESULTS) / f"{name}_kernels.npz")
     return data["steps"], data["K"]
 
 
@@ -564,9 +794,14 @@ def cell_name(N, alpha, ek, seed):
     return f"ntk_N{N}_a{alpha:g}_wd{ek:g}_s{seed}"
 
 
-def load_cell(N, alpha, ek, seed, steps, eval_interval, verbose=False, probe="train"):
-    """Load a grid cell from results/, training it first if it is missing."""
-    suffix = "" if probe == "train" else f"_probe{probe}"
+def load_cell(N, alpha, ek, seed, steps, eval_interval, verbose=False, probe="mixed"):
+    """Load a grid cell from results/, training it first if it is missing.
+
+    The default probe is the mixed probe of the report's Kernel metrics
+    section, and select_probe describes it. A cell with another probe has
+    the probe in its name, such as ntk_N100_a1_wd0_s0_probetest.
+    """
+    suffix = "" if probe == "mixed" else f"_probe{probe}"
     return run_or_load(cell_name(N, alpha, ek, seed) + suffix, verbose=verbose, parameterisation="ntk", hidden_dim=N,
                        alpha=alpha, eta_0=100.0, eta_kappa=ek, seed=seed, steps=steps,
                        eval_interval=eval_interval, kernel_save_interval=steps, probe=probe)

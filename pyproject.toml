@@ -12,6 +12,12 @@ dependencies = [
     "nbconvert>=7.16",
     "scipy>=1.17.1",
     "plotly>=7.1.0",
+    "pandas>=3.0.6",
+    "pyarrow>=25.0.1",
+    "statsmodels>=0.15.0",
+    "scikit-learn>=1.9.1",
+    "lifelines>=0.30.0",
+    "xgboost>=3.2.0",
 ]
 
 [tool.uv]
