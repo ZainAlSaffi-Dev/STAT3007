@@ -122,7 +122,7 @@ The sweep was rerun on 3 October 2026 with a separate split for each seed. All 7
 
 ## 11. The golden report of 4 October 2026
 
-A newer golden report, `report_golden.pdf` at the root of the repository, has 21 pages. The tables above compare against the older 15-page `docs/report_golden.pdf`. The rows on A_t, seeds, phases, models and the experimental design are now out of date. The pushed LaTeX source on the branch `feat/grid` (`grid/project/report/report.tex`) is older than the 21-page PDF, because it still has a placeholder where the PDF has §4.2 to §4.4. This section lists what changed.
+A newer golden report has 21 pages. Since commit 7da1996 it is `docs/report_golden.pdf`, with its source in `docs/report_golden.tex`, and it replaced the older 15-page PDF at that path. A copy of it at the root of the repository was deleted on 5 October 2026. The tables above compare against the older 15-page version, which is in git history before commit 7da1996. The rows on A_t, seeds, phases, models and the experimental design are now out of date. The pushed LaTeX source on the branch `feat/grid` (`grid/project/report/report.tex`) is older than the 21-page PDF, because it still has a placeholder where the PDF has §4.2 to §4.4. This section lists what changed.
 
 | Item | Older golden report (15 pages) | Newer golden report (21 pages) |
 |---|---|---|

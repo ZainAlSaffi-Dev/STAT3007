@@ -2,7 +2,7 @@
 
 This file is for any assistant that edits the report in this folder or runs the experiments behind it. Read the root `CLAUDE.md` first. Its four rules still apply here: never invent a source, write plain full sentences, cross-check anything taken from a paper, and make every LaTeX change compile. This file adds the rules that are specific to `report_v2`.
 
-`report_v2` is the restructured G2 report. It was set up on 5 October 2026 to give the golden report one line of argument, to use the data in `data/` only, and to cut the measures and models that the story does not need. Where this file and the golden report disagree about the content of this report, this file wins inside `report_v2`. The decisions are listed below, and none of them should be reverted without asking the user.
+`report_v2` is the restructured G2 report. It was set up on 5 October 2026 to give the golden report one line of argument, to use the data in `data/` only, and to cut the measures and models that the story does not need. Where this file and the golden report disagree about the content of this report, this file wins inside `report_v2`. The root `CLAUDE.md` records this precedence. The golden report itself is `docs/report_golden.pdf`, built from `docs/report_golden.tex`. The decisions are listed below, and none of them should be reverted without asking the user.
 
 ## What is in this folder
 
@@ -123,7 +123,7 @@ The first grep should print nothing. `--` is allowed only inside page ranges suc
 
 - `ref.bib` holds only the entries that `main.tex` cites. Every entry was checked on 5 October 2026, and the red reference-check table in `main.tex` records how.
 - To add a source, fetch its arXiv abstract page or publisher page. Confirm the title, the authors and their name order, and the year. If you cite a section, theorem or equation number, open the PDF of the version you name and confirm it.
-- Copy an entry from `docs/ref.bib` on main when it is there. Otherwise write a new one with a comment saying what it was checked against.
+- Copy an entry from `docs/ref.bib`, the golden report's bibliography, when it is there. Otherwise write a new one with a comment saying what it was checked against.
 - Then add a row to the reference-check table. If a source cannot be verified, cite it with `\TODO{UNVERIFIED: ...}` and tell the user. Never cite from memory, and never swap in a source that looks close.
 - These items are still open:
   - The Khanh papers' first author may have the family name Truong. The bib follows arXiv, which parses it as Khanh. The group decides.
@@ -147,7 +147,7 @@ The first grep should print nothing. `--` is allowed only inside page ranges suc
   - A run that misses a level is kept and censored at 200,000 steps.
   - These are the definitions of the root `CLAUDE.md` and the golden report §3.5. Do not change them without telling the user.
 - **Code layout.** Write one script per item as `report_v2/code/E<k>_<name>.py`, with no arguments and with seeds fixed at the top. Write the figure to `overleaf/figures/E<k>_<name>.pdf` and the numbers to `report_v2/code/out/E<k>.json`. Shared loaders, event definitions and colours go in `report_v2/code/common.py`, with one colour per statistic used by every figure. The last section of `EXPERIMENTS_TODO.md` describes the planned clean repository, so build toward it.
-- **Reuse before writing.** Most items port a method from an existing notebook or script, which the item names. Examples are the placebo test in `repoduced-code/tier1_v2.ipynb` §7 (branch `jasper`), the scaling fits in `repoduced-code/tier2_consistency.py`, and the prediction models in `model_fitting/3_kernel_only.ipynb` and `4_nonlinear_exploration.ipynb`. The old notebooks used old data and old definitions, so take their methods and never their numbers.
+- **Reuse before writing.** Most items port a method from an existing notebook or script, which the item names. Examples are the placebo test in `repoduced-code/tier1_v2.ipynb` §7, the scaling fits in `repoduced-code/tier2_consistency.py`, and the prediction models in `model_fitting/3_kernel_only.ipynb` and `4_nonlinear_exploration.ipynb`. The old notebooks used old data and old definitions, so take their methods and never their numbers.
 - **Environment.** Use Python 3.11 or later with the packages listed in `pyproject.toml` at the repository root. The fits need `lifelines` and `xgboost`, so check that both are installed before running them. Record the interpreter and the package versions with every output.
 - **After a run.**
   - Mark the item done in `EXPERIMENTS_TODO.md`, with the date and what was run.

@@ -1124,9 +1124,9 @@ expect if the plan is carried out, and how to raise it.
     placebo test, so Tier 1 claims a threshold for rotation only.
 \end{itemize}
 
-\paragraph{Cut from the golden report.} Each item can be restored from commit
-7da1996 on main, with the command
-\file{git show 7da1996:docs/report_golden.tex}.
+\paragraph{Cut from the golden report.} Each item can be restored from the
+golden report's source, \file{docs/report_golden.tex} (added in commit 7da1996),
+and its figure files in \file{docs/figures/}.
 \begin{itemize}
   \item Section 3.4, Spectral measures: effective rank, trace ratios and the
     target power along eigenvectors. Section 4.3: the cumulative target power
@@ -1155,10 +1155,10 @@ expect if the plan is carried out, and how to raise it.
 \paragraph{Planned in the proposal and not run.} The clamped-norm arm with
 $\rho\in[1,2]$, the arm over three primes and three training fractions, the
 cross-entropy arm, the statistic $y^\top K^{-1}y$, and events defined by loss
-thresholds. The proposal is \texttt{proposal.tex} at the root of the repository.
+thresholds. The proposal is \file{docs/G2_proposal.tex}.
 
 \paragraph{Superseded analyses.} \file{repoduced-code/tier1_v2.ipynb} and
-\file{tier2_width_decay.ipynb} on branch \texttt{jasper} use the old data, with
+\file{tier2_width_decay.ipynb} use the old data, with
 one split shared by every seed, the trace kernel and test accuracy 1.0. Their
 methods are ported, and their numbers are not used.
 

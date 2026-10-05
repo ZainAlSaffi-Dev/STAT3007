@@ -164,7 +164,7 @@ Status words: **carry over** means the number exists and only needs a clean scri
 - For each α, a table over N × ηλ giving the seeds that grok out of 5 and the median T95. **Status:** carry over (extend the §7 table of `tier2_reproduction.md` to α = 0.5 and 2).
 
 ### E14. Cross-check from the second pipeline (Appendix D)
-- **Source.** The golden report §4.2.2 on main (commit 7da1996), built from release grid-v0.1.0 on branch `feat/grid`. It has 12 seeds per cell, a budget of 100,000 steps and the decay edge near ηλ ≈ 7e-4.
+- **Source.** The golden report §4.2.2 (`docs/report_golden.tex`, added in commit 7da1996), built from release grid-v0.1.0 on branch `feat/grid`. It has 12 seeds per cell, a budget of 100,000 steps and the decay edge near ηλ ≈ 7e-4.
 - **Task.**
   - Export the broken-line figure as a PDF from that pipeline. Overleaf and Tectonic cannot run PythonTeX.
   - Quote the break ψ = 7.0e-4 [6.8e-4, 7.3e-4] and the outcomes at the four design levels, after rechecking them against the databases.

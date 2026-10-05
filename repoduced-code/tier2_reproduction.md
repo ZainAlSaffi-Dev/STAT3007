@@ -1,7 +1,7 @@
 # Reproducing Tier 2 from `data/` under the golden report of 4 October 2026
 
 This file says how to rebuild Tier 2, the width arm, from the dataset in `data/` with the definitions of the
-golden report of 4 October 2026 (`report_golden.pdf` at the repository root, 21 pages). It replaces the
+golden report of 4 October 2026 (`docs/report_golden.pdf`, 21 pages). It replaces the
 recipe of `tier2_sweep.py` and `tier2_width_decay.ipynb`, whose runs and definitions are superseded (see the
 entry of 4 October in `tier_2.md`). The text for the report is drafted in `docs/tier2_additions.tex`, and the
 numbers produced here fill its placeholders.

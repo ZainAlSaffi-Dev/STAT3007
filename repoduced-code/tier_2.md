@@ -1,7 +1,7 @@
 # Tier 2 experimental log
 
 This file records what was decided, checked, run and noticed during Tier 2, in the order it happened. It is
-the reference for writing the Tier 2 part of `report.tex`. The analysis itself is in
+the reference for writing the Tier 2 part of the report. That draft was the root `report.tex`, deleted on 5 October 2026 and kept in git history. The analysis itself is in
 `tier2_width_decay.ipynb`, and the grid constants and the run driver are in `tier2_sweep.py`.
 
 Tier 2 is the head claim. It fits log t_grok = c + a log N + b log(eta*lambda) on a grid of width N and
@@ -13,7 +13,7 @@ Every run in Tier 2 uses the NTK parameterisation. Every width result below shou
 
 ## 4 October 2026: the results below are superseded
 
-The golden report of 4 October 2026 (`report_golden.pdf` at the repository root, 21 pages) changed the
+The golden report of 4 October 2026 (`docs/report_golden.pdf`, 21 pages) changed the
 definitions that Tier 2 was run under. No number in the Results and Observations sections below holds under
 the new definitions. They are kept as a record of what was run. The reasons are as follows.
 

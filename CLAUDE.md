@@ -4,13 +4,19 @@ This file sets the rules for any assistant working in this repository. Read it b
 
 ## What this project is
 
-This is the STAT3007 deep learning project for Group G2. The baseline document is the golden report, `docs/report_golden.pdf`. The group has verified it, and it supersedes the proposal (`docs/DeepLearningProposal.pdf`) and the older report skeleton (`docs/report.tex`) wherever they differ. Read the golden report before starting work on the code or the write-up. When code, notebooks or other documents disagree with it, the golden report wins unless a source paper shows that the golden report is wrong.
+This is the STAT3007 deep learning project for Group G2. The baseline document is the golden report, `docs/report_golden.pdf`, built from `docs/report_golden.tex`. The group has verified it, and it supersedes the proposal (`docs/DeepLearningProposal.pdf`) and the older report skeleton (`docs/report.tex`) wherever they differ. Read the golden report before starting work on the code or the write-up. When code, notebooks or other documents disagree with it, the golden report wins unless a source paper shows that the golden report is wrong. Inside `report_v2/` one more exception applies, which the section on the restructured report below describes.
 
 The project asks what sets the grokking time on modular addition. The candidates are rotation of the empirical neural tangent kernel, the scale of the kernel or the weights, or the weight-decay rate itself. The plan is to first reproduce a published baseline, then extend it with new measurements and a new test.
 
 The baseline is the setup in Kumar et al. (2024), Appendix 8.3. It is a one hidden layer MLP with width 100, input size 2p as two concatenated one-hot vectors, output size p, mean squared error loss, full-batch gradient descent with learning rate 100, p equal to 23, and 90 percent of the p squared pairs used for training. The proposal calls this Tier 0 and treats it as a hard gate. If Tier 0 does not match the published figure, later work is not interpretable.
 
 The extension measures the empirical tangent kernel of the sum of the logits divided by the square root of p (golden report Eq. 5). The statistics are taken on the kernel of the test pairs of a seed (golden report §3.3 and Eq. 6). The scale S_t is the ratio of the Frobenius norm of the kernel at step t to its norm at initialisation. It is a plain ratio, so 1 means no change. The shape change R_t is one minus the uncentred cosine between the kernels at step t and at initialisation. The variation D_t is the Frobenius norm of the difference of the two kernels divided by the norm at initialisation. The alignment A_t is the centred kernel alignment of the kernel with the label kernel Y Y^T, following Cortes, Mohri, and Rostamizadeh (2024), and it is unchanged by rescaling. The head claim is a regression of log grokking time on log width and log of the product of learning rate and weight decay.
+
+## The restructured report in report_v2
+
+The group is rewriting the report in `report_v2/`. It holds an Overleaf-ready skeleton of the report, its verified bibliography, and the list of figures and numbers still to produce. Before you edit anything in `report_v2/` or run an experiment for it, read `report_v2/CLAUDE.md` as well as this file. The four rules below apply there in full.
+
+Inside `report_v2/`, the decisions that `report_v2/CLAUDE.md` lists take precedence over the golden report. In short, the new report uses only the data in `data/`, measures three statistics (S_t, R_t and A_t) on the kernel of the summed logits on the test pairs, and leaves the spectral measures and most of the survival models out of the main text. Outside `report_v2/`, the golden report remains the baseline as described above. Do not change code, notebooks or files in `docs/` to match a `report_v2` decision unless the user asks.
 
 ## Rule 1. Never invent a source
 
