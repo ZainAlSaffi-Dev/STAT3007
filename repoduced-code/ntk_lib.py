@@ -682,6 +682,21 @@ def linear_step_axis(ax):
     ax.set_xlim(left=0, right=None if last is None else 1.05 * last)
 
 
+def plot_times(ax, x, t, censored, colour, flip=False, ms=6, alpha=0.85, label=None):
+    """Draw measured times as circles and censored bounds as triangles.
+
+    A censored grokking time is a lower bound, so its triangle points up
+    towards the true value. With flip the triangle points down, which is the
+    right direction when the plotted value is the reciprocal of a time. This
+    matches the convention of the Tier 0 notebook.
+    """
+    x, t, censored = np.asarray(x, float), np.asarray(t, float), np.asarray(censored, bool)
+    ax.plot(x[~censored], t[~censored], "o", color=colour, ms=ms, alpha=alpha, markeredgecolor="white",
+            markeredgewidth=0.5, label=label, lw=0)
+    ax.plot(x[censored], t[censored], "v" if flip else "^", color=colour, ms=ms + 1, alpha=alpha,
+            markeredgecolor="white", markeredgewidth=0.5, lw=0)
+
+
 def mark_crossings(ax, g):
     """Dotted line at the train crossing and dashed line at the test crossing."""
     if g["t_train"] is not None:
@@ -859,45 +874,77 @@ def fmt(x, digits=4):
 # =====================================================================
 # Censored regression for the head claim
 # =====================================================================
-def censored_log_fit(X, t, censored, n_boot=300, seed=0):
-    """Fit log t = X beta + noise by maximum likelihood with right censoring.
+def censored_linear_fit(X, y, censored, side="right", n_boot=300, seed=0, groups=None):
+    """Fit y = X beta + normal noise by maximum likelihood when some values of y are censored.
 
-    X is a design matrix with an intercept column, t the grokking times and
-    censored a boolean array. A censored time enters through the probability
-    that the true value exceeds it, which is the Tobit model the report names.
-    The noise is normal on the log scale. Confidence intervals come from a
-    bootstrap over cells. Returns the coefficients, their 95 percent
-    intervals, and the fitted log standard deviation.
+    X is a design matrix with an intercept column, y the response already on
+    the scale being fitted, and censored a boolean array. With side "right" a
+    censored value is a lower bound and enters through the probability that
+    the true value exceeds it, which is the Tobit model the report names.
+    With side "left" a censored value is an upper bound and enters through
+    the probability that the true value is below it. The reciprocal fit needs
+    this, because a lower bound on the grokking time is an upper bound on its
+    reciprocal.
+
+    Confidence intervals come from a bootstrap. Without groups, runs are
+    resampled from the whole pool. With groups, an array of cell labels, runs
+    are resampled within each cell, so every cell appears in every resample.
+    Resamples whose design matrix loses rank are skipped. Returns the
+    coefficients, their 95 percent intervals, the fitted log standard
+    deviation, the number of bootstrap fits used, and the bootstrap draws.
     """
     from scipy.optimize import minimize
     from scipy.stats import norm
 
     X = np.asarray(X, float)
-    y = np.log(np.asarray(t, float))
+    y = np.asarray(y, float)
     c = np.asarray(censored, bool)
+    if side not in ("right", "left"):
+        raise ValueError(side)
+    tail = norm.logsf if side == "right" else norm.logcdf
 
     def nll(params, Xf, yf, cf):
         beta, sigma = params[:-1], np.exp(params[-1])
         mu = Xf @ beta
-        return -(norm.logpdf(yf[~cf], mu[~cf], sigma).sum() + norm.logsf(yf[cf], mu[cf], sigma).sum())
+        return -(norm.logpdf(yf[~cf], mu[~cf], sigma).sum() + tail(yf[cf], mu[cf], sigma).sum())
 
     def fit(Xf, yf, cf):
         beta0 = np.linalg.lstsq(Xf, yf, rcond=None)[0]
-        res = minimize(lambda p: nll(p, Xf, yf, cf), np.r_[beta0, 0.0], method="BFGS")
+        # A log response starts at sigma 1, as it always has. Other responses, such as a
+        # reciprocal time, start at the spread of the least-squares residuals.
+        start = np.log(np.std(yf - Xf @ beta0)) if side == "left" else 0.0
+        res = minimize(lambda p: nll(p, Xf, yf, cf), np.r_[beta0, start], method="BFGS")
         return res.x
 
     est = fit(X, y, c)
     rng = np.random.default_rng(seed)
-    boots = []
     n = len(y)
+    if groups is not None:
+        members = [np.where(np.asarray(groups) == g)[0] for g in dict.fromkeys(groups)]
+    boots = []
     for _ in range(n_boot):
-        idx = rng.integers(0, n, n)
+        if groups is None:
+            idx = rng.integers(0, n, n)
+        else:
+            idx = np.concatenate([m[rng.integers(0, len(m), len(m))] for m in members])
         if np.linalg.matrix_rank(X[idx]) < X.shape[1]:
             continue
         boots.append(fit(X[idx], y[idx], c[idx]))
     boots = np.array(boots)
     lo, hi = np.percentile(boots, [2.5, 97.5], axis=0)
-    return dict(coef=est[:-1], lo=lo[:-1], hi=hi[:-1], log_sigma=est[-1], n_boot=len(boots))
+    return dict(coef=est[:-1], lo=lo[:-1], hi=hi[:-1], log_sigma=est[-1], n_boot=len(boots),
+                boot=boots[:, :-1])
+
+
+def censored_log_fit(X, t, censored, n_boot=300, seed=0, groups=None):
+    """Fit log t = X beta + noise by maximum likelihood with right censoring.
+
+    t holds the grokking times and censored marks the lower bounds. The noise
+    is normal on the log scale. This is censored_linear_fit applied to log t,
+    and the bootstrap follows the groups argument described there.
+    """
+    return censored_linear_fit(X, np.log(np.asarray(t, float)), censored, side="right",
+                               n_boot=n_boot, seed=seed, groups=groups)
 
 
 def plot_definitions(run, tau=1e-2, test_level=0.95, title=None):

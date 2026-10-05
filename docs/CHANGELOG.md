@@ -119,3 +119,25 @@ The sweep was rerun on 3 October 2026 with a separate split for each seed. All 7
 - **Interactions matter less among grokked runs.** In notebook 4, the gain in held-out R² from interaction terms fell from 0.08 to 0.02, and kernel ridge fell from 0.69 to 0.55. Interactions still help to predict whether a run groks at all.
 - **A_t has much more seed noise.** The within-cell share of the spread of A_t rose from 11% to 44%. A_t is measured on the test pairs, and these now differ between seeds.
 - **The history of the kernel helps more.** In notebook 3, a GRU on the history scores 0.768 against 0.705 for XGBoost at the prediction time, a gain of 0.06 (before, 0.02). The settings alone still score 0.780.
+
+## 11. The golden report of 4 October 2026
+
+A newer golden report has 21 pages. Since commit 7da1996 it is `docs/report_golden.pdf`, with its source in `docs/report_golden.tex`, and it replaced the older 15-page PDF at that path. A copy of it at the root of the repository was deleted on 5 October 2026. The tables above compare against the older 15-page version, which is in git history before commit 7da1996. The rows on A_t, seeds, phases, models and the experimental design are now out of date. The pushed LaTeX source on the branch `feat/grid` (`grid/project/report/report.tex`) is older than the 21-page PDF, because it still has a placeholder where the PDF has §4.2 to §4.4. This section lists what changed.
+
+| Item | Older golden report (15 pages) | Newer golden report (21 pages) |
+|---|---|---|
+| Alignment A_t | CKA of the test-pair kernel of the summed logits with YYᵀ. | CKA of the tangent kernel Θ_t of all p logits on the test pairs, an np × np matrix, with yyᵀ, where y stacks the one-hot targets (§3.3, after Baratin et al. 2021, supplement). S_t, R_t and D_t stay on the kernel of the summed logits. The pilot A_0 is 0.015, where the older report had 0.40. |
+| Seeds | 5 in the pilot cell. | 12 in the pilot cell, the α arm and the second stage of the weight-decay arm. |
+| Phase threshold | Not stated. | 0.9 (§4.2.2). |
+| Grokking level | All three levels reported. | §4.2.2 uses 0.90. The other subsections use 0.95. Table 5 lists every level. |
+| Aalen model | All cells, with indicators of α and ηλ. | The pilot cell and the second-stage cells, with ηλ. The intervals resample seeds with all their runs (Davison and Hinkley 1997). The estimator stops where Y(t) loses full rank. |
+| §4.2 | Placeholder. | "Moving one setting of the pilot cell". §4.2.1 is the α arm, with α in {0.5, 1, 1.5, 2} (Table 3). §4.2.2 is the weight-decay arm. A single-seed scan covers 90 levels from 5 × 10⁻⁴ to 0.2. The break is at ψ = 7.0 × 10⁻⁴, with an interval of 6.8 to 7.3 × 10⁻⁴. The 12-seed design levels are {5.0, 7.4, 7.83, 8.28} × 10⁻⁴ (Table 4). |
+| §4.3 and §4.4 | Not present. | §4.3 has the cumulative target power (Figure 6) and the time-varying Cox fit (Table 6). §4.4 is a placeholder. |
+| Width | No width arm. | Still no width arm. `docs/tier2_additions.tex` drafts one. |
+
+### Corrections to the sections above
+
+- Section 7 omits several references that the older golden report already added: Lyu et al. (2024), Kopitkov and Indelman (2020), Rahaman et al. (2019), Basri et al. (2019), Canatar, Bordelon and Pehlevan (2021), Arora et al. (2019) and Axler (2024). Atanasov et al. (2021) and Liu et al. (2023) were carried over from `report.tex`. The newer report adds Davison and Hinkley (1997).
+- Section 10 says that the pilot cell still agrees with the golden report. That holds for Table 2 only. Table 1 of the older report gave grokking at 0.95 at a median of 34,000 steps (22,000 to 42,000). The 5-seed pilot cell of the dataset of 3 October gives 23,000 steps (15,395 to 34,000). The newer Table 1 uses 12 seeds and gives 31,000 steps (18,000 to 57,000). The dataset has not yet been compared with it.
+- The `seed` row of `model_fitting/data/data_dictionary.md` still says that the data seed is 42 for every run. Since the rerun of 3 October it is 42 + seed.
+- The column `A_sum` of the dataset of 3 October is the older report's A_t. It is not the A_t of the newer report.
