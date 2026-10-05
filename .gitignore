@@ -241,3 +241,6 @@ model_fitting/data/checkpoints.parquet
 # The dataset before each seed had its own split (29 September 2026). Its tables are in git history.
 model_fitting/data/runs_seed42/
 model_fitting/data/seed42_tables/
+# The full dataset of 3 October 2026 (11 GB): weights, kernels and the long table. It is
+# downloaded, not regenerated here, and repoduced-code/tier2_reproduction.md describes it.
+/data/

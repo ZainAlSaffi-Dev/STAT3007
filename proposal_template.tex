@@ -1,0 +1,97 @@
+\documentclass[a4paper,11pt]{article} % Don't change this
+\usepackage{fullpage} % Don't change this
+
+\usepackage{titling} % Don't change this
+\pretitle{\vspace{-6em}\begin{center}\larger[2]\bf} % Don't change this
+\postauthor{\end{center}} % Don't change this
+\preauthor{\vspace{-2em}\begin{center}\smaller[1]} % Don't change this
+\postauthor{\end{center}\vspace{-5em}} % Don't change this
+
+\usepackage[shortlabels]{enumitem} % Don't change this 
+\setlist{itemsep=0em,topsep=0.3em} % Don't change this
+
+%%% Some useful packages.
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage[hidelinks]{hyperref}
+\usepackage{relsize}
+\usepackage{cleveref}
+\crefname{figure}{Fig.}{Figs.}
+
+\usepackage[backend=bibtex,natbib=true,style=authoryear-icomp,maxnames=3,giveninits=true]{biblatex}
+\citetrackerfalse
+\bibliography{ref} % put bib entries in ref.bib
+
+\usepackage[linesnumbered]{algorithm2e}
+\usepackage{cleveref}
+\crefname{equation}{Equation.}{Equations.}
+\crefname{figure}{Figure}{Figures.}
+
+\usepackage{lipsum}
+\usepackage{wrapfig}
+\usepackage{tikz}
+
+%%% Add additional packages or macros below
+
+\begin{document}
+
+\title{STAT3007/7007 Project Proposal Template}
+\author{Group X \\
+Issac Newton (s12345678) $\cdot$
+Albert Einstein (s23456781) $\cdot$
+Alan Turing (s34567812) \\
+John von Neumann (s45678123) $\cdot$ Kurt G\"odel (s56781234)}
+
+\date{}
+\maketitle
+
+\begin{abstract}
+	This is a \LaTeX\ template for your project proposal.
+	Note the following: 
+	(a) Change the title and group information above to your project title and
+	group information.
+	(b) Your proposal should not exceed \underline{2 pages} (excluding the
+	references) 
+	You should not alter the font size or the page size.
+	(c) You can do collaborative writing by uploading the template to \underline{Overleaf}:
+	download \emph{STAT3007-7007\_Project\_Templates.zip},
+	login to \url{https://www.overleaf.com},
+	click \emph{Upload Project},
+	then upload the zip file.
+	Overleaf provides excellent guides on \LaTeX\ at
+	\url{https://www.overleaf.com/learn}.
+	Often, a quicker way to get the answer to a \LaTeX\ question is to ask ChatGPT;
+	in many cases, it can give you a correct answer without much prompting.
+	(d) When you submit your proposal, name it in the format of
+	\emph{GX\_proposal\_AlanTuring.pdf}, where 
+	\emph{GX} should be replaced by your group name, and \emph{AlanTuring} by the
+	submitter's name.
+	Only one group member needs to submit.
+\end{abstract}
+
+\section{Topic}
+
+Briefly describe your project topic.
+This can be as short as one or two sentences, but you should make it clear what
+the machine learning problem is.
+
+\section{Significance}
+
+Briefly explain why the problem is important.
+See \emph{report.tex} for how to cite references.
+
+\section{Feasibility}
+
+This is the most substantial part of your proposal.
+You should justify that the project is feasible by explaining what has been
+done, what the planned work will be and how it will be carried out.  
+If data is needed for your project, make sure that you have found some, as
+sometimes data does not come as easily as we expect.
+
+\smaller
+\printbibliography
+
+\end{document}

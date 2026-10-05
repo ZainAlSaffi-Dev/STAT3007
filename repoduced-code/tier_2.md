@@ -11,6 +11,152 @@ the reciprocal form 1/t_grok = c0 + c1 eta*lambda + c2 log N.
 
 Every run in Tier 2 uses the NTK parameterisation. Every width result below should be read with that in mind.
 
+## 4 October 2026: the results below are superseded
+
+The golden report of 4 October 2026 (`report_golden.pdf` at the repository root, 21 pages) changed the
+definitions that Tier 2 was run under. No number in the Results and Observations sections below holds under
+the new definitions. They are kept as a record of what was run. The reasons are as follows.
+
+- **Split.** Each seed now draws its own split of the pairs (report §3.1). The Tier 2 runs use data seed 42
+  for every seed, so only seed 0 still matches.
+- **Kernel.** S_t, R_t and D_t are now taken on the kernel of the summed logits divided by √p, on the test
+  pairs of each seed (§3.2, §3.3). Tier 2 used the trace kernel on a probe of 256 pairs. S_t is now a plain
+  ratio and R_t is uncentred.
+- **Alignment.** A_t is now the CKA of the tangent kernel of all p logits on the test pairs, with the stacked
+  one-hot targets (§3.3). Its value at initialisation in the pilot cell is 0.015.
+- **Events.** Memorisation is now training accuracy 0.99, and grokking is test accuracy 0.80, 0.90 or 0.95,
+  counted from step 0 (§3.5). Tier 2 used accuracy 1.0 for both and timed the gap from memorisation.
+- **Runs that never memorise.** These are now kept and censored at the budget (§3.5). Tier 2 dropped them
+  (open question 7).
+- **Models.** The report fits a Kaplan-Meier estimate per cell, a log-normal AFT (Eq. 10), Aalen's additive
+  model (Eq. 12) and a time-varying Cox model (Eq. 13). The reciprocal form, the A* placebo test and the
+  early-rate test of the Tier 2 notebook have no counterpart in the report.
+
+The width arm is redrafted against the new report in `docs/tier2_additions.tex`. Its numbers are left as
+placeholders until the new data run has been checked. The budget for the width arm is 200,000 steps at every
+width, which is the budget of that data run (decision by Jasper Chong).
+
+The new report also changes which open questions below still apply. Question 3 (the reciprocal intercept) and
+question 4 (its noise model) lapse, because the reciprocal form is replaced by the Aalen model. Question 7 is
+settled by the censoring rule above. Question 12 lapses, because the report no longer states that the slower
+clock sets the time. Question 5 (the source for a = 1) still stands. The golden report attributes the
+order 1/n size of T_0 to Lewkowycz and Gur-Ari (2021), but a = 1 has not been checked against that paper.
+
+## 4 October 2026: consistency check on the new data
+
+**What was run.** `tier2_consistency.py` compares the Tier 2 results of 26 September with the dataset in
+`data/` (see `tier2_reproduction.md`). It uses the α = 1 slice: 240 runs, widths {50, 100, 200, 400, 800,
+1600}, decays {0, 3e-6, 1e-5, 3e-5, 1e-4, 3e-4, 1e-3, 3e-3}, 5 seeds, and 200,000 steps. Seeds 1 to 4 have
+their own splits. The script ran in tara-env in about 5 minutes and wrote `results/tier2_consistency.json`.
+It has four parts.
+
+- **A.** Seed 0 is compared directly with the old runs.
+- **B.** The old definitions are applied to the new data.
+- **C.** The definitions of the golden report are applied.
+- **D.** The kernel at the event is measured by width.
+
+**A. Seed 0 is identical.** Seed 0 has data seed 42 and model seed 0 in both sets. At every step both sets
+checked, the training loss, test loss, training accuracy, test accuracy and weight norm agree exactly, with a
+relative difference of 0 over the 20 shared cells. The event steps differ only by checkpoint resolution. For
+example, N = 1600 at 1e-5 generalises at 127,500 in the old runs and at 128,000 here. The 300,000-step budget
+of the old wide runs had no effect at seed 0, because the old no-decay wide runs never generalised.
+
+**B. The old definitions on the new data reproduce the old head result.** This part uses memorisation and
+generalisation at accuracy 1.0, the gap from memorisation, runs that never memorise left out, the four old
+widths, the old nonzero decays, and the fit and cell bootstrap of `tier2_width_decay.ipynb`.
+
+| Quantity | Old runs (26 Sep) | New data |
+|---|---|---|
+| Main effects, a | +0.307 [+0.228, +0.382] | +0.284 [+0.216, +0.354] |
+| Main effects, b | -0.491 [-0.558, -0.421] | -0.497 [-0.565, -0.424] |
+| Residual sigma | 0.603 | 0.553 |
+| Interaction term | -0.210 [-0.271, -0.154] | -0.191 [-0.243, -0.140] |
+| a and b with the interaction | +0.241, -0.554 | +0.225, -0.555 |
+| On t_test, a and b | +0.152, -0.377 | +0.135, -0.398 |
+| a within decay 0, 1e-5, 3e-5, 1e-4, 3e-4 | +1.76, +0.61, +0.32, +0.16, -0.21 | +1.71, +0.58, +0.24, +0.21, -0.21 |
+| b within N = 50, 100, 400, 1600 | -0.15, -0.38, -0.82, -0.71 | -0.15, -0.46, -0.79, -0.70 |
+| Runs that never memorise | 5, all at N = 1600 and 3e-4 | 5, all at N = 1600 and 3e-4 |
+
+Cutting the runs at N ≤ 100 to the old budget of 100,000 steps changes a and b by less than 0.003. The new
+splits, the new budget and the coarser checkpoint grid therefore leave the old result in place.
+
+**C. Under the report's definitions, the exponents depend on which cells enter.** The events are now counted
+from step 0, every run is kept and censored at 200,000, and the intervals resample seeds. The main fits at
+level 0.95 are as follows.
+
+| Cells | a | b | Interaction | Censored |
+|---|---|---|---|---|
+| 6 widths, 1e-5 to 1e-4 | +0.237 [+0.202, +0.276] | -0.633 [-0.659, -0.604] | -0.162 | 0 of 90 |
+| 6 widths, 1e-5 to 3e-4 | +0.432 [+0.400, +0.468] | -0.209 [-0.231, -0.190] | +0.141 | 10 of 120 |
+| Old 4 widths, 1e-5 to 3e-4 | +0.381 [+0.353, +0.419] | -0.196 [-0.226, -0.173] | +0.076 | 5 of 80 |
+| Old 4 widths, 1e-5 to 3e-4, without N = 1600 at 3e-4 | +0.200 [+0.168, +0.242] | -0.372 [-0.404, -0.345] | -0.171 | 0 of 75 |
+
+At levels 0.80 and 0.90 the same pattern holds. In the range from 1e-5 to 1e-4, a is +0.30 and +0.27, and b is
+-0.55 and -0.60.
+
+- **The new censoring rule causes most of the change.** The last row leaves out the cell that never memorises,
+  as the old rule did. That gives a = +0.20 and b = -0.37, close to the old t_test fit (a = +0.15,
+  b = -0.38), which also counts from step 0. Keeping those 5 runs as censored at 200,000 raises a to +0.38,
+  moves b to -0.20, and turns the interaction positive. Counting from step 0, in place of the gap from
+  memorisation, accounts for the rest of the difference from the old head result.
+- **The 3e-4 column lies at the edge.** Including it makes the time rise again at the wide widths, so a single
+  plane in ln N and ln ηλ no longer fits. The residual sigma rises from 0.38 to 0.82. The range from 1e-5 to
+  1e-4 is the one where every seed at every width groks. It gives a plane with a residual sigma of 0.38 and a
+  negative interaction, as the old fit did.
+- **Memorisation moves the other way.** In the range from 1e-5 to 1e-4, a for memorisation is -1.53: wider
+  networks memorise much sooner.
+- **Width without decay.** Only N = 50 and N = 100 reach any grokking level. N = 50 groks later than N = 100
+  by a factor of e^0.39 = 1.5 at level 0.95 (indicator +0.39 [+0.14, +0.72]). None of the 20 runs at N ≥ 200
+  reaches level 0.80 within 200,000 steps. The old within-stratum a of +1.76 without decay rested on the same
+  censored wide cells. Both say that, without decay, the width effect is not monotone: time falls from 50 to
+  100 and then rises past the budget.
+- **The wide cells vary less across seeds.** This repeats an old observation. The standard deviation of
+  ln t_grok95 within a cell, as a median over 1e-5 to 1e-4, is 0.14, 0.19, 0.05, 0.14, 0.11 and 0.02 from
+  N = 50 to N = 1600.
+
+**The intervals are too narrow to read as uncertainty about the law.** The old cell bootstrap and the seed
+bootstrap give almost the same intervals here: for b at 0.95 in the first row, [-0.664, -0.602] against
+[-0.659, -0.604]. Both keep every cell in every resample, so both measure only the noise between seeds inside
+a cell. The residual sigma of the plane, 0.38, is well above that noise, which ranges from 0.02 to 0.19.
+Most of the residual is therefore misfit between the cells and the plane, and neither bootstrap includes it.
+The same holds for the old intervals. The intervals should be described as conditional on the cells, or
+replaced by intervals that allow for misfit at the cell level.
+
+**D. The kernel at the event: the old pattern holds with the new statistics.** R_t is now the uncentred
+R of the sum kernel at the event checkpoint. A_t is the CKA of the tangent kernel of all logits on the test
+pairs, read at the last saved weight step before the event. That step is a median of 10% of the event time
+early, and at most 27%. The table gives means over the runs that grokked at level 0.95, across all decays.
+
+| N | 50 | 100 | 200 | 400 | 800 | 1600 |
+|---|---|---|---|---|---|---|
+| A_0 | 0.0132 | 0.0139 | 0.0145 | 0.0146 | 0.0148 | 0.0149 |
+| A at the event | 0.0151 | 0.0169 | 0.0180 | 0.0181 | 0.0180 | 0.0182 |
+| R at the event | 0.116 | 0.061 | 0.038 | 0.022 | 0.017 | 0.017 |
+| S at the event | 3.44 | 2.27 | 1.28 | 0.84 | 0.69 | 0.45 |
+| Runs | 30 | 30 | 20 | 20 | 15 | 15 |
+
+- **A_0 still rises with width.** The new values go from 0.0132 to 0.0149. The old ones, on the older A, went
+  from 0.0845 to 0.0957 at seed 0.
+- **A at the event barely changes with width, while R falls.** A at the event has a max/min ratio of 1.42 and
+  a spread of 7.9%. R at the event falls 7-fold, from 0.116 to 0.017, with a max/min ratio of 13.7 and a
+  spread of 75%. The old values were 1.75 and 11.7% for A and a 27-fold fall for R. The direction is the same,
+  and the contrast is smaller because R is now uncentred.
+- **S at the event falls with width as well,** from 3.44 to 0.45. At the wide widths the kernel at the event
+  is smaller than at initialisation. This fits the old observation that the weight norm falls with width.
+
+**Summary.** The old Tier 2 results reproduce on the new data under the old definitions. Under the report's
+definitions, the qualitative picture is the same:
+
+- a is positive, and b is negative and neither 0 nor -1;
+- without decay the width effect is not monotone;
+- the decay edge falls with width;
+- A at the event is nearly flat across width while R falls.
+
+The values of a and b now depend on two choices that the group has to make: whether the cells at the decay
+edge enter the fit, and how the intervals treat misfit at the cell level. These results are a check on the
+data and are not yet the Tier 2 analysis of `tier2_reproduction.md`. That analysis still needs the
+Kaplan-Meier estimates, the Aalen model and the Cox model, and it needs A_t at the exact event steps.
+
 ## Design decisions
 
 **26 September 2026. The decay axis is the Tier 1 axis.** The grid uses eta*lambda in {0, 1e-5, 3e-5, 1e-4,
@@ -209,7 +355,7 @@ weight norm ended at 0.30 to 0.31 of its initial value.
 It was executed a second time after the findings cell was written, and every reported number was identical,
 because all bootstrap and permutation seeds are fixed.
 
-## Results
+## Results (superseded on 4 October 2026)
 
 All numbers are from NTK parameterisation at alpha 1, with the generalisation event at test accuracy 1.0.
 Notebook sections are given in brackets.
@@ -249,7 +395,7 @@ Notebook sections are given in brackets.
 - **Sensitivity.** At test accuracy 1.0, 0.95 and 0.9, a is +0.31, +0.41 and +0.50 and b is -0.49, -0.49 and
   -0.48. Under the loss definition 53 of 90 runs are censored, so that fit is not interpretable (section 10).
 
-## Observations
+## Observations (superseded on 4 October 2026)
 
 **26 September 2026. A_0 rises with width.** At seed 0 the centred alignment of the initial kernel is 0.0845
 at N = 50, 0.0903 at N = 100, 0.0951 at N = 400, and 0.0957 at N = 1600. In Tier 1 the alignment at the
