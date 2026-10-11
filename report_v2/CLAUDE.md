@@ -52,11 +52,15 @@ These were taken by Jasper Chong on 11 October 2026.
 - Tier 1 measures the spread across runs by the standard deviation (ddof 1), not the CV. An SD carries the units of its statistic, so compare statistics only by the tightening ratio and the permutation p.
 - Tier 4' (Section 4.5) is commented out in `main.tex`, and E11, E17 and E18 are not run.
 
+This was taken by Jasper Chong on 12 October 2026.
+
+- A new Tier 4 (Section 4.5, label `sec:tier4mnist`) holds only a TODO placeholder for an extension experiment on MNIST digits. It is separate from the theory section Tier 4', which stays commented out. MNIST runs are new training outside `data/`, so they need the user's agreement before they start, and the rule that all results come from `data/` will need an exception for this section.
+
 ## What the data allow the report to claim
 
 These limits come from checks on `data/`. A claim that goes past them is wrong, even if it reads better.
 
-- **Tier 1.** Rotation is the statistic most tied to the event, but only at a fixed width. Read at another run's grokking step, its SD at N = 100 widens 1.71 times, against 1.29 times for scale and 1.09 for alignment. Across widths no statistic passes at level 0.95. At levels 0.80 and 0.90, scale and alignment tighten slightly across widths, and rotation does not.
+- **Tier 1.** Rotation is the statistic most tied to the event, but only at a fixed width. Read at another run's grokking step, its SD at N = 100 widens 1.71 times, against 1.29 times for scale and 1.09 for alignment. Across widths no statistic passes at level 0.95. At level 0.80, scale and alignment tighten slightly across widths. At 0.90 only alignment does (p = 0.013; scale has p = 0.085). Rotation does not at any level.
 - **Rotation is not a sufficient threshold.** In 8 cells where some seed memorises but none groks, seeds still reach the median rotation at grokking of their width. Do not write that reaching a rotation makes a network grok.
 - **Alignment.** The median of A barely changes between step 0 (0.398) and grokking (0.406) over the runs that grok. Its placebo ratio at N = 100 is 1.09 with p = 0.03, so write that its ratio is close to 1. Do not write that alignment is a threshold or a clock.
 - **Tier 2 intervals.** With cells resampled, γ has an interval that includes zero. Do not claim its sign.
@@ -102,7 +106,7 @@ The build must finish with no errors, undefined citations or undefined reference
 | `\budget{...}` | The page budget of a section. |
 | `\placeholderfigure[height]{...}` | A red box that stands in for a figure. The text names its E item. |
 | `draftnote` environment | A red block. The notes after the consent page use it. |
-| `draftcontrib{where}` environment | A red draft of what a section adds and why it matters, written as if the preliminary findings hold. It ends with a note to verify against the full runs. Fold what survives into the prose and delete the block. These blocks carry the narrative and the case for significance and novelty, so update them whenever a finding changes. |
+| `draftcontrib{where}` environment | Removed on 12 October 2026. The red draft blocks of what each section adds were checked against the full runs, folded into the prose, and deleted, together with the `\differs` macro. The changelog in `main.tex` lists the claims that changed. Do not add the blocks back. |
 | `\file{...}` | A file path that can break across lines. |
 
 **Replacing a placeholder.** When the figure for item E*k* exists as `overleaf/figures/E<k>_<name>.pdf`, replace its `\placeholderfigure{...}` with `\includegraphics[width=\linewidth]{figures/E<k>_<name>.pdf}`. Then rewrite the caption and remove its `\TODO`.

@@ -184,7 +184,7 @@ Status words: **carry over** means the number exists and only needs a clean scri
 - Write down the grouped cross-validation, the search grids (XGBoost: depth 1 to 4, learning rate 0.03 or 0.1, minimum child weight 1, 5 or 10, early stopping after 50 rounds), the kernel ridge selection, the GRU (16 hidden units, learning rate 0.01, weight decay 1e-4, early stopping up to 800 epochs) and all seeds. Copy them from notebooks 3 and 4. **Status:** done 11 Oct 2026 (`E15_settings.py`, with `models.py`).
 
 ### E16. Sensitivity to the grokking level (Appendix F)
-- Repeat E3 (with the SD) and E6 at levels 0.80 and 0.90. **Status:** done 11 Oct 2026 (`E16_levels.py`). At 0.80 and 0.90, S and A tighten slightly across widths (p down to 0.001), while R does not.
+- Repeat E3 (with the SD) and E6 at levels 0.80 and 0.90. **Status:** done 11 Oct 2026 (`E16_levels.py`). At 0.80, S and A tighten slightly across widths (p 0.024 and 0.001). At 0.90 only A does (p 0.013; S has p 0.085). R does not at any level. (Corrected 12 Oct 2026: the earlier note said S also tightened at 0.90.)
 
 ### E17. Test the premise of the rotation clock (§4.5, option B)
 - **Question.** Does the early rate of rotation fall with width as 1/N, as the order of T_0 in Lewkowycz and Gur-Ari suggests? How much of the change of scale does weight decay alone account for?

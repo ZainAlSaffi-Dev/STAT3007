@@ -2,7 +2,7 @@
 
 The runs are the 355 that grok at level 0.95 among those with eta lambda at most 1e-3, with the
 statistics at t* = 2,430. For each of the seven non-empty subsets of {S_t, log R_t, A_t}, RBF kernel
-ridge predicts log T. Each cell is held out in turn (48 cells). Inside each fold the penalty and the
+ridge predicts log T. Each cell is held out in turn (74 cells). Inside each fold the penalty and the
 width are chosen by grouped 5-fold cross-validation over the training cells (models.kernel_ridge).
 The scores are R^2 of log T and the concordance index on the held-out predictions.
 

@@ -41,8 +41,8 @@
 %
 % How to use this file. Upload the folder report_v2/overleaf to Overleaf as it
 % is, or build it locally with "tectonic main.tex" from this folder. It needs no
-% file outside this folder. Every figure is a red placeholder box until the
-% scripts of report_v2/EXPERIMENTS_TODO.md write PDFs into figures/.
+% file outside this folder. The scripts of report_v2/code/ write the figures,
+% the tables and numbers.tex.
 %
 % Red text is for the group and must be deleted before submission:
 %   \TODO{...}        a task.
@@ -65,21 +65,11 @@
 \newcommand{\placeholderfigure}[2][4.5cm]{%
   \fbox{\parbox[c][#1][c]{0.95\linewidth}{\centering\color{red}\small\textbf{Figure to make.} #2}}}
 \newenvironment{draftnote}{\par\color{red}}{\par}
-% A draft of what a section contributes, written as if the preliminary findings
-% hold. Each block says why the finding is new and why it matters. Fold the
-% text into the section's prose once the full runs confirm it, then delete the
-% block.
-\newenvironment{draftcontrib}[1]{\par\smallskip\noindent\color{red}%
-  \textbf{Draft contribution, #1, if the preliminary findings hold.}\ }%
-  {\ \textit{Verify with the full-run experiments before keeping any of this. If
-  a finding it rests on does not hold, rewrite or drop the claim.}\par\smallskip}
 
 % Every number from the experiments is a macro in numbers.tex, which
 % report_v2/code/make_numbers.py writes. Rerun report_v2/code/make_all.py to
 % rebuild it; never type a result by hand.
 \input{numbers}
-% A red note where a finding of the full runs differs from the earlier draft.
-\newcommand{\differs}[1]{\textcolor{red}{\textbf{Differs from draft:} #1}}
 
 \newcommand{\etalam}{\eta\lambda}
 \newcommand{\tstar}{t^{\ast}}
@@ -104,46 +94,36 @@ Zac Kienzle (s4803349) $\cdot$ Samuel Rieger (s4904959)}
     including $R_t$'s name, the figure labels and the tier titles. The word
     ``rotation'' is kept for now so that the text matches what the group
     already uses.}
-  \item This is a skeleton. Each section opens with the claim it has to
-    support. Red numbers with an item ID are planning values from read-only
-    checks on \file{data/} (5 October 2026). Recompute every one through its
-    item in \file{EXPERIMENTS_TODO.md} before it becomes final.
+  \item Each section opens with the claim it has to support. Every number
+    comes from the scripts in \file{report_v2/code/} through
+    \file{numbers.tex}. The only red planning values left are those of E14 in
+    Appendix~\ref{app:edge}.
   \item The main text must end by page 12. References and appendices do not
     count, and the appendices may take at most 5 pages. Each section shows its
     page budget.
   \item The draft notes after the consent page hold the criteria
     self-assessment, the changelog of what was cut and why, and the reference
     checks.
-  \item Each section has a red block headed ``Draft contribution''. It says
-    what the section adds and why it matters, written as if the preliminary
-    findings hold. The blocks carry the narrative and answer the marking
-    criteria for significance and novelty. Check each against the full-run
-    results, fold what survives into the section's prose, and delete the block.
-    Until then the blocks push the main text past its page budget.
 \end{itemize}
 \end{draftnote}
 
 \begin{abstract}
-  \TODO{Write last, from the finished sections. Keep one sentence for each
-    point below.}
   Grokking is delayed generalisation, and what sets the length of the delay is
   disputed. Recent accounts time it by the weight norm, by the scale of the
   logits, or by the weight-decay rate. We split the movement of the neural
   tangent kernel into a change of scale and a rotation, and measure both, with
   the kernel's alignment to the labels, on 720 runs of a two-layer network
   learning modular addition. The runs cross laziness, width and weight decay.
-  At a fixed width, grokking happens at a nearly fixed amount of rotation, but
-  no statistic takes a fixed value across widths. The grokking time depends on
-  both width and weight decay, which neither a rotation clock nor a
+  The usual distance between the kernel and its initial value mostly records
+  the growth of the kernel. At a fixed width, rotation is the statistic most
+  tied to the grokking step, yet networks can reach that rotation without
+  grokking. Across widths no statistic takes a fixed value at grokking. The
+  grokking time grows with width and falls with weight decay, with exponents
+  of \EsixMainA{} and \EsixMainB{}, which neither a rotation clock nor a
   weight-decay clock predicts alone. Read before any run groks, rotation is the
-  best single predictor of the grokking time, and scale adds information that
-  rotation lacks. \TODO{Final sentence: what this means for the accounts of
-  grokking.}
-  \differs{The sentence ``At a fixed width, grokking happens at a nearly fixed
-  amount of rotation'' no longer matches the full runs. Rotation is the
-  statistic most tied to the grokking step at a fixed width, but networks can
-  reach that rotation without grokking (\cref{sec:tier1}). Reword when the
-  abstract is written.}
+  best single predictor of the grokking time on held-out settings, and scale
+  adds information that rotation lacks. Each published clock therefore
+  describes one part of what sets the grokking time.
 \end{abstract}
 
 % =====================================================================
@@ -203,33 +183,18 @@ follows.
   % \item \TODO{A theory contribution, if \cref{sec:tier4} keeps one. Its form
   %   depends on the option the group chooses there.}
 \end{enumerate}
-\TODO{One sentence of findings, matching the abstract, once the numbers are
-final.}
+We find that rotation matters most and is not enough on its own: the grokking
+time depends on both width and weight decay.
 
-\begin{draftcontrib}{Introduction}
-\emph{What is new.} The works we cite each follow one quantity: the distance
-the kernel moves \citep{mohamadiWhyYouGrok2024}, the weight norm
-\citep{khanhWeightNormSets2026}, the logit scale
-\citep{khanhWhatDoesWeight2026}, or the weight-decay rate
-\citep{kimGrokkingWeightDecayClock2026,pracherSpectralTheoryGrokking2026}. None
-of them separates the growth of the tangent kernel from its rotation. None tests
-a scale clock, a rotation clock and a weight-decay clock against each other on
-one grid. This report does both, and it adds a placebo test that any claim of a
-fixed value at grokking can be given.
-\emph{Why it matters.} The 2026 accounts disagree about what times grokking. If
-the preliminary findings hold, each account is partly right. Weight decay
-shortens the grokking time through the scale of the kernel, width lengthens it
-through the rotation, and neither sets the time alone. The findings also qualify
-the main evidence for the lazy-to-rich account. At the baseline
-most of the kernel's movement is growth (\NtwoAOneGrok{} of $D_t^2$ at grokking
-at $\alpha=1$), so a large distance does
-not by itself show that features were learned. Last, the statistics can be read
-from any network during training, without knowing its laziness or its effective
-regularisation. Rotation read before any run groks already orders runs by their
-grokking time (concordance \EtenRC{} on held-out cells, \cref{tab:subsets}).
-\TODO{Search the literature beyond the works cited before calling any of this
-the first of its kind.}
-\end{draftcontrib}
+The works we cite each follow one quantity: the distance the kernel moves
+\citep{mohamadiWhyYouGrok2024}, the weight norm \citep{khanhWeightNormSets2026},
+the logit scale \citep{khanhWhatDoesWeight2026}, or the weight-decay rate
+\citep{kimGrokkingWeightDecayClock2026,pracherSpectralTheoryGrokking2026}. This
+report separates the growth of the tangent kernel from its rotation, and sets a
+scale clock, a rotation clock and a weight-decay clock against each other on one
+grid. The split also bears on the evidence for
+the lazy-to-rich account. A kernel that only grows keeps its eigenvectors, so a
+large distance does not by itself show that features were learned.
 
 % =====================================================================
 \section{Related Work}\label{sec:related}
@@ -298,7 +263,13 @@ source. Add it to ref.bib only after checking it on arXiv.}
 of this report. If rotation sets the clock and $T_t$ stays of order $1/N$ along
 training, a wider network rotates more slowly and groks later at a fixed weight
 decay. The weight decay should then matter little. A weight-decay clock predicts
-the opposite.
+the opposite. Each account was tested on its own, so these predictions have not
+been set against each other on one grid. The weight-decay accounts also leave
+open what sets the time without weight decay. \Citet[p.~3, arXiv
+v1]{kimGrokkingWeightDecayClock2026} lists that case, and the creation of new
+directions by feature learning, among the things its mechanism does not
+explain. Rotation of the tangent kernel measures one form of such feature
+learning (our reading).
 
 \begin{table}[H]
   \centering\small
@@ -325,18 +296,6 @@ the opposite.
     \bottomrule
   \end{tabular}
 \end{table}
-
-\begin{draftcontrib}{Related Work}
-\emph{The gap.} \Cref{tab:predictions} shows that the three accounts make
-different predictions for the same experiments, yet each was tested on its own.
-The accounts that time grokking by weight decay also leave open what sets the
-time without it. \Citet[p.~3, arXiv v1]{kimGrokkingWeightDecayClock2026} lists
-grokking without explicit weight decay, and the creation of new directions by
-feature learning, among the things its mechanism does not explain. Rotation of
-the tangent kernel measures one form of that feature learning (our reading).
-\emph{Why it matters.} A test that sets the accounts against each other on one
-grid shows which part of each one holds.
-\end{draftcontrib}
 
 % Cut from the golden report's Related Work, kept in the changelog: spectral
 % bias and alignment (Rahaman, Basri, Canatar, Kopitkov, Baratin, Shan), silent
@@ -494,8 +453,8 @@ grokking step exceeds the budget
 \citep{kalbfleischStatisticalAnalysisFailure2002}. Both logarithms are centred at
 the middle of the grid, so $a$ and $b$ are the slopes there. The fits use
 lifelines \citep{davidson-pilonLifelinesSurvivalAnalysis2019}. The intervals
-resample \TODO{whole cells, and seeds within cells, so that they include the
-misfit of the cells about the fitted plane}.
+resample whole cells and then seeds within cells, so that they include the
+misfit of the cells about the fitted plane.
 
 \paragraph{Prediction (Tier 3$'$).} We read $S_t$, $\log R_t$ and $A_t$ at
 $\tstar=2\,430$, a saved step before any run reaches the grokking level. Four
@@ -520,8 +479,10 @@ Appendix~\ref{app:fitting} gives the settings of each model.
 
 \textbf{Claim.} At the baseline of \citet{kumarGrokkingTransitionLazy2024} the
 network memorises within a few thousand steps and groks much later, and a lazier
-network groks later. Over this time the kernel grows several-fold while it
-rotates by a few per cent.
+network groks later. Over this time the kernel grows several-fold while $R_t$
+stays below 0.09.
+% 0.09 bounds the largest R_sum over every checkpoint of the 15 baseline runs
+% in code/data/checkpoints_slim.parquet (0.086, at alpha = 0.5).
 
 \begin{figure}[H]
   \centering
@@ -545,8 +506,11 @@ median step of \NfiveATwoMemMedian{}, but no seed reaches test accuracy 0.95
 within 200\,000 steps. Grokking therefore comes later as $\alpha$ grows, as in
 \citet[Fig.~2(c), arXiv v3]{kumarGrokkingTransitionLazy2024}. The grokking steps
 at $\alpha=0.5$ and $\alpha=1$ are close to those in their figure, while our
-networks fit the training pairs several times sooner. Appendix~\ref{app:kumar}
-compares the settings one by one.
+networks fit the training pairs several times sooner. They do not state their
+parameterisation or initialisation, which may explain the gap. The
+reproduction therefore matches on the grokking time and on the order in
+$\alpha$, and does not match on the memorisation time.
+Appendix~\ref{app:kumar} compares the settings one by one.
 
 By \eqref{eq:identity} the squared variation splits into a scale part
 $(S_t-1)^2$ and a rotation part $2S_tR_t$. At $\alpha=1$ the scale part is
@@ -556,26 +520,6 @@ while $R_t$ is only \NtwoAOneRfinal{}. The scale part is \NtwoAHalfGrok{} at
 grokking for $\alpha=0.5$, and \NtwoATwoFinal{} at the last step for
 $\alpha=2$. The distance $D_t$ thus mostly records the growth of the kernel,
 which is why we measure $S_t$ and $R_t$ separately.
-
-\begin{draftcontrib}{Section 4.1}
-\emph{What is new.} The reproduction itself is not new. Its purpose is to
-confirm that the setup groks as published, which the proposal set as the gate
-for all later work. What is new is the split of the kernel's movement at the
-very baseline where the lazy-to-rich account was proposed
-\citep{kumarGrokkingTransitionLazy2024}.
-\emph{Why it matters.} Most of $D_t^2$ is scale (\NtwoAOneGrok{} at grokking
-at $\alpha=1$), so the distance that serves as evidence of the transition mostly
-records growth. A kernel that only grows keeps its eigenvectors, so its features
-do not change. Rotation has to be measured on its own before a large distance
-can be read as feature learning.
-\differs{The draft said the reproduction confirms that the setup groks as
-published. The grokking steps match Fig.~2 of Kumar et al.\ at $\alpha=0.5$ and
-$\alpha=1$, but our networks reach training accuracy 0.99 much sooner (median
-\NfiveAOneMemMedian{} steps at $\alpha=1$, against about 20\,000 epochs in their
-figure, read by eye). They do not state their parameterisation or
-initialisation, which may explain the gap. The gate passes on the grokking time
-and on the order in $\alpha$. It does not pass on the memorisation time.}
-\end{draftcontrib}
 
 \subsection{Tier 1: is there a threshold?}\label{sec:tier1}
 \budget{1.6 pages}
@@ -635,9 +579,12 @@ the placebo test at level 0.95. At $\alpha=1$ the ratios are \EthreeAoneSRatio,
 \EthreeAoneRRatio{} and \EthreeAoneARatio, and no $p$ is below 0.05. At grokking
 $R_t$ falls from \NsevenRWFifty{} at $N=50$ to \NsevenRWSixteenhundred{} at
 $N=1600$, and $S_t$ falls from \NsevenSWFifty{} to \NsevenSWSixteenhundred{}
-(medians over all $\alpha$ and $\eta\lambda$). At the lower levels of
-\cref{app:levels} the scale and the alignment tighten slightly across widths,
-while $R_t$ still does not.
+(medians over all $\alpha$ and $\eta\lambda$). At level 0.80
+(\cref{app:levels}) the scale and the alignment tighten slightly across widths,
+and at 0.90 only the alignment does. $R_t$ does not at any level. Pooled over all \EthreeAllRuns{} runs that grok,
+$S_t$ tightens \EthreeAllSRatio-fold ($p$ \EthreeAllSP). The grokking steps of
+that pool span nearly two decades while $S_t$ keeps growing, so this may reflect
+growth more than a threshold.
 
 Reaching the rotation at which runs grok is not enough to grok. There are
 \NeightNoGrokMemorised{} cells in which some seed memorises but no seed groks.
@@ -647,46 +594,18 @@ baseline cell at $\alpha=2$ (\cref{sec:baseline}).
 
 Wider networks grok with less rotation but take longer, which suggests that
 width sets the rate at which the kernel rotates. \Cref{sec:tier2} tests this.
-
-\begin{draftcontrib}{Tier 1}
-\emph{What is new.} This is a threshold test of the tangent kernel at grokking,
-with a placebo control, across laziness, width and weight decay. The proposal's
-hypothesis, that the alignment crosses a threshold shared by every cell, does not
-hold here in that form.
-\emph{Why it matters.} Reading each statistic at the true event and at another
-run's event separates a value tied to the event from one that stays in a narrow
-band. At a fixed width, rotation is the statistic most tied to the event. Across
-widths the rotation at grokking changes several-fold, so no single kernel state
-marks grokking. Threshold claims of this kind, such as the critical weight norm
-of \citet{khanhWeightNormSets2026}, can be given the same check.
-\differs{(1) The draft said that at a fixed width the rotation needed to grok is
-nearly fixed, so that the grokking time there comes down to how fast the kernel
-rotates. In \NeightAboveRMedianMemorised{} cells that memorise, seeds reach the
-median rotation at grokking of their width without grokking. Rotation is tied to
-the event, but it is not a sufficient threshold. (2) The draft said that without
-the placebo check the alignment would have looked like the best threshold (CV
-0.08). The spread is now the SD (group decision of 11 October 2026), and an SD
-cannot be compared across statistics, so that argument is dropped. The ratios at
-$N=100$ are \EthreeNhundredRRatio{} for $R_t$, \EthreeNhundredSRatio{} for $S_t$
-and \EthreeNhundredARatio{} for $A_t$ (the CV gave \EthreeNhundredRCvratio{} for
-$R_t$). (3) Under the SD the alignment tightens slightly at $N=100$ ($p=$
-\EthreeNhundredAP), so ``it fails the placebo test'' becomes ``its ratio is close
-to 1''. (4) Pooled over all \EthreeAllRuns{} runs that grok, $S_t$ tightens
-\EthreeAllSRatio-fold ($p$ \EthreeAllSP), which the draft did not report. The
-grokking steps of that pool span two decades while $S_t$ keeps growing, so this
-may reflect growth more than a threshold. (5) At levels 0.80 and 0.90 the
-scale and the alignment tighten slightly across widths ($p$ down to
-\EsixteenEightyAoneAP), so ``across widths no statistic passes'' holds at level
-0.95 only. $R_t$ fails across widths at every level.}
-\end{draftcontrib}
+Our proposal expected the alignment to cross a threshold shared by every cell,
+and that does not hold. Other claims of a fixed value at grokking, such as the
+critical weight norm of \citet{khanhWeightNormSets2026}, can be given the same
+placebo check.
 
 \subsection{Tier 2: width or weight decay?}\label{sec:tier2}
 \budget{2.0 pages}
 
 \textbf{Claim.} The grokking time depends on both width and weight decay, so
 neither the rotation clock nor the weight-decay clock of
-\cref{tab:predictions} holds on its own. Width acts through the rotation of the
-kernel, and weight decay acts through its scale.
+\cref{tab:predictions} holds on its own. Width sets the rotation of the kernel.
+At a fixed width, weight decay shrinks its scale.
 
 \begin{figure}[H]
   \centering
@@ -705,7 +624,9 @@ Without weight decay, only $N=50$ and $N=100$ grok within the budget
 $\eta\lambda=10^{-5}$ to $10^{-4}$ every seed at every width groks, and the time
 falls with $\eta\lambda$ at every width. The largest weight decay at which every
 seed groks is \EfourEdgeWFifty{} for $N\le400$ and \EfourEdgeWEighthundred{} for
-$N=800$ and $N=1600$. At $10^{-3}$ and above no width groks.
+$N=800$ and $N=1600$. At $10^{-3}$ and above no width groks. A wider network
+thus groks later at the same weight decay and stops grokking at a smaller one,
+so the weight decay that speeds grokking depends on the width.
 
 \begin{figure}[H]
   \centering
@@ -783,40 +704,11 @@ against \EsixMainWithin{} for the spread between the seeds of one cell. An
 interval that resamples seeds alone holds the cells fixed and is much narrower:
 for $a$ it runs from \EsixMainASeedlo{} to \EsixMainASeedhi.
 
-\begin{draftcontrib}{Tier 2}
-\emph{What is new.} This is a crossed grid of width and weight decay, fitted with
-censoring and set against the predictions of a rotation clock and of the
-weight-decay clocks of \citet{kimGrokkingWeightDecayClock2026} and
-\citet{pracherSpectralTheoryGrokking2026}. The grid includes runs without weight
-decay, which \citet[p.~3, arXiv v1]{kimGrokkingWeightDecayClock2026} places
-outside the scope of the weight-decay mechanism.
-\emph{Why it matters.} Both exponents are nonzero, and neither takes its
-predicted value (\cref{tab:scaling}), so no single published clock is complete.
-The data point to two routes that act together. Width acts through the rotation
-of the kernel, and weight decay acts through its scale (\cref{fig:mechanism}).
-This reconciles the accounts, since each one describes a single route. It also
-matters in practice. In the NTK parameterisation a wider network groks later at
-the same weight decay and stops grokking at a smaller one
-(\EfourEdgeWEighthundred{} at $N\ge800$ against \EfourEdgeWFifty{} at
-$N\le400$), so the weight decay that speeds grokking has to be chosen together
-with the width.
-\differs{(1) With cells resampled, the intervals are several times wider than the
-planning ones, which held the cells fixed: $a$ is \EsixMainA{}
-[\EsixMainALo, \EsixMainAHi] and $b$ is \EsixMainB{} [\EsixMainBLo,
-\EsixMainBHi]. Both still exclude 0, and $b$ excludes $-1$. (2) The interval of
-$\gamma$ now includes zero, so the report makes no claim about its sign. (3) The
-draft said weight decay sets the scale. Weight decay explains \NnineSDecay{} of
-the spread of $S_t$, about as much as $\alpha$ (\NnineSAlpha) and width
-(\NnineSWidth), so the text now says weight decay is one of the settings that
-set the scale. (4) $\sigma$ is \EsixMainS, against 0.38 in the planning fit, and
-most of it is misfit of the cells about the plane.}
-\end{draftcontrib}
-
 \subsection{\texorpdfstring{Tier 3$'$}{Tier 3'}: predicting the grokking time from the kernel}\label{sec:tier3}
 \budget{1.6 pages}
 
 \textbf{Claim.} Read before any run groks, rotation is the best single predictor
-of the grokking time. Scale adds information that rotation lacks, and alignment
+of the grokking time on held-out cells. Scale adds information that rotation lacks, and alignment
 adds little. The best models use rotation and scale together and let them
 interact.
 
@@ -860,6 +752,10 @@ shortens the grokking time more when the kernel has also rotated more
 (\cref{fig:surface}). In the censored model with all three statistics and their
 products, the coefficient of the product of $S_t$ and $\log R_t$ is \EnineGamma,
 with a cell-bootstrap interval from \EnineGammalo{} to \EnineGammahi.
+Between \EtenBetweenLogT{} and \EtenBetweenLogR{} of the spread of $\log T$,
+$S_t$ and $\log R_t$ lies between cells (\cref{tab:subsets}). The statistics are
+therefore almost fully set by the cell, and they say nothing about which seed of
+a cell groks first.
 
 \begin{figure}[H]
   \centering
@@ -879,11 +775,16 @@ for $S_t$ and \EeightRonly{} for $\log R_t$. The linear model reaches
 \EeightLinear{} and the linear model with interactions \EeightInter. Kernel ridge
 reaches \EeightKrr{}, gradient-boosted trees \EeightXgb{} and the recurrent network
 on the history \EeightGru. The reference model given the settings reaches
-\EeightRef, more than any model of the kernel statistics.
+\EeightRef, more than any model of the kernel statistics. \Citet[p.~1, arXiv v3]{nandaProgressMeasuresGrokking2023} call a progress
+measure a metric that varies smoothly, precedes the phase transition and is
+causally linked to it. Rotation meets the first two conditions here. We have not
+tested a causal link, and reaching a rotation does not make a network grok
+(\cref{sec:tier1}). Rotation also gives no earlier or better warning than the
+settings themselves.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.66\linewidth]{figures/E9_surface.pdf}
+  \includegraphics[width=0.6\linewidth]{figures/E9_surface.pdf}
   \caption{Growth of the kernel shortens the grokking time more when the kernel
     has also rotated more. The predicted grokking step over $S_t$ and $R_t$ at
     $\tstar$ comes from kernel ridge on the \EtenRuns{} runs that grok, with
@@ -893,29 +794,21 @@ on the history \EeightGru. The reference model given the settings reaches
   \label{fig:surface}
 \end{figure}
 
-\begin{draftcontrib}{Tier 3$'$}
-\emph{What is new.} The works we cite explain the grokking time by settings,
-such as the weight-decay rate, or by quantities they set directly, such as a
-clamped weight norm. Here the time is predicted from statistics of the tangent
-kernel measured before any run groks. The models are scored on cells and on a
-laziness they have not seen, and each statistic is removed in turn.
-\emph{Why it matters.} This is a third, separate test of the same answer.
-Rotation carries the most information, and scale carries information that
-rotation lacks, so neither one is the whole clock. The statistics can be read
-from any network without knowing its laziness or its effective regularisation.
-Early rotation is therefore a candidate progress measure in the sense of
-\citet{nandaProgressMeasuresGrokking2023}: a quantity that moves before the test
-accuracy does. Its limits are that the statistics mostly reflect the settings
-and do not separate the seeds of one cell (\cref{sec:limitations}).
-\differs{(1) Alignment alone now scores $R^2=$ \EtenARsq{} and concordance
-\EtenAC{} on held-out cells, against 0.02 and 0.44 in the planning run. It is now a
-little better than a coin toss, and the claim that it adds little stands. (2) ``Growth shortens the time only when the kernel has also
-rotated'' is softened to ``more when it has rotated more'', since a negative
-product coefficient says no more than that. All other Tier 3$'$ numbers are
-within 0.04 of their planning values.}
-\end{draftcontrib}
+% NEW TIER 4 (added 12 October 2026 at the user's request, Jasper Chong). A
+% placeholder for an extension experiment on MNIST digits. It is a different
+% section from the commented-out Tier 4' below: Tier 4 is an empirical
+% extension to a second task, while Tier 4' was a theory extension.
+\subsection{Tier 4: an extension to MNIST digits}\label{sec:tier4mnist}
+
+\TODO{This section will be populated with an extension experiment on MNIST
+digits.}
 
 % TIER 4' COMMENTED OUT on 11 October 2026 at the user's request (Jasper Chong).
+% Tier 4' is the THEORY extension (options A to E: the rate-addition model, the
+% premise test, the frozen kernel, the closed-form network, or no section). It
+% is separate from the MNIST Tier 4 above and was not replaced by it. Both use
+% the name "Tier 4", so rename one before restoring this section; its label
+% sec:tier4 does not clash with the label sec:tier4mnist of the new section.
 % Items E11, E17 and E18 were not run. To restore the section, remove the
 % leading '% ' from each line down to END OF TIER 4'.
 % \subsection{\texorpdfstring{Tier 4$'$}{Tier 4'} (stretch, to be decided): theory}\label{sec:tier4}
@@ -986,14 +879,6 @@ within 0.04 of their planning values.}
 % options rest on its premise. If time allows, option C adds the most. Option A is
 % a short add-on. It summarises the data and does not explain them. Option D is
 % likely out of reach.
-%
-% \begin{draftcontrib}{Tier 4$'$, if option C is chosen}
-% \emph{What is new.} A direct test of whether the rotated tangent kernel alone can
-% generalise, set against the step at which the network groks.
-% \emph{Why it matters.} It would explain the mixed clock found in Tiers 1 to
-% 3$'$. The shape of the kernel decides what can be learned, and its scale decides
-% how fast training gets there.
-% \end{draftcontrib}
 % \end{draftnote}
 %
 % \begin{figure}[H]
@@ -1037,29 +922,16 @@ within 0.04 of their planning values.}
 \section{Conclusion}\label{sec:conclusion}
 \budget{0.3 page}
 
-\TODO{Three to five sentences. Answer the research question: rotation matters
-most, but the grokking time is set by rotation and scale together, through width
-and weight decay. Restate what is new: the scale and rotation split as timing
-variables, the placebo threshold test, the crossed grid, and prediction from
-quantities that any network exposes. Name one next step.}
-
-\begin{draftcontrib}{Conclusion}
-We asked what sets the grokking time. On the full runs, rotation of the
-tangent kernel matters most, but it is not enough on its own. At a fixed width
-rotation is the statistic most tied to the grokking step, yet networks can reach
-that rotation without grokking, and across widths the rotation at grokking
-changes. The grokking time depends on both width and weight decay. Early rotation
-and scale together predict it better than either one does alone. Each published
-clock therefore captures one route: width acts through the rotation of the
-kernel, and weight decay acts through its scale. What is new is the split of the kernel's
-movement into scale and rotation as timing variables, the placebo test of
-thresholds, the crossed grid of width and weight decay, and prediction from
-quantities that any network exposes. The next step is \TODO{a theory
-direction for the mixed clock (Tier 4$'$ is commented out), or a second task}.
-\differs{The draft said grokking happens at a nearly fixed rotation within one
-width. The full runs show a rotation tied to the event at a fixed width but not
-sufficient for it (\cref{sec:tier1}).}
-\end{draftcontrib}
+We asked what sets the grokking time: the shape of the tangent kernel, its
+scale, or the weight-decay rate. Rotation matters most and is not enough on its
+own. At a fixed width it is the statistic most tied to the grokking step, yet
+networks can reach that rotation without grokking. The grokking time grows with
+width and falls with weight decay. Width sets the rotation, and at a fixed width
+weight decay shrinks the scale. Early rotation and scale together predict the
+grokking time better than either one alone, so each published clock describes
+one part of it. What is new is the split into scale and rotation, the placebo test,
+the crossed grid, and prediction from quantities that any network exposes. A
+next step is to test whether the early rate of rotation falls as $1/N$.
 
 \section*{Contribution}
 
@@ -1203,10 +1075,12 @@ best weights are kept. Early stopping chose between \EfifteenGruEpochsMin{} and
 0.90, and \cref{tab:levels-scaling} repeats the main fit. At $N=100$ the order of
 the statistics is the same at every level. $R_t$ tightens most, with ratios of
 \EsixteenEightyNhundredRRatio{} at 0.80 and \EsixteenNinetyNhundredRRatio{} at
-0.90, and $S_t$ comes next. Across widths $R_t$ never passes. At the lower
-levels the scale and the alignment tighten slightly across widths. At 0.80 their
-$p$ is \EsixteenEightyAoneSP{} and \EsixteenEightyAoneAP, with ratios of only
-\EsixteenEightyAoneSRatio{} and \EsixteenEightyAoneARatio. The exponents $a$ and
+0.90, and $S_t$ comes next. Across widths $R_t$ never passes. At 0.80 the
+scale and the alignment tighten slightly across widths, with $p$ of
+\EsixteenEightyAoneSP{} and \EsixteenEightyAoneAP{} and ratios of only
+\EsixteenEightyAoneSRatio{} and \EsixteenEightyAoneARatio. At 0.90 only the
+alignment does ($p=$ \EsixteenNinetyAoneAP); the scale has $p=$
+\EsixteenNinetyAoneSP. The exponents $a$ and
 $b$ keep their signs at every level, and both intervals exclude zero.
 
 \begin{table}[H]
@@ -1248,52 +1122,74 @@ teaching resource by including one of the statement below.
 
 \subsection*{1. How the report meets each marking criterion}
 
-The task sheet marks the report on five criteria and asks it to cover six
-points. The table gives where this skeleton addresses each one, the mark we
-expect if the plan is carried out, and how to raise it.
+The task sheet (\file{project.pdf}) marks the report on five criteria and asks
+the main text to cover six points within 12 pages. The table gives where the
+report addresses each one as it stands on 12 October 2026, the mark we expect,
+and how to raise it. The marks are our own estimate; the task sheet gives no
+scale.
 
 {\small
-\begin{tabular}{L{2.5cm}L{3.9cm}L{2.3cm}L{4.7cm}}
+\begin{longtable}{L{2.3cm}L{4.2cm}L{2.3cm}L{4.6cm}}
   \toprule
   Criterion & Where it is addressed & Likely mark & How to improve \\
   \midrule
-  Clarity and conciseness & One research question. Three statistics on one
-  kernel. One regression model and one cross-validation scheme. Each section
-  opens with its claim, and the spectral and survival machinery is cut. & Good
-  once written. The risk is a heavy load of notation and 8 figures in 12 pages.
-  & Add the notation table. Merge \cref{fig:mechanism} into \cref{fig:map}. Use
-  one colour for each statistic in every figure. Do a pass for the writing rules
-  of CLAUDE.md and for spelling. \\
-  Correctness & Censored fits, the placebo test, grouped cross-validation, and
-  the caveats stated in \cref{sec:limitations}. & Good, with a risk in Tier 2.
-  & Report the check rows of \cref{tab:scaling}. Make the intervals resample
-  cells. State the assumptions of the theorem behind \eqref{eq:kernelflow}.
-  Label any Tier 4$'$ model that no source derives as the group's own. \\
-  Reproducibility & \Cref{tab:hyper}, the grid, the split rule, the compute, and
-  one script for each figure, listed in the experiments file. & Good. & Publish a
-  small extract of the data. Generate every number as a macro. Add a README that
-  maps each figure to its script. \\
-  Significance & Three 2026 accounts tested on one grid, with statistics that any
-  network exposes. The ``why it matters'' half of each draft contribution block
-  (Sections 1, 2, 4.1 to 4.4 and 6) states the case section by section. &
-  Medium to good. & Keep the reconciling claim (each clock describes one route)
-  only if Tier 2 and E7 confirm it. Say what a practitioner can measure and why
-  it helps. Discuss what a single small task can and cannot show. \\
-  Novelty & The five contributions listed in the Introduction. The ``what is
-  new'' half of each draft contribution block says what each section adds over
-  the works cited. & Medium to good. The split into scale and rotation may look
-  small. & Search the literature beyond the works cited before claiming any
-  first. Contrast the split with the distance of \citet{mohamadiWhyYouGrok2024}
-  and with the untested argument of \citet{kumarGrokkingTransitionLazy2024}.
-  Use the scope of \citet{kimGrokkingWeightDecayClock2026}, which leaves out
-  grokking without weight decay. Repeat what is new in the Conclusion. \\
-  Required content & Problem and significance (Sections 1 and 2), steps
-  (Section 3), findings (Section 4), limitations (Section 5), conclusion
-  (Section 6), contribution, AI use and consent. & Complete. & Check the limits
-  of 12 pages and 5 appendix pages, and name the file
-  G2\_report\_\textless Name\textgreater.pdf. \\
+  \endhead
+  Clarity and conciseness. No spelling, grammar or punctuation mistakes; well
+  organised; clear notation; straight to the point. & One research question.
+  Three statistics on one kernel, defined in \cref{eq:statistics}. Each section
+  of \cref{sec:experiments} opens with its claim. Seven figures and five tables
+  in the main text, with one colour for each statistic in every figure. The
+  spectral and survival machinery is cut. & Good. & Write the Limitations as
+  short prose; it is still a list under a TODO. Decide on the notation table.
+  Do one pass for spelling and for the writing rules of CLAUDE.md, and one
+  read-through by a member who did not write the section. \\
+  Correctness. Sound arguments and technical details. & Censored log-normal
+  fits whose intervals resample cells, with the check rows of
+  \cref{tab:scaling}. The placebo test with 2\,000 permutations. Grouped
+  cross-validation by cell and by $\alpha$, with a settings reference. Every
+  claim is held to the limits in \file{report_v2/CLAUDE.md}, and claims the
+  full runs did not support were softened on 12 October (changelog). & Good. &
+  Add one check of the log-normal assumption, such as a probability plot of the
+  residuals of the main fit; it was cut with the golden report's survival
+  material. Settle the open reference items: Truong or Khanh, the Kalbfleisch
+  edition, and Dyer and Gur-Ari. \\
+  Reproduc\-ibility. Enough detail to reproduce the results. & \Cref{tab:hyper}
+  gives every setting, the split rule and the compute. Appendix~\ref{app:fitting}
+  gives every setting of the prediction models. \file{report_v2/code/} rebuilds
+  every figure, table and number with \file{make_all.py} from a 9 MB extract
+  with checksums. Its README maps each item to its script, and every number in
+  the text is a macro. & Good. & Run E14 or drop Appendix~\ref{app:edge}; it is
+  still a TODO. Package \file{report_v2/code/} as the zip for Blackboard, with
+  the data extract, and name in the report where the code is. \\
+  Significance. The report should highlight what it believes is significant. &
+  The Introduction sets the question against three 2026 accounts that disagree.
+  Related Work ends with what each account predicts (\cref{tab:predictions}).
+  Tier 1 offers the placebo check to other threshold claims. Tier 2 gives a
+  practical point: the weight decay that speeds grokking depends on the width.
+  The Conclusion states the answer. & Medium to good. & State what a single
+  small task can and cannot show. Say in one sentence why a practitioner would
+  measure $S_t$ and $R_t$, since the settings reference still predicts better
+  (\cref{fig:ladder}). \\
+  Novelty. The report should highlight what it believes is novel. & A paragraph
+  after the contributions in the Introduction, and the Conclusion: the split of
+  the kernel's movement into scale and rotation as timing variables, the placebo
+  test, the crossed grid of width and weight decay, and prediction from
+  measurable quantities. No sentence claims a first. & Medium to good. The split
+  may look small. & Search the literature beyond the works cited before any
+  claim of a first. Contrast the split with the distance of
+  \citet{mohamadiWhyYouGrok2024} more sharply in \cref{sec:baseline}. \\
+  Required content. Problem, significance, steps, findings, limitations and
+  conclusion within 12 pages; contribution; AI use; consent. & Problem and
+  significance in Sections 1 and 2, steps in Section 3, findings in Section 4,
+  limitations in Section 5 and conclusion in Section 6. Contribution, AI use and
+  consent sections exist. & Nearly complete. & Without the red markup the main
+  text ends two lines into page 13; cut them (see the changelog of 12 October).
+  The appendices take about 4 pages of the 5 allowed. Fill in the contribution
+  lines, the acknowledgement and the consent choice, and agree the AI-use text.
+  Name the file G2\_report\_\textless Name\textgreater.pdf and submit the code
+  separately as a zip. \\
   \bottomrule
-\end{tabular}
+\end{longtable}
 }
 
 \subsection*{2. Changelog: decisions and what was cut}
@@ -1332,6 +1228,10 @@ expect if the plan is carried out, and how to raise it.
     To restore it, remove the leading comment sign from each line between the
     markers TIER 4' COMMENTED OUT and END OF TIER 4', and restore contribution 5
     of the Introduction.
+  \item (12 October 2026, Jasper Chong.) A new Section~\ref{sec:tier4mnist},
+    Tier 4, holds a TODO placeholder for an extension experiment on MNIST
+    digits. It is separate from the commented-out theory section Tier 4$'$.
+    The MNIST runs would be new training outside \file{data/}.
   \item The spread in Tier 1 is the standard deviation, not the coefficient of
     variation. To restore the CV, set \texttt{SPREAD = 'cv'} in
     \file{report_v2/code/E03_placebo.py}; its JSON output keeps the CV values.
@@ -1346,11 +1246,69 @@ expect if the plan is carried out, and how to raise it.
   \item Kumar et al.\ App.~8.1 and 8.3, Sec.~3 and Fig.~2 (arXiv v3) were read
     for Appendix~\ref{app:kumar}. The memorisation steps differ from their
     figure; the grokking steps agree at $\alpha=0.5$ and $\alpha=1$.
-  \item Claims changed by the full runs are marked in red with ``Differs from
+  \item Claims changed by the full runs were marked in red with ``Differs from
     draft'' in the draft contribution blocks and the abstract. In short: the
     rotation threshold at a fixed width is not sufficient; the interval of
     $\gamma$ includes zero; weight decay is one of the settings that set the
-    scale; across widths no statistic passes only at level 0.95.
+    scale; across widths no statistic passes only at level 0.95. These markers
+    were removed on 12 October 2026 (below).
+\end{itemize}
+
+\paragraph{Changes made on 12 October 2026.}
+\begin{itemize}
+  \item The red draft contribution blocks were folded into the prose and
+    deleted, together with the \texttt{draftcontrib} environment, the
+    \texttt{\textbackslash differs} macro and the commented block inside
+    Tier 4$'$. Their text is in the git history of \file{main.tex} before this
+    date. The abstract and the Conclusion were written from the final numbers.
+  \item The ``why it matters'' and ``what is new'' points that the numbers
+    support now sit in the Introduction (a paragraph after the contributions),
+    Related Work (the Predictions paragraph and Kim's scope), \cref{sec:baseline}
+    (the gate and the baseline split), \cref{sec:tier1} (the alignment
+    hypothesis and the critical norm), \cref{sec:tier2} (Kim's scope and the
+    width-dependent decay edge) and \cref{sec:tier3} (scoring, progress
+    measure).
+  \item Claims changed. (1) The Tier 2 claim and the Conclusion said that weight
+    decay acts through the scale. Weight decay explains \NnineSDecay{} of the
+    spread of $S_t$, about as much as $\alpha$ and width, so the text now says
+    that at a fixed width weight decay shrinks the scale. The story in
+    \file{report_v2/CLAUDE.md} still says weight decay sets the scale. (2) The
+    baseline claim ``rotates by a few per cent'' became ``$R_t$ stays below
+    0.09'', the bound on every baseline checkpoint. (3) The reconciling claim
+    of the Introduction block was dropped.
+  \item Claims added from the final numbers. Tier 1 now reports that $S_t$
+    pooled over all runs that grok tightens \EthreeAllSRatio-fold, with the
+    caveat that it keeps growing. Tier 3$'$ now states in the prose that
+    \EtenBetweenLogT{} to \EtenBetweenLogR{} of the spread lies between cells,
+    so the statistics do not separate the seeds of a cell, and its claim is
+    limited to held-out cells.
+  \item The Introduction no longer carries a ``search the literature'' TODO.
+    No sentence claims a first. The search is listed under novelty in the
+    criteria table.
+  \item The criteria table was rewritten against the five criteria and the
+    required content of the task sheet.
+  \item The red TODO around the interval sentence of \cref{sec:analysis} was
+    removed, since the intervals resample cells (decision of 11 October).
+  \item Page limit. Built with the red markup hidden, the main text ended five
+    lines into page 13. Words that repeat other sections were cut: Kim's scope
+    in \cref{sec:tier2} (kept in Related Work), a closing sentence of
+    \cref{sec:baseline}, a scoring sentence of \cref{sec:tier3} (kept in
+    \cref{sec:analysis}), and parts of the Introduction and Conclusion.
+    \Cref{fig:surface} went from 0.66 to 0.6 of the line width. Two lines still
+    spill onto page 13. The next cuts would be to write the Limitations as
+    prose, or to merge \cref{fig:mechanism} into \cref{fig:map}.
+  \item The code and the numbers were verified. The tangent kernel recomputed
+    by autograd from the saved weights of 8 runs matches $S_t$, $R_t$ and $A_t$
+    to a relative $3\times10^{-10}$. A minimal retraining of the baseline run
+    reproduces its accuracy curve exactly over 6\,000 steps. Independent code
+    reproduces 133 macros of \file{numbers.tex}; the only gaps are Monte Carlo
+    ones (a permutation $p$ and a bootstrap bound, both within their noise).
+    A clean rerun of \file{make_all.py} reproduces \file{numbers.tex}, every
+    table and every JSON output exactly.
+  \item One claim was corrected. The text said that at levels 0.80 and 0.90 the
+    scale and the alignment tighten across widths. At 0.90 the scale has
+    $p=$ \EsixteenNinetyAoneSP, so only the alignment does. \Cref{sec:tier1}
+    and \cref{app:levels} now say so.
 \end{itemize}
 
 \paragraph{Cut from the golden report.} Each item can be restored from the
@@ -1399,6 +1357,9 @@ methods are ported, and their numbers are not used.
   \item Whether to add the notation table.
   \item Which theory direction, if any, Tier 4$'$ takes (options A to E in the
     commented-out Section 4.5 of \file{main.tex}).
+  \item Confirm the softer Tier 2 headline of 12 October 2026 (``at a fixed
+    width, weight decay shrinks the scale''), and update the story in
+    \file{report_v2/CLAUDE.md} to match.
 \end{itemize}
 
 \subsection*{3. Reference checks}
@@ -1414,7 +1375,7 @@ number cited in the text was checked in the PDF of the version named.
   \midrule
   \endhead
   Power et al.\ 2022 & arXiv 2201.02177 & Matches & v1 only. \\
-  Nanda et al.\ 2023 & arXiv 2301.05217 & Matches & v3 of 19 Oct 2023 gives the month. \\
+  Nanda et al.\ 2023 & arXiv 2301.05217 & Matches & v3 of 19 Oct 2023 gives the month. The v3 PDF was read on 12 Oct 2026 for the progress-measure sentence of \cref{sec:tier3}. Page 1 defines progress measures as ``metrics that precede and are causally linked to the phase transition, and which vary more smoothly'', after Barak et al.\ (2022). The report claims only the first and last conditions for $R_t$. \\
   Gromov 2023 & arXiv 2301.02679 & Matches & \\
   Jacot et al.\ 2020 & arXiv 1806.07572 & Matches & Year is v4 (Feb 2020); NeurIPS 2018. \\
   Chizat et al.\ 2020 & arXiv 1812.07956 & Matches & Year is v5 (Jan 2020); NeurIPS 2019. \\
