@@ -1,0 +1,86 @@
+{
+ "item": "E01",
+ "seeds": {},
+ "versions": {
+  "python": "3.11.4",
+  "platform": "macOS-26.7.1-arm64-arm-64bit",
+  "numpy": "2.4.6",
+  "pandas": "2.3.3",
+  "pyarrow": "23.0.1",
+  "scipy": "1.17.1",
+  "matplotlib": "3.10.8",
+  "lifelines": "0.30.0",
+  "scikit-learn": "1.9.1",
+  "xgboost": "3.2.0",
+  "torch": "2.10.0"
+ },
+ "results": {
+  "N5": {
+   "0.5": {
+    "mem_median": 1455.0,
+    "mem_min": 1313,
+    "mem_max": 1612,
+    "grok95_median": 4981.0,
+    "grok95_min": 3662,
+    "grok95_max": 6776,
+    "grok95_median_all": 4981.0,
+    "grokked": 5,
+    "seeds": 5,
+    "censored_seeds": []
+   },
+   "1": {
+    "mem_median": 2983.0,
+    "mem_min": 2692,
+    "mem_max": 2983,
+    "grok95_median": 23000.0,
+    "grok95_min": 15395,
+    "grok95_max": 34000,
+    "grok95_median_all": 23000.0,
+    "grokked": 5,
+    "seeds": 5,
+    "censored_seeds": []
+   },
+   "2": {
+    "mem_median": 5520.0,
+    "mem_min": 4496,
+    "mem_max": 6000,
+    "grok95_median": null,
+    "grok95_min": null,
+    "grok95_max": null,
+    "grok95_median_all": 200000.0,
+    "grokked": 0,
+    "seeds": 5,
+    "censored_seeds": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   }
+  },
+  "N2": {
+   "0.5": {
+    "mem": 0.8478238142820562,
+    "grok95": 0.9408877631655631,
+    "final": 0.9805084248246162,
+    "S_final_median": 8.63383038027089,
+    "R_final_median": 0.0701191005749152
+   },
+   "1": {
+    "mem": 0.7576192890648498,
+    "grok95": 0.8979175030659367,
+    "final": 0.9491802463873112,
+    "S_final_median": 4.536618116574781,
+    "R_final_median": 0.0743284891694455
+   },
+   "2": {
+    "mem": 0.48121691432370345,
+    "grok95": null,
+    "final": 0.8977785373833937,
+    "S_final_median": 2.7832124344236897,
+    "R_final_median": 0.0650433180655939
+   }
+  }
+ }
+}

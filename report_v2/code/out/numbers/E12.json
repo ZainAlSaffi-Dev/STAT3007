@@ -1,0 +1,168 @@
+{
+ "item": "E12",
+ "seeds": {},
+ "versions": {
+  "python": "3.11.4",
+  "platform": "macOS-26.7.1-arm64-arm-64bit",
+  "numpy": "2.4.6",
+  "pandas": "2.3.3",
+  "pyarrow": "23.0.1",
+  "scipy": "1.17.1",
+  "matplotlib": "3.10.8",
+  "lifelines": "0.30.0",
+  "scikit-learn": "1.9.1",
+  "xgboost": "3.2.0",
+  "torch": "2.10.0"
+ },
+ "results": {
+  "settings": [
+   [
+    "Task",
+    "$a+b \\bmod p$, $p=23$",
+    "$a+b \\bmod p$, $p=23$",
+    "App. 8.3"
+   ],
+   [
+    "Encoding",
+    "two one-hot codes, $D=2p$",
+    "two one-hot codes, $D=2p$",
+    "App. 8.3"
+   ],
+   [
+    "Output",
+    "$p$ outputs, one-hot target",
+    "$p$ outputs, one-hot target",
+    "App. 8.3"
+   ],
+   [
+    "Training pairs",
+    "90\\% of $p^2$",
+    "90\\% of $p^2$ (476 of 529)",
+    "App. 8.3"
+   ],
+   [
+    "Width",
+    "$N=100$",
+    "$N=100$ (grid: 50 to 1600)",
+    "App. 8.3"
+   ],
+   [
+    "Network",
+    "one hidden layer",
+    "one hidden layer, no biases, rectifier",
+    "App. 8.3"
+   ],
+   [
+    "Parameterisation",
+    "not stated",
+    "NTK, weights from $\\mathcal{N}(0,1)$",
+    ""
+   ],
+   [
+    "Loss",
+    "mean squared error",
+    "mean squared error",
+    "Sec. 3"
+   ],
+   [
+    "Optimiser",
+    "vanilla full-batch GD, no weight decay",
+    "full-batch GD; $\\eta\\lambda=0$ at the baseline",
+    "App. 8.3"
+   ],
+   [
+    "Predictor",
+    "$\\alpha[f(x;\\theta)-f(x;\\theta_0)]$",
+    "the same",
+    "App. 8.1"
+   ],
+   [
+    "Learning rate",
+    "$\\eta=100$; $\\eta=\\eta_0/\\alpha^2$",
+    "$\\eta=100/\\alpha^2$",
+    "App. 8.1, 8.3"
+   ],
+   [
+    "$\\alpha$",
+    "$\\{0.5,1,1.5,2\\}$",
+    "$\\{0.5,1,2\\}$",
+    "Fig. 2(c)"
+   ],
+   [
+    "Budget",
+    "100\\,000 epochs (Fig. 2(c))",
+    "200\\,000 steps",
+    "Fig. 2(c)"
+   ],
+   [
+    "Seeds",
+    "one run shown",
+    "5 per cell",
+    "Fig. 2"
+   ]
+  ],
+  "figure_reading": {
+   "0.5": {
+    "train_100": "$\\approx$4\\,000",
+    "test_100": "$\\approx$5\\,000"
+   },
+   "1.0": {
+    "train_100": "$\\approx$20\\,000 to 25\\,000",
+    "test_100": "$\\approx$25\\,000 to 27\\,000"
+   },
+   "1.5": {
+    "train_100": "$\\approx$65\\,000",
+    "test_100": "$\\approx$70\\,000"
+   },
+   "2.0": {
+    "train_100": "$\\approx$90\\,000",
+    "test_100": "about 25\\% at 100\\,000"
+   }
+  },
+  "ours": {
+   "0.5": {
+    "mem_median": 1455.0,
+    "mem_min": 1313,
+    "mem_max": 1612,
+    "grok95_median": 4981.0,
+    "grok95_min": 3662,
+    "grok95_max": 6776,
+    "grok95_median_all": 4981.0,
+    "grokked": 5,
+    "seeds": 5,
+    "censored_seeds": []
+   },
+   "1": {
+    "mem_median": 2983.0,
+    "mem_min": 2692,
+    "mem_max": 2983,
+    "grok95_median": 23000.0,
+    "grok95_min": 15395,
+    "grok95_max": 34000,
+    "grok95_median_all": 23000.0,
+    "grokked": 5,
+    "seeds": 5,
+    "censored_seeds": []
+   },
+   "2": {
+    "mem_median": 5520.0,
+    "mem_min": 4496,
+    "mem_max": 6000,
+    "grok95_median": null,
+    "grok95_min": null,
+    "grok95_max": null,
+    "grok95_median_all": 200000.0,
+    "grokked": 0,
+    "seeds": 5,
+    "censored_seeds": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   }
+  },
+  "source": "arXiv:2310.06110v3, App. 8.1 and 8.3, Sec. 3, Fig. 2; read 11 Oct 2026"
+ }
+}

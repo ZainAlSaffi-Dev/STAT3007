@@ -14,7 +14,7 @@ report_v2/
     main.tex           the report
     ref.bib            only the entries main.tex cites, each one verified
     figures/           PDFs made by the scripts; empty until they exist
-  code/                does not exist yet; one script per item will live here
+  code/                one script per item, make_all.py, and README.md (built 11 October 2026)
 ```
 
 The `overleaf/` folder must stay self-contained. Nothing in it may refer to a file outside it.
@@ -47,12 +47,23 @@ These were taken by Jasper Chong on 5 October 2026. They are recorded in the cha
 - In Tier 3', the model given the settings (width and weight decay) is a reference that knows more than any network would report. It is not a competitor. The reason is that a general network does not report its laziness or its effective regularisation, while its tangent kernel can be measured.
 - "Rotation" stays as the word for R until the group agrees to switch to "shape". A red TODO at the top of `main.tex` records this. Do not do the rename unless asked.
 
+These were taken by Jasper Chong on 11 October 2026.
+
+- Tier 1 measures the spread across runs by the standard deviation (ddof 1), not the CV. An SD carries the units of its statistic, so compare statistics only by the tightening ratio and the permutation p.
+- Tier 4' (Section 4.5) is commented out in `main.tex`, and E11, E17 and E18 are not run.
+
+This was taken by Jasper Chong on 12 October 2026.
+
+- A new Tier 4 (Section 4.5, label `sec:tier4mnist`) holds only a TODO placeholder for an extension experiment on MNIST digits. It is separate from the theory section Tier 4', which stays commented out. MNIST runs are new training outside `data/`, so they need the user's agreement before they start, and the rule that all results come from `data/` will need an exception for this section.
+
 ## What the data allow the report to claim
 
 These limits come from checks on `data/`. A claim that goes past them is wrong, even if it reads better.
 
-- **Tier 1.** Rotation passes the placebo test only at a fixed width. Read at another run's grokking step, its spread at N = 100 widens 1.9 times, against 1.3 times for scale. Across widths no statistic passes.
-- **Alignment.** A barely moves during training (median 0.398 at step 0 and 0.406 at grokking) and fails the placebo test. Do not write that alignment is a threshold or a clock.
+- **Tier 1.** Rotation is the statistic most tied to the event, but only at a fixed width. Read at another run's grokking step, its SD at N = 100 widens 1.71 times, against 1.29 times for scale and 1.09 for alignment. Across widths no statistic passes at level 0.95. At level 0.80, scale and alignment tighten slightly across widths. At 0.90 only alignment does (p = 0.013; scale has p = 0.085). Rotation does not at any level.
+- **Rotation is not a sufficient threshold.** In 8 cells where some seed memorises but none groks, seeds still reach the median rotation at grokking of their width. Do not write that reaching a rotation makes a network grok.
+- **Alignment.** The median of A barely changes between step 0 (0.398) and grokking (0.406) over the runs that grok. Its placebo ratio at N = 100 is 1.09 with p = 0.03, so write that its ratio is close to 1. Do not write that alignment is a threshold or a clock.
+- **Tier 2 intervals.** With cells resampled, γ has an interval that includes zero. Do not claim its sign.
 - **Tier 2.** The exponents depend on which weight-decay cells enter the fit. Always report the main range (ηλ from 1e-5 to 1e-4) together with the check rows. If the intervals resample seeds only, say that they hold the cells fixed.
 - **Tier 3'.** Rotation is the best single statistic, scale adds information that rotation lacks, and alignment adds little.
   - The statistics are almost fully set by the cell, and they carry no signal about which seed of a cell groks first.
@@ -95,7 +106,7 @@ The build must finish with no errors, undefined citations or undefined reference
 | `\budget{...}` | The page budget of a section. |
 | `\placeholderfigure[height]{...}` | A red box that stands in for a figure. The text names its E item. |
 | `draftnote` environment | A red block. The notes after the consent page use it. |
-| `draftcontrib{where}` environment | A red draft of what a section adds and why it matters, written as if the preliminary findings hold. It ends with a note to verify against the full runs. Fold what survives into the prose and delete the block. These blocks carry the narrative and the case for significance and novelty, so update them whenever a finding changes. |
+| `draftcontrib{where}` environment | Removed on 12 October 2026. The red draft blocks of what each section adds were checked against the full runs, folded into the prose, and deleted, together with the `\differs` macro. The changelog in `main.tex` lists the claims that changed. Do not add the blocks back. |
 | `\file{...}` | A file path that can break across lines. |
 
 **Replacing a placeholder.** When the figure for item E*k* exists as `overleaf/figures/E<k>_<name>.pdf`, replace its `\placeholderfigure{...}` with `\includegraphics[width=\linewidth]{figures/E<k>_<name>.pdf}`. Then rewrite the caption and remove its `\TODO`.
@@ -146,9 +157,9 @@ The first grep should print nothing. `--` is allowed only inside page ranges suc
   - Grokking at level ℓ is the first checkpoint with test accuracy ≥ ℓ, counted from step 0.
   - A run that misses a level is kept and censored at 200,000 steps.
   - These are the definitions of the root `CLAUDE.md` and the golden report §3.5. Do not change them without telling the user.
-- **Code layout.** Write one script per item as `report_v2/code/E<k>_<name>.py`, with no arguments and with seeds fixed at the top. Write the figure to `overleaf/figures/E<k>_<name>.pdf` and the numbers to `report_v2/code/out/E<k>.json`. Shared loaders, event definitions and colours go in `report_v2/code/common.py`, with one colour per statistic used by every figure. The last section of `EXPERIMENTS_TODO.md` describes the planned clean repository, so build toward it.
+- **Code layout.** Write one script per item as `report_v2/code/E<k>_<name>.py`, with no arguments and with seeds fixed at the top. Each script writes its figure to `code/out/figures/`, its tables to `code/out/tables/` and its numbers to `code/out/numbers/`. `make_all.py` copies the figures and tables into `overleaf/` and writes `overleaf/numbers.tex`. Shared loaders, event definitions and colours go in `report_v2/code/common.py`, with one colour per statistic used by every figure. The last section of `EXPERIMENTS_TODO.md` describes the planned clean repository, so build toward it.
 - **Reuse before writing.** Most items port a method from an existing notebook or script, which the item names. Examples are the placebo test in `repoduced-code/tier1_v2.ipynb` §7, the scaling fits in `repoduced-code/tier2_consistency.py`, and the prediction models in `model_fitting/3_kernel_only.ipynb` and `4_nonlinear_exploration.ipynb`. The old notebooks used old data and old definitions, so take their methods and never their numbers.
-- **Environment.** Use Python 3.11 or later with the packages listed in `pyproject.toml` at the repository root. The fits need `lifelines` and `xgboost`, so check that both are installed before running them. Record the interpreter and the package versions with every output.
+- **Environment.** Use Python 3.11 or later with the packages listed in `pyproject.toml` at the repository root. Call the environment's interpreter by its full path. A shell profile can put another environment first on `PATH`, and `conda run` then picks that one up. The fits need `lifelines` and `xgboost`, so check that both are installed before running them. Record the interpreter and the package versions with every output.
 - **After a run.**
   - Mark the item done in `EXPERIMENTS_TODO.md`, with the date and what was run.
   - Replace the matching `\pending` values in `main.tex`.

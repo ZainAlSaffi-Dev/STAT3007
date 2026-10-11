@@ -1,0 +1,513 @@
+{
+ "item": "E04",
+ "seeds": {},
+ "versions": {
+  "python": "3.11.4",
+  "platform": "macOS-26.7.1-arm64-arm-64bit",
+  "numpy": "2.4.6",
+  "pandas": "2.3.3",
+  "pyarrow": "23.0.1",
+  "scipy": "1.17.1",
+  "matplotlib": "3.10.8",
+  "lifelines": "0.30.0",
+  "scikit-learn": "1.9.1",
+  "xgboost": "3.2.0",
+  "torch": "2.10.0"
+ },
+ "results": {
+  "alpha1": [
+   {
+    "alpha": 1.0,
+    "width": 50,
+    "eta_kappa": 0.0,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 33000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 50,
+    "eta_kappa": 3e-06,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 30000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 50,
+    "eta_kappa": 1e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 27000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 50,
+    "eta_kappa": 3e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 24000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 50,
+    "eta_kappa": 0.0001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 18900.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 50,
+    "eta_kappa": 0.0003,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 15000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 50,
+    "eta_kappa": 0.001,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 1.0,
+    "width": 50,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 1.0,
+    "width": 100,
+    "eta_kappa": 0.0,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 23000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 100,
+    "eta_kappa": 3e-06,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 23000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 100,
+    "eta_kappa": 1e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 20941.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 100,
+    "eta_kappa": 3e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 17000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 100,
+    "eta_kappa": 0.0001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 10000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 100,
+    "eta_kappa": 0.0003,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 9218.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 100,
+    "eta_kappa": 0.001,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 1.0,
+    "width": 100,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 1.0,
+    "width": 200,
+    "eta_kappa": 0.0,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 1.0,
+    "width": 200,
+    "eta_kappa": 3e-06,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 1.0,
+    "width": 200,
+    "eta_kappa": 1e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 106000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 200,
+    "eta_kappa": 3e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 27000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 200,
+    "eta_kappa": 0.0001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 11000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 200,
+    "eta_kappa": 0.0003,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 10000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 200,
+    "eta_kappa": 0.001,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 1.0,
+    "width": 200,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 1.0,
+    "width": 400,
+    "eta_kappa": 0.0,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 1.0,
+    "width": 400,
+    "eta_kappa": 3e-06,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 1.0,
+    "width": 400,
+    "eta_kappa": 1e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 82000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 400,
+    "eta_kappa": 3e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 27000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 400,
+    "eta_kappa": 0.0001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 12000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 400,
+    "eta_kappa": 0.0003,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 13894.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 400,
+    "eta_kappa": 0.001,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 1.0,
+    "width": 400,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 1.0,
+    "width": 800,
+    "eta_kappa": 0.0,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 1.0,
+    "width": 800,
+    "eta_kappa": 3e-06,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 1.0,
+    "width": 800,
+    "eta_kappa": 1e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 88000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 800,
+    "eta_kappa": 3e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 30000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 800,
+    "eta_kappa": 0.0001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 15000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 800,
+    "eta_kappa": 0.0003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MGGGG",
+    "letter": "G"
+   },
+   {
+    "alpha": 1.0,
+    "width": 800,
+    "eta_kappa": 0.001,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 1.0,
+    "width": 800,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 1.0,
+    "width": 1600,
+    "eta_kappa": 0.0,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 1.0,
+    "width": 1600,
+    "eta_kappa": 3e-06,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 1.0,
+    "width": 1600,
+    "eta_kappa": 1e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 99000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 1600,
+    "eta_kappa": 3e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 37000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 1600,
+    "eta_kappa": 0.0001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 20000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 1600,
+    "eta_kappa": 0.0003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "FFFFF",
+    "letter": "F"
+   },
+   {
+    "alpha": 1.0,
+    "width": 1600,
+    "eta_kappa": 0.001,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 1.0,
+    "width": 1600,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   }
+  ],
+  "largest_decay_all_grok": {
+   "50": 0.0003,
+   "100": 0.0003,
+   "200": 0.0003,
+   "400": 0.0003,
+   "800": 0.0001,
+   "1600": 0.0001
+  },
+  "no_decay_widths_that_grok": [
+   50,
+   100
+  ]
+ }
+}
