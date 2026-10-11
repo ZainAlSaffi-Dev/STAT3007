@@ -1,0 +1,18 @@
+{
+ "E01_baseline": 1.0,
+ "E03_placebo": 0.5,
+ "E02_thresholds": 0.9,
+ "E04_map": 0.7,
+ "E06_aft": 496.3,
+ "E05_scaling": 0.9,
+ "E07_mechanism": 0.9,
+ "E08_ladder": 68.7,
+ "E09_surface": 25.7,
+ "E10_subsets": 71.4,
+ "E12_kumar": 1.4,
+ "E13_grid": 1.8,
+ "E15_settings": 5.3,
+ "E16_levels": 3.1,
+ "N_numbers": 1.6,
+ "make_numbers": 1.3
+}

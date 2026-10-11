@@ -1,0 +1,1478 @@
+{
+ "item": "E13",
+ "seeds": {},
+ "versions": {
+  "python": "3.11.4",
+  "platform": "macOS-26.7.1-arm64-arm-64bit",
+  "numpy": "2.4.6",
+  "pandas": "2.3.3",
+  "pyarrow": "23.0.1",
+  "scipy": "1.17.1",
+  "matplotlib": "3.10.8",
+  "lifelines": "0.30.0",
+  "scikit-learn": "1.9.1",
+  "xgboost": "3.2.0",
+  "torch": "2.10.0"
+ },
+ "results": {
+  "cells": [
+   {
+    "alpha": 0.5,
+    "width": 50,
+    "eta_kappa": 0.0,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 6776.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 50,
+    "eta_kappa": 3e-06,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 6776.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 50,
+    "eta_kappa": 1e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 7508.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 50,
+    "eta_kappa": 3e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 6776.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 50,
+    "eta_kappa": 0.0001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 6776.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 50,
+    "eta_kappa": 0.0003,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 4981.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 50,
+    "eta_kappa": 0.001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 6000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 50,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 0.5,
+    "width": 100,
+    "eta_kappa": 0.0,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 4981.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 100,
+    "eta_kappa": 3e-06,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 4981.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 100,
+    "eta_kappa": 1e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 4496.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 100,
+    "eta_kappa": 3e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 4496.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 100,
+    "eta_kappa": 0.0001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 4000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 100,
+    "eta_kappa": 0.0003,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 3662.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 100,
+    "eta_kappa": 0.001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 4000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 100,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 0.5,
+    "width": 200,
+    "eta_kappa": 0.0,
+    "grokked": 3,
+    "seeds": 5,
+    "median_T": 27000.0,
+    "phases": "GMGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 200,
+    "eta_kappa": 3e-06,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 25710.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 200,
+    "eta_kappa": 1e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 13894.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 200,
+    "eta_kappa": 3e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 6776.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 200,
+    "eta_kappa": 0.0001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 4981.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 200,
+    "eta_kappa": 0.0003,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 4000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 200,
+    "eta_kappa": 0.001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 6116.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 200,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 0.5,
+    "width": 400,
+    "eta_kappa": 0.0,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 0.5,
+    "width": 400,
+    "eta_kappa": 3e-06,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 70000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 400,
+    "eta_kappa": 1e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 18900.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 400,
+    "eta_kappa": 3e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 9000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 400,
+    "eta_kappa": 0.0001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 5520.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 400,
+    "eta_kappa": 0.0003,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 4496.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 400,
+    "eta_kappa": 0.001,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 0.5,
+    "width": 400,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 0.5,
+    "width": 800,
+    "eta_kappa": 0.0,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 0.5,
+    "width": 800,
+    "eta_kappa": 3e-06,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 106000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 800,
+    "eta_kappa": 1e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 33000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 800,
+    "eta_kappa": 3e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 12000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 800,
+    "eta_kappa": 0.0001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 6776.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 800,
+    "eta_kappa": 0.0003,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 6000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 800,
+    "eta_kappa": 0.001,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 0.5,
+    "width": 800,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 0.5,
+    "width": 1600,
+    "eta_kappa": 0.0,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 0.5,
+    "width": 1600,
+    "eta_kappa": 3e-06,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 157000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 1600,
+    "eta_kappa": 1e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 48000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 1600,
+    "eta_kappa": 3e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 17000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 1600,
+    "eta_kappa": 0.0001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 8319.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 1600,
+    "eta_kappa": 0.0003,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 9218.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 0.5,
+    "width": 1600,
+    "eta_kappa": 0.001,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 0.5,
+    "width": 1600,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 1.0,
+    "width": 50,
+    "eta_kappa": 0.0,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 33000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 50,
+    "eta_kappa": 3e-06,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 30000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 50,
+    "eta_kappa": 1e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 27000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 50,
+    "eta_kappa": 3e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 24000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 50,
+    "eta_kappa": 0.0001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 18900.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 50,
+    "eta_kappa": 0.0003,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 15000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 50,
+    "eta_kappa": 0.001,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 1.0,
+    "width": 50,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 1.0,
+    "width": 100,
+    "eta_kappa": 0.0,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 23000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 100,
+    "eta_kappa": 3e-06,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 23000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 100,
+    "eta_kappa": 1e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 20941.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 100,
+    "eta_kappa": 3e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 17000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 100,
+    "eta_kappa": 0.0001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 10000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 100,
+    "eta_kappa": 0.0003,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 9218.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 100,
+    "eta_kappa": 0.001,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 1.0,
+    "width": 100,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 1.0,
+    "width": 200,
+    "eta_kappa": 0.0,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 1.0,
+    "width": 200,
+    "eta_kappa": 3e-06,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 1.0,
+    "width": 200,
+    "eta_kappa": 1e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 106000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 200,
+    "eta_kappa": 3e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 27000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 200,
+    "eta_kappa": 0.0001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 11000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 200,
+    "eta_kappa": 0.0003,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 10000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 200,
+    "eta_kappa": 0.001,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 1.0,
+    "width": 200,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 1.0,
+    "width": 400,
+    "eta_kappa": 0.0,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 1.0,
+    "width": 400,
+    "eta_kappa": 3e-06,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 1.0,
+    "width": 400,
+    "eta_kappa": 1e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 82000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 400,
+    "eta_kappa": 3e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 27000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 400,
+    "eta_kappa": 0.0001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 12000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 400,
+    "eta_kappa": 0.0003,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 13894.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 400,
+    "eta_kappa": 0.001,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 1.0,
+    "width": 400,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 1.0,
+    "width": 800,
+    "eta_kappa": 0.0,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 1.0,
+    "width": 800,
+    "eta_kappa": 3e-06,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 1.0,
+    "width": 800,
+    "eta_kappa": 1e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 88000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 800,
+    "eta_kappa": 3e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 30000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 800,
+    "eta_kappa": 0.0001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 15000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 800,
+    "eta_kappa": 0.0003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MGGGG",
+    "letter": "G"
+   },
+   {
+    "alpha": 1.0,
+    "width": 800,
+    "eta_kappa": 0.001,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 1.0,
+    "width": 800,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 1.0,
+    "width": 1600,
+    "eta_kappa": 0.0,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 1.0,
+    "width": 1600,
+    "eta_kappa": 3e-06,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 1.0,
+    "width": 1600,
+    "eta_kappa": 1e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 99000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 1600,
+    "eta_kappa": 3e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 37000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 1600,
+    "eta_kappa": 0.0001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 20000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 1.0,
+    "width": 1600,
+    "eta_kappa": 0.0003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "FFFFF",
+    "letter": "F"
+   },
+   {
+    "alpha": 1.0,
+    "width": 1600,
+    "eta_kappa": 0.001,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 1.0,
+    "width": 1600,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 2.0,
+    "width": 50,
+    "eta_kappa": 0.0,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 2.0,
+    "width": 50,
+    "eta_kappa": 3e-06,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "GMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 2.0,
+    "width": 50,
+    "eta_kappa": 1e-05,
+    "grokked": 1,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "GMMMM",
+    "letter": ""
+   },
+   {
+    "alpha": 2.0,
+    "width": 50,
+    "eta_kappa": 3e-05,
+    "grokked": 2,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "GGMMG",
+    "letter": ""
+   },
+   {
+    "alpha": 2.0,
+    "width": 50,
+    "eta_kappa": 0.0001,
+    "grokked": 1,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "GMGGM",
+    "letter": ""
+   },
+   {
+    "alpha": 2.0,
+    "width": 50,
+    "eta_kappa": 0.0003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 2.0,
+    "width": 50,
+    "eta_kappa": 0.001,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 2.0,
+    "width": 50,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 2.0,
+    "width": 100,
+    "eta_kappa": 0.0,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 2.0,
+    "width": 100,
+    "eta_kappa": 3e-06,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 2.0,
+    "width": 100,
+    "eta_kappa": 1e-05,
+    "grokked": 3,
+    "seeds": 5,
+    "median_T": 95000.0,
+    "phases": "GGGMG",
+    "letter": ""
+   },
+   {
+    "alpha": 2.0,
+    "width": 100,
+    "eta_kappa": 3e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 69000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 2.0,
+    "width": 100,
+    "eta_kappa": 0.0001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 42937.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 2.0,
+    "width": 100,
+    "eta_kappa": 0.0003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 2.0,
+    "width": 100,
+    "eta_kappa": 0.001,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 2.0,
+    "width": 100,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 2.0,
+    "width": 200,
+    "eta_kappa": 0.0,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 2.0,
+    "width": 200,
+    "eta_kappa": 3e-06,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 2.0,
+    "width": 200,
+    "eta_kappa": 1e-05,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 2.0,
+    "width": 200,
+    "eta_kappa": 3e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 86000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 2.0,
+    "width": 200,
+    "eta_kappa": 0.0001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 40000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 2.0,
+    "width": 200,
+    "eta_kappa": 0.0003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 2.0,
+    "width": 200,
+    "eta_kappa": 0.001,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 2.0,
+    "width": 200,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 2.0,
+    "width": 400,
+    "eta_kappa": 0.0,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 2.0,
+    "width": 400,
+    "eta_kappa": 3e-06,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 2.0,
+    "width": 400,
+    "eta_kappa": 1e-05,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 2.0,
+    "width": 400,
+    "eta_kappa": 3e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 83000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 2.0,
+    "width": 400,
+    "eta_kappa": 0.0001,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 60000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 2.0,
+    "width": 400,
+    "eta_kappa": 0.0003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 2.0,
+    "width": 400,
+    "eta_kappa": 0.001,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 2.0,
+    "width": 400,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 2.0,
+    "width": 800,
+    "eta_kappa": 0.0,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 2.0,
+    "width": 800,
+    "eta_kappa": 3e-06,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 2.0,
+    "width": 800,
+    "eta_kappa": 1e-05,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 2.0,
+    "width": 800,
+    "eta_kappa": 3e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 94000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 2.0,
+    "width": 800,
+    "eta_kappa": 0.0001,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "GGGMG",
+    "letter": "G"
+   },
+   {
+    "alpha": 2.0,
+    "width": 800,
+    "eta_kappa": 0.0003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 2.0,
+    "width": 800,
+    "eta_kappa": 0.001,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 2.0,
+    "width": 800,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 2.0,
+    "width": 1600,
+    "eta_kappa": 0.0,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 2.0,
+    "width": 1600,
+    "eta_kappa": 3e-06,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 2.0,
+    "width": 1600,
+    "eta_kappa": 1e-05,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 2.0,
+    "width": 1600,
+    "eta_kappa": 3e-05,
+    "grokked": 5,
+    "seeds": 5,
+    "median_T": 98000.0,
+    "phases": "GGGGG",
+    "letter": ""
+   },
+   {
+    "alpha": 2.0,
+    "width": 1600,
+    "eta_kappa": 0.0001,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "MMMMM",
+    "letter": "M"
+   },
+   {
+    "alpha": 2.0,
+    "width": 1600,
+    "eta_kappa": 0.0003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 2.0,
+    "width": 1600,
+    "eta_kappa": 0.001,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   },
+   {
+    "alpha": 2.0,
+    "width": 1600,
+    "eta_kappa": 0.003,
+    "grokked": 0,
+    "seeds": 5,
+    "median_T": null,
+    "phases": "NNNNN",
+    "letter": "N"
+   }
+  ],
+  "by_alpha": {
+   "0.5": {
+    "cells_all_grok": 35,
+    "cells_none_grok": 12,
+    "runs_grok": 178
+   },
+   "1": {
+    "cells_all_grok": 26,
+    "cells_none_grok": 22,
+    "runs_grok": 130
+   },
+   "2": {
+    "cells_all_grok": 8,
+    "cells_none_grok": 36,
+    "runs_grok": 47
+   }
+  }
+ }
+}

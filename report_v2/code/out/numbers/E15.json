@@ -1,0 +1,150 @@
+{
+ "item": "E15",
+ "seeds": {},
+ "versions": {
+  "python": "3.11.4",
+  "platform": "macOS-26.7.1-arm64-arm-64bit",
+  "numpy": "2.4.6",
+  "pandas": "2.3.3",
+  "pyarrow": "23.0.1",
+  "scipy": "1.17.1",
+  "matplotlib": "3.10.8",
+  "lifelines": "0.30.0",
+  "scikit-learn": "1.9.1",
+  "xgboost": "3.2.0",
+  "torch": "2.10.0"
+ },
+ "results": {
+  "settings": {
+   "aft_penalizer_cross_validation": 0.01,
+   "aft_penalizer_full_data": 0.0001,
+   "kernel_ridge_grid": {
+    "alpha": [
+     0.01,
+     0.1,
+     1
+    ],
+    "gamma": [
+     0.1,
+     0.5,
+     2
+    ]
+   },
+   "kernel_ridge_inner_cv": "GroupKFold(5) by cell",
+   "xgboost_base": {
+    "objective": "survival:aft",
+    "aft_loss_distribution": "normal",
+    "aft_loss_distribution_scale": 1.0,
+    "subsample": 0.8,
+    "eval_metric": "aft-nloglik",
+    "nthread": 1
+   },
+   "xgboost_grid": {
+    "max_depth": [
+     1,
+     2,
+     3,
+     4
+    ],
+    "eta": [
+     0.03,
+     0.1
+    ],
+    "min_child_weight": [
+     1,
+     5,
+     10
+    ]
+   },
+   "xgboost_rounds": 1000,
+   "xgboost_early_stopping": 50,
+   "validation_share_of_training_cells": 0.2,
+   "xgboost_seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "gru": {
+    "hidden": 16,
+    "lr": 0.01,
+    "weight_decay": 0.0001,
+    "max_epochs": 800,
+    "validate_every": 10,
+    "optimiser": "Adam, full batch",
+    "loss": "log-normal AFT",
+    "inputs": "25 saved steps up to t*, A, S and raw R, z-scored on the training fold"
+   },
+   "gru_seeds": [
+    0,
+    1,
+    2
+   ]
+  },
+  "xgboost_chosen_seed0": {
+   "XGBoost, alpha 0.5 held out": {
+    "max_depth": 2,
+    "eta": 0.1,
+    "min_child_weight": 5,
+    "rounds": 58,
+    "validation_concordance": 0.8272377285851781
+   },
+   "XGBoost, alpha 1 held out": {
+    "max_depth": 3,
+    "eta": 0.1,
+    "min_child_weight": 10,
+    "rounds": 47,
+    "validation_concordance": 0.8399202320522118
+   },
+   "XGBoost, alpha 2 held out": {
+    "max_depth": 2,
+    "eta": 0.1,
+    "min_child_weight": 10,
+    "rounds": 106,
+    "validation_concordance": 0.8259085580304807
+   },
+   "settings reference, alpha 0.5 held out": {
+    "max_depth": 2,
+    "eta": 0.1,
+    "min_child_weight": 1,
+    "rounds": 46,
+    "validation_concordance": 0.7603464870067372
+   },
+   "settings reference, alpha 1 held out": {
+    "max_depth": 1,
+    "eta": 0.1,
+    "min_child_weight": 1,
+    "rounds": 45,
+    "validation_concordance": 0.6162073966642495
+   },
+   "settings reference, alpha 2 held out": {
+    "max_depth": 1,
+    "eta": 0.03,
+    "min_child_weight": 1,
+    "rounds": 194,
+    "validation_concordance": 0.7757913247362251
+   }
+  },
+  "gru_epochs": {
+   "0_0.5": 120,
+   "0_1": 80,
+   "0_2": 70,
+   "1_0.5": 320,
+   "1_1": 140,
+   "1_2": 250,
+   "2_0.5": 350,
+   "2_1": 220,
+   "2_2": 240
+  },
+  "surface_krr": {
+   "kernelridge__alpha": 0.1,
+   "kernelridge__gamma": 0.1
+  },
+  "gamma_bootstrap": 200,
+  "folds": {
+   "E8": "leave one alpha out (3 folds)",
+   "E10": "leave one cell out (48 cells)"
+  }
+ }
+}

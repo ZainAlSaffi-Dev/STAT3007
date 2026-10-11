@@ -4,6 +4,15 @@ This file lists every figure, table and number that `overleaf/main.tex` needs. E
 
 Written on 5 October 2026. The planning values below come from read-only checks on `data/` made that day. Treat each one as a target to recompute, not as a result.
 
+## Status on 11 October 2026
+
+The scripts in `report_v2/code/` were built and run on 11 October 2026 with `make_all.py`, on Python 3.11.4 with the packages in `pyproject.toml`. `code/environment.txt` gives the versions. `report_v2/code/README.md` maps each script to its place in the report, and `out/logs/times.json` gives the run times. Every number in `main.tex` now comes from `overleaf/numbers.tex`.
+
+- **Done:** E1 to E10, E12, E13, E15, E16, and N1 to N9. Each item below says which script made it.
+- **Not run:** E11, E17 and E18. Tier 4' is commented out in `main.tex` at the user's request.
+- **Not run:** E14. It needs the grid-v0.1.0 databases and the R scripts of branch `feat/grid`, so it stays as the golden report's quoted values.
+- **Changed by the user on 11 October 2026:** Tier 1 (E2, E3 and E16) measures the spread by the standard deviation, not the CV. The CV planning values in E3 are kept for the record, but they are superseded.
+
 ## Ground rules
 
 - Every item reads from `data/` only. That is the sweep of 3 October 2026 with a separate split for each seed. Its design is α ∈ {0.5, 1, 2}, N ∈ {50, 100, 200, 400, 800, 1600} and ηλ ∈ {0, 3e-6, 1e-5, 3e-5, 1e-4, 3e-4, 1e-3, 3e-3}, with seeds 0 to 4 and a budget of 200,000 steps. It holds 720 runs, and all finished with status `ok`.
@@ -36,23 +45,23 @@ Status words: **carry over** means the number exists and only needs a clean scri
 - **Data.** `checkpoints.parquet`: `step`, `train_acc`, `test_acc`, `S_sum`, `R_sum`, `A_sum`. Events come from `report_runs.csv`.
 - **Method.** There are four panels against log step: accuracies, S, R and A. Each shows the median over seeds with the range shaded. Mark memorisation with a hollow marker and grokking at 0.95 with a filled one.
 - **Port from.** `repoduced-code/tier0_v2.ipynb` §3 (old data, layout only).
-- **Output.** `overleaf/figures/E1_baseline.pdf`. **Status:** port.
+- **Output.** `overleaf/figures/E1_baseline.pdf`. **Status:** done 11 Oct 2026 (`E01_baseline.py`).
 
 ### E2. Statistics at the grokking step (Fig. 2, §4.2)
 - **Setup.** All runs that grok at 0.95. Left block: N = 100, grouped by α and coloured by ηλ. Right block: α = 1, grouped by N.
 - **Data.** `report_runs.csv`: `S_t_at_grok95`, `R_t_at_grok95`, `A_t_at_grok95`.
-- **Method.** One panel per statistic, labelled with the CV and the tightening ratio from E3.
-- **Output.** `E2_thresholds.pdf`. **Status:** new.
+- **Method.** One panel per statistic, labelled with the SD and the tightening ratio from E3.
+- **Output.** `E2_thresholds.pdf`. **Status:** done 11 Oct 2026 (`E02_thresholds.py`).
 
 ### E3. Threshold table with placebo (Table 3, §4.2)
 - **Setup.** Two groups of runs: N = 100 across α × ηλ (78 grokked runs), and α = 1 across N × ηλ (130 grokked runs).
 - **Data.** `report_runs.csv` for the events. `checkpoints.parquet` to read each run at another run's grokking step: take the value at that step, or the last checkpoint before it.
 - **Method.**
-  - Compute the CV at grokking, at memorisation and at the placebo step.
+  - Compute the standard deviation (SD, ddof 1) at grokking, at memorisation and at the placebo step. This was the CV until the user changed it on 11 October 2026. `SPREAD = 'cv'` in `E03_placebo.py` restores the CV.
   - The placebo uses 2,000 random permutations with no fixed points.
-  - Report the tightening ratio (median placebo CV over the true CV) and the permutation p (the share of permutations at least as tight).
+  - Report the tightening ratio (median placebo SD over the true SD) and the permutation p (the share of permutations at least as tight).
   - Also run the test across all grokked runs.
-- **Planning values** (100 permutations):
+- **Planning values** (CV, 100 permutations; superseded by the SD, kept for the record):
 
   | Group | S: CV, placebo, ratio | R: CV, placebo, ratio | A: CV, placebo, ratio |
   |---|---|---|---|
@@ -60,7 +69,7 @@ Status words: **carry over** means the number exists and only needs a clean scri
   | α = 1 | 0.75, 0.78, 1.0× | 0.75, 0.77, 1.0× | 0.13, 0.13, 1.0× |
 
 - **Port from.** `repoduced-code/tier1_v2.ipynb` §7 (placebo code, on old data).
-- **Output.** A table, and numbers in `overleaf/numbers.tex`. **Status:** port.
+- **Output.** A table, and numbers in `overleaf/numbers.tex`. **Status:** done 11 Oct 2026 (`E03_placebo.py`). The SD ratios at N = 100 are 1.71 for R, 1.29 for S and 1.09 for A, and the CV ratio for R reproduces 1.93. N8 was redefined as the cells in which some seed memorises, none groks, and a seed reaches the median R at grokking of its width; there are 8 such cells.
 
 ### E4. Time and outcome map (Fig. 3, §4.3)
 - **Setup.** α = 1, all N × ηλ.
@@ -70,7 +79,7 @@ Status words: **carry over** means the number exists and only needs a clean scri
   - Each cell is labelled with the seeds that grok out of 5.
   - Cells with no grokking seed get a letter: M memorises only, F forgets (training accuracy rose above 0.9 and ended below it), N never fits. The letters use the phase rule of the golden report at threshold 0.9.
 - **Check against.** The table in `repoduced-code/tier2_reproduction.md` §7.
-- **Output.** `E4_map.pdf`. **Status:** carry over (the table exists; the figure is new).
+- **Output.** `E4_map.pdf`. **Status:** done 11 Oct 2026 (`E04_map.py`; it asserts the §7 table). The cell N = 800, ηλ = 3e-4 gets the letter G, which means that test accuracy ends above 0.9 without reaching 0.95.
 
 ### E5. Scaling with weight decay at each width (Fig. 4, §4.3)
 - **Setup.** α = 1, ηλ > 0, all widths, 5 seeds.
@@ -78,7 +87,7 @@ Status words: **carry over** means the number exists and only needs a clean scri
   - Plot log T95 against log ηλ, one line per N, with seeds as points and censored runs as open markers at the budget.
   - Overlay the fitted plane of E6 for the main range.
   - Draw grey reference slopes of 0 and −1.
-- **Output.** `E5_scaling.pdf`. **Status:** new.
+- **Output.** `E5_scaling.pdf`. **Status:** done 11 Oct 2026 (`E05_scaling.py`).
 
 ### E6. Scaling fits (Table 4, §4.3)
 - **Setup.** α = 1.
@@ -94,14 +103,14 @@ Status words: **carry over** means the number exists and only needs a clean scri
   - Level 0.80: a = +0.30, b = −0.55. Level 0.90: a = +0.27, b = −0.60.
   - Memorisation: a = −1.53.
 - **Port from.** `repoduced-code/tier2_consistency.py` part C.
-- **Output.** A table, plus macros. **Status:** port.
+- **Output.** A table, plus macros. **Status:** done 11 Oct 2026 (`E06_aft.py`). The point estimates of the main row equal the planning values. The cell bootstrap widens the intervals: a is [+0.08, +0.40], b is [−0.92, −0.46] and γ is [−0.37, +0.05]. σ = 0.34.
 
 ### E7. Width sets rotation, weight decay sets scale (Fig. 5, §4.3)
 - **Setup.** α = 1, all N × ηλ, read at t* = 2,430.
 - **Data.** `report_kernel.parquet` at `step == 2430`.
 - **Method.** Two heatmaps: the median log R and the median S per cell. Also compute N9.
 - **Port from.** `model_fitting/4_nonlinear_exploration.ipynb` Part 2 (the setting maps).
-- **Output.** `E7_mechanism.pdf`. It may be merged into E4. **Status:** port.
+- **Output.** `E7_mechanism.pdf`. It may be merged into E4. **Status:** done 11 Oct 2026 (`E07_mechanism.py`).
 
 ### E8. Model ladder on a held-out α (Fig. 6, §4.4)
 - **Setup.** All 630 runs with ηλ ≤ 1e-3. The statistics are at t* = 2,430, with log R. Hold out one α at a time.
@@ -115,7 +124,7 @@ Status words: **carry over** means the number exists and only needs a clean scri
   - Kernel ridge 0.568; XGBoost 0.708; GRU 0.768.
   - Settings reference 0.780.
 - **Port from.** `model_fitting/3_kernel_only.ipynb`.
-- **Output.** `E8_ladder.pdf`. **Status:** carry over.
+- **Output.** `E8_ladder.pdf`. **Status:** done 11 Oct 2026 (`E08_ladder.py`).
 
 ### E9. The S × log R surface (Fig. 7, §4.4)
 - **Setup.** Grokked runs (or all runs with XGBoost). A is held at its median.
@@ -123,7 +132,7 @@ Status words: **carry over** means the number exists and only needs a clean scri
   - Draw the kernel ridge prediction over S and log R, with the runs overlaid and the empty region shaded.
   - Also report γ_SR from the AFT with interactions and its cell-bootstrap interval. Planning value: −0.62 [−1.41, −0.12], from notebook 3 Part 2.
 - **Port from.** Notebook 3 Part 4 and notebook 4 Part 5 (maps).
-- **Output.** `E9_surface.pdf`. **Status:** carry over.
+- **Output.** `E9_surface.pdf`. **Status:** done 11 Oct 2026 (`E09_surface.py`).
 
 ### E10. Subsets and variance split (Table 5, §4.4)
 - **Setup.** The 355 runs that grok at 0.95 among those with ηλ ≤ 1e-3. The statistics are at t*.
@@ -141,9 +150,10 @@ Status words: **carry over** means the number exists and only needs a clean scri
     - log R + A: 0.39, 0.73
     - all three: 0.57, 0.78
   - Share between cells: log T 0.964, S 0.987, log R 0.993, A 0.563 (notebook 4 Part 2).
-- **Output.** A table. **Status:** new (subsets) and carry over (split).
+- **Output.** A table. **Status:** done 11 Oct 2026 (`E10_subsets.py`).
 
 ### E11. Rate-addition model (Fig. 8, §4.5, option A; on hold)
+- **Not run (11 Oct 2026).** Tier 4' is commented out in `main.tex` at the user's request.
 - **On hold.** Tier 4' is undecided. §4.5 of the report lists options A to E. Run this item only if the group chooses option A, and run E17 first, because this model assumes what E17 tests.
 - **Setup.** α = 1, all widths, ηλ from 0 to 3e-4. Leave out the cells above the edge where no seed memorises or every seed forgets.
 - **Method.**
@@ -158,23 +168,23 @@ Status words: **carry over** means the number exists and only needs a clean scri
 ### E12. Baseline against Kumar et al. (Appendix B)
 - **Task.** Open Kumar et al. (2024), arXiv:2310.06110v3, Appendix 8.3. Compare every setting with Table 2 of the report: task, encoding, training fraction, width, parameterisation, loss, optimiser, learning rate, α values and step budget. Record any difference.
 - **Also.** Tabulate the memorisation and grokking steps by α at N = 100 and ηλ = 0, beside what Kumar et al. report or show. α = 1.5 is not in `data/`; say so.
-- **Status:** new (reading) and port (`tier0_v2.ipynb` §2).
+- **Status:** done 11 Oct 2026 (`E12_kumar.py`). Kumar et al. v3, Apps. 8.1 and 8.3, Sec. 3 and Fig. 2 were read in the PDF. Their parameterisation and initialisation are not stated. Their Fig. 2 (one run, read by eye) shows training accuracy reaching 100% near 20,000 epochs at α = 1, against a median memorisation step of 2,983 here. The grokking steps agree.
 
 ### E13. Grid outcome tables (Appendix C)
-- For each α, a table over N × ηλ giving the seeds that grok out of 5 and the median T95. **Status:** carry over (extend the §7 table of `tier2_reproduction.md` to α = 0.5 and 2).
+- For each α, a table over N × ηλ giving the seeds that grok out of 5 and the median T95. **Status:** done 11 Oct 2026 (`E13_grid.py`).
 
 ### E14. Cross-check from the second pipeline (Appendix D)
 - **Source.** The golden report §4.2.2 (`docs/report_golden.tex`, added in commit 7da1996), built from release grid-v0.1.0 on branch `feat/grid`. It has 12 seeds per cell, a budget of 100,000 steps and the decay edge near ηλ ≈ 7e-4.
 - **Task.**
   - Export the broken-line figure as a PDF from that pipeline. Overleaf and Tectonic cannot run PythonTeX.
   - Quote the break ψ = 7.0e-4 [6.8e-4, 7.3e-4] and the outcomes at the four design levels, after rechecking them against the databases.
-- **Status:** carry over.
+- **Status:** not run on 11 Oct 2026 (needs the grid-v0.1.0 databases).
 
 ### E15. Prediction model settings (Appendix E)
-- Write down the grouped cross-validation, the search grids (XGBoost: depth 1 to 4, learning rate 0.03 or 0.1, minimum child weight 1, 5 or 10, early stopping after 50 rounds), the kernel ridge selection, the GRU (16 hidden units, learning rate 0.01, weight decay 1e-4, early stopping up to 800 epochs) and all seeds. Copy them from notebooks 3 and 4. **Status:** carry over.
+- Write down the grouped cross-validation, the search grids (XGBoost: depth 1 to 4, learning rate 0.03 or 0.1, minimum child weight 1, 5 or 10, early stopping after 50 rounds), the kernel ridge selection, the GRU (16 hidden units, learning rate 0.01, weight decay 1e-4, early stopping up to 800 epochs) and all seeds. Copy them from notebooks 3 and 4. **Status:** done 11 Oct 2026 (`E15_settings.py`, with `models.py`).
 
 ### E16. Sensitivity to the grokking level (Appendix F)
-- Repeat E3 and E6 at levels 0.80 and 0.90. **Status:** new.
+- Repeat E3 (with the SD) and E6 at levels 0.80 and 0.90. **Status:** done 11 Oct 2026 (`E16_levels.py`). At 0.80 and 0.90, S and A tighten slightly across widths (p down to 0.001), while R does not.
 
 ### E17. Test the premise of the rotation clock (§4.5, option B)
 - **Question.** Does the early rate of rotation fall with width as 1/N, as the order of T_0 in Lewkowycz and Gur-Ari suggests? How much of the change of scale does weight decay alone account for?
@@ -183,7 +193,7 @@ Status words: **carry over** means the number exists and only needs a clean scri
 - **Method.**
   - Rotation rate. Take the slope of log R_t against log t over a window before memorisation, or R_t at a fixed early step. Fit log rate = c − q log N for each α and compare q with 1. Wide networks memorise within the first hundred steps, so choose the window before looking at the result and say how it was chosen.
   - Scale under weight decay alone. The network is 2-homogeneous, so scaling every weight by c scales its tangent kernel by c². Weight decay with no gradient would therefore give S_t = (1 − ηλ)^(2t) and R_t = 0. This is the group's own derivation; it matches the term −2(k − 1)λΘ_t of the kernel-flow equation with k = 2. Plot the measured S_t against this curve, and report the ratio at memorisation and at grokking.
-- **Output.** `E17_premise.pdf`. **Status:** new. Run it first if the group keeps any theory section.
+- **Output.** `E17_premise.pdf`. **Status:** not run (Tier 4' commented out, 11 Oct 2026). Run it first if the group keeps any theory section.
 
 ### E18. Can the frozen kernel alone generalise? (§4.5, option C)
 - **Question.** Kernel ridge regression with a ridge proportional to the kernel's trace gives the same predictions when the kernel is rescaled, so what a frozen kernel can learn depends only on its shape. Does the frozen tangent kernel start to generalise near the step at which the network groks?
@@ -197,7 +207,7 @@ Status words: **carry over** means the number exists and only needs a clean scri
 - **Caution.**
   - The saved steps are up to 20,000 apart late in training, so the frozen-kernel event is coarse.
   - The column `krr_full_test_acc` in `checkpoints.parquet` does a similar regression with the older kernel of the feature logger. It can serve as a first look, but this item must use the report's kernel.
-- **Output.** `E18_frozen_kernel.pdf`. **Status:** new. Run it only if the group chooses option C.
+- **Output.** `E18_frozen_kernel.pdf`. **Status:** not run (Tier 4' commented out, 11 Oct 2026). Run it only if the group chooses option C.
 
 ## Numbers quoted in the text
 
@@ -215,15 +225,15 @@ Status words: **carry over** means the number exists and only needs a clean scri
 
 ## Open checks before any number is final
 
-1. Recompute the placebo test (E3) with 2,000 permutations at full checkpoint resolution, and add the memorisation column.
-2. Redo the kernel-at-event table by width with A_sum. Part D of `tier2_consistency.py` used the full-logit A.
-3. Refit E6 with intervals that resample cells.
-4. Decide whether E7 is its own figure or part of E4.
-5. Read Kumar et al. Appendix 8.3 for E12.
-6. Confirm what `total_seconds` in the manifest measures (N1).
-7. Decide the direction of Tier 4' once E3, E6 and E7 are final. If any theory section stays, run E17 first.
+1. Done (11 Oct 2026): E3 recomputed with 2,000 permutations, the SD and a memorisation column.
+2. Done: N7 now uses `R_t_at_grok95` and `S_t_at_grok95` on the summed-logit kernel.
+3. Done: E6 intervals resample cells and then seeds.
+4. Open: decide whether E7 is its own figure or part of E4.
+5. Done: Kumar et al. Apps. 8.1 and 8.3 read for E12.
+6. Done: `total_seconds` is the sum of the per-run wall times (`dataset_sweep.py` line 824). The elapsed time was 2.67 h on 4 wide and 8 narrow workers (`logs/sweep.log`).
+7. Open: decide the direction of Tier 4'. It is commented out for now. If any theory section stays, run E17 first.
 
-## Approach for the clean repository (later, not built yet)
+## Approach for the clean repository (built 11 Oct 2026 in `report_v2/code/`, apart from the public copy in step 7)
 
 The aim is a repository a reader can clone to rebuild every figure and number in the report from data, with no notebooks in the path.
 
