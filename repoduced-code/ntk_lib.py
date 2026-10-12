@@ -123,8 +123,96 @@ class NTKMLP(nn.Module):
         return z @ self.W2.T / math.sqrt(self.hidden_dim)
 
 
-def build_model(parameterisation, input_dim, hidden_dim, output_dim, activation="relu", init_scale=1.0):
-    """Return a fresh model. The caller sets the seed before calling this."""
+class OmnigrokMLP(nn.Module):
+    """The MNIST network of Liu, Michaud and Tegmark (2023), Appendix A.
+
+    It is a ReLU perceptron with three linear layers, each of width
+    hidden_dim except the last, with biases and PyTorch's default
+    initialisation. Section 4 of that paper multiplies the initial weights
+    by a constant, and build_model does this to every parameter, so that
+    the ratio of the parameter norm to its default value is init_scale. The
+    biases make the network inhomogeneous, so the closed-form kernel does
+    not apply and the kernel is computed by autograd.
+    """
+
+    def __init__(self, input_dim, hidden_dim, output_dim):
+        super().__init__()
+        self.net = nn.Sequential(nn.Linear(input_dim, hidden_dim), nn.ReLU(),
+                                 nn.Linear(hidden_dim, hidden_dim), nn.ReLU(),
+                                 nn.Linear(hidden_dim, output_dim))
+
+    def forward(self, x):
+        return self.net(x)
+
+
+class DeepBiasFreeMLP(nn.Module):
+    """A bias-free ReLU network with depth linear layers, for the MNIST study.
+
+    Every hidden layer has width hidden_dim. Layer l computes
+    h_l = c_l a_{l-1} W_l^T with a_0 = x, and a_l = relu(h_l) for every
+    layer but the last, whose h_L is the output. There are no biases, so the
+    network is depth-homogeneous in its weights.
+
+    scaling chooses the parameterisation. Under "standard" each W_l is drawn
+    uniformly from (-1 / sqrt(fan_in), 1 / sqrt(fan_in)), the draw that
+    PyTorch's nn.Linear makes for its weight, and c_l = 1. With depth 3 and
+    width 200 this is OmnigrokMLP without its biases. Under "ntk" each W_l
+    is drawn from N(0, 1) and c_l = 1 / sqrt(fan_in), which is NTKMLP when
+    depth is 2. Every weight is multiplied by init_scale after the draw.
+    """
+
+    def __init__(self, input_dim, hidden_dim, output_dim, depth=3, scaling="standard", init_scale=1.0):
+        super().__init__()
+        if depth < 2:
+            raise ValueError("DeepBiasFreeMLP needs at least two layers")
+        self.input_dim, self.hidden_dim, self.depth, self.scaling = input_dim, hidden_dim, depth, scaling
+        self.activation = "relu"
+        sizes = [input_dim] + [hidden_dim] * (depth - 1) + [output_dim]
+        self.factors = []
+        for l in range(depth):
+            fan_in, fan_out = sizes[l], sizes[l + 1]
+            if scaling == "standard":
+                bound = 1.0 / math.sqrt(fan_in)
+                W, c = torch.empty(fan_out, fan_in).uniform_(-bound, bound), 1.0
+            elif scaling == "ntk":
+                W, c = torch.randn(fan_out, fan_in), 1.0 / math.sqrt(fan_in)
+            else:
+                raise ValueError(f"unknown scaling {scaling!r}")
+            setattr(self, f"W{l + 1}", nn.Parameter(init_scale * W))
+            self.factors.append(c)
+
+    def weights(self):
+        """Return the weight matrices W_1 to W_L in order."""
+        return [getattr(self, f"W{l + 1}") for l in range(self.depth)]
+
+    def forward(self, x):
+        a = x
+        for l, (W, c) in enumerate(zip(self.weights(), self.factors)):
+            h = c * (a @ W.T)
+            a = torch.relu(h) if l < self.depth - 1 else h
+        return a
+
+
+def build_model(parameterisation, input_dim, hidden_dim, output_dim, activation="relu", init_scale=1.0,
+                depth=None):
+    """Return a fresh model. The caller sets the seed before calling this.
+
+    "deep_standard" and "deep_ntk" build a DeepBiasFreeMLP with depth layers
+    in the standard or NTK parameterisation. depth is used by these two only.
+    """
+    if parameterisation in ("deep_standard", "deep_ntk"):
+        if depth is None:
+            raise ValueError(f"parameterisation {parameterisation!r} needs depth")
+        if activation != "relu":
+            raise ValueError("DeepBiasFreeMLP uses relu only")
+        return DeepBiasFreeMLP(input_dim, hidden_dim, output_dim, depth=depth,
+                               scaling=parameterisation[len("deep_"):], init_scale=init_scale)
+    if parameterisation == "omnigrok":
+        model = OmnigrokMLP(input_dim, hidden_dim, output_dim)
+        with torch.no_grad():
+            for q in model.parameters():
+                q.mul_(init_scale)
+        return model
     if parameterisation == "ntk":
         return NTKMLP(input_dim, hidden_dim, output_dim, activation, init_scale)
     if parameterisation == "standard":
@@ -230,13 +318,110 @@ def closed_form_terms(W1, W2, x, c1, c2, output=None):
     return K_W1, K_W2
 
 
+def closed_form_terms_deep(weights, factors, x):
+    """Return the per-layer terms of the sum-over-outputs kernel of a bias-free ReLU network, in float64.
+
+    weights are W_1 to W_L and factors are c_1 to c_L, with h_l = c_l a_{l-1} W_l^T,
+    a_0 = x, a_l = relu(h_l) for l < L and f = h_L. M_l is the mask of positive
+    entries of h_l. The gradient of output c with respect to W_l is
+    c_l d_{l,c} a_{l-1}^T, where d_{L,c} = e_c and
+    d_{l,c} = M_l * (c_{l+1} W_{l+1}^T d_{l+1,c}) for l < L. Summing the inner
+    products of these gradients over the outputs gives
+
+        K(x, x') = sum_l c_l^2 <a_{l-1}(x), a_{l-1}(x')> <D_l(x), D_l(x')>_F,
+
+    where D_l(x) is the width_l by C matrix whose column c is d_{l,c}(x). For
+    the last layer D_L is the C by C identity, so the second factor is C. The
+    list returned holds the L terms, layer 1 first; their sum is the kernel.
+    For L = 2 the terms are (K_W1, K_W2) of closed_form_terms. This is the
+    group's own derivation from the definition in RepoducedCode.compute_entk
+    in mode "trace". No paper states it.
+    """
+    X = x.detach().double()
+    Ws = [W.detach().double() for W in weights]
+    L = len(Ws)
+    acts, masks = [X], []
+    for l in range(L - 1):
+        h = factors[l] * (acts[-1] @ Ws[l].T)
+        masks.append((h > 0).double())
+        acts.append(torch.relu(h))
+    C = Ws[-1].shape[0]
+    terms = [None] * L
+    terms[L - 1] = factors[L - 1] ** 2 * C * (acts[L - 1] @ acts[L - 1].T)
+    D = None
+    for l in range(L - 2, -1, -1):
+        back = factors[l + 1] * Ws[l + 1].T                 # width_l by width_{l+1}
+        if D is None:
+            D = masks[l][:, :, None] * back[None]          # n by width_l by C
+        else:
+            D = masks[l][:, :, None] * torch.einsum("ik,nkc->nic", back, D)
+        Dflat = D.reshape(D.shape[0], -1)
+        terms[l] = factors[l] ** 2 * (acts[l] @ acts[l].T) * (Dflat @ Dflat.T)
+    return terms
+
+
+def entk_closed_form_deep(model, x_probe, parts=False):
+    """The sum-over-outputs kernel of a bias-free ReLU network of any depth, from its weights.
+
+    The model is a DeepBiasFreeMLP, an NTKMLP or a MeanFieldMLP.
+    closed_form_terms_deep gives the formula. With parts=True the per-layer
+    terms are returned in float64, layer 1 first. Otherwise their sum is
+    returned in float32, as entk_closed_form does.
+    """
+    if isinstance(model, DeepBiasFreeMLP):
+        weights, factors = model.weights(), model.factors
+    else:
+        if model.activation != "relu":
+            raise ValueError("the closed-form kernel is derived for the relu activation only")
+        weights, factors = [model.W1, model.W2], list(closed_form_scales(model))
+    terms = closed_form_terms_deep(weights, factors, x_probe)
+    if parts:
+        return terms
+    return sum(terms).float()
+
+
 def probe_kernel(model, x_probe, method):
-    """Return the probe kernel by the chosen method, "autograd" or "closed_form"."""
+    """Return the probe kernel by the chosen method, "autograd" or "closed_form".
+
+    "closed_form" uses entk_closed_form_deep for a DeepBiasFreeMLP and
+    entk_closed_form for the two layer models.
+    """
     if method == "autograd":
         return entk(model, x_probe)
     if method == "closed_form":
+        if isinstance(model, DeepBiasFreeMLP):
+            return entk_closed_form_deep(model, x_probe)
         return entk_closed_form(model, x_probe)
     raise ValueError(f"unknown kernel method {method!r}")
+
+
+def gauss_newton_top_eigenvalue(model, X, alpha=1.0, f0=None, iters=50, seed=0):
+    """Largest eigenvalue of (2 / (n C)) J^T J at the model's current weights, by power iteration.
+
+    J is the Jacobian of the predictor alpha f on X, or alpha (f - f0) if f0
+    is given, with respect to the parameters. n C is the number of entries
+    MSELoss averages over. This is top_gauss_newton_eigenvalue of mnist/exploration/mnist_pilot.py
+    applied to a given model. The start vector comes from a generator seeded
+    with seed, so the global random state is not touched.
+    """
+    params = {k: v.detach() for k, v in model.named_parameters()}
+
+    def predict(p):
+        out = functional_call(model, p, X)
+        return alpha * (out - f0) if f0 is not None else alpha * out
+
+    gen = torch.Generator().manual_seed(seed)
+    v = {k: torch.randn(t.shape, generator=gen, dtype=t.dtype) for k, t in params.items()}
+    lam = 0.0
+    for _ in range(iters):
+        norm = torch.sqrt(sum((t ** 2).sum() for t in v.values()))
+        v = {k: t / norm for k, t in v.items()}
+        _, Jv = torch.func.jvp(predict, (params,), (v,))
+        _, pullback = torch.func.vjp(predict, params)
+        (Gv,) = pullback(2.0 * Jv / Jv.numel())
+        lam = sum((Gv[k] * v[k]).sum() for k in v).item()
+        v = Gv
+    return lam
 
 
 # =====================================================================
@@ -307,12 +492,18 @@ DEFAULTS = dict(parameterisation="mean_field", p=23, hidden_dim=100, alpha=1.0,
                 eta_0=100.0, eta_kappa=0.0, steps=60000, eval_interval=250,
                 probe_size=256, seed=0, data_seed=42, train_fraction=0.9,
                 activation="relu", init_scale=1.0, kernel_save_interval=5000, probe="train",
-                checkpoint_steps=None, kernel_method="autograd")
+                checkpoint_steps=None, kernel_method="autograd",
+                dataset="modular_addition", n_train=None, centred=True, optimizer="sgd",
+                batch_size=None, momentum=0.0,
+                depth=None, lr_schedule=None, lr_update_interval=10000, lr_norm_power=4.0, lr_cap=1000.0)
 
 # Configuration keys added after some runs were saved, with the value those
 # runs were trained with. A saved run that lacks one of them is compared as if
 # it had that value.
-LEGACY_VALUES = dict(probe="train", checkpoint_steps=None, kernel_method="autograd")
+LEGACY_VALUES = dict(probe="train", checkpoint_steps=None, kernel_method="autograd",
+                     dataset="modular_addition", n_train=None, centred=True, optimizer="sgd",
+                     batch_size=None, momentum=0.0,
+                     depth=None, lr_schedule=None, lr_update_interval=10000, lr_norm_power=4.0, lr_cap=1000.0)
 
 # The centred terms and the two alignments on the training part and on the
 # test part of the probe. A part with fewer than two pairs gives NaN.
@@ -352,8 +543,32 @@ def select_probe(X_train, y_train, X_test, y_test, probe, probe_size):
     return x, y, is_test
 
 
+def make_dataset(cfg):
+    """Return ((X_train, y_train), (X_test, y_test)) for the dataset a configuration names.
+
+    "modular_addition" is the task of the report and uses p, train_fraction
+    and data_seed. "mnist" takes n_train training images drawn at random by
+    data_seed and the full test set, as mnist_data.load_mnist describes. The
+    targets are one-hot in both cases, so the model's input and output sizes
+    are read from the data.
+    """
+    if cfg["dataset"] == "modular_addition":
+        return make_modular_addition_dataset(p=cfg["p"], train_fraction=cfg["train_fraction"],
+                                             seed=cfg["data_seed"])
+    if cfg["dataset"] == "mnist":
+        import sys
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "mnist"))
+        from mnist_data import load_mnist
+        if cfg["n_train"] is None:
+            raise ValueError("an MNIST run needs n_train")
+        return load_mnist(n_train=cfg["n_train"], seed=cfg["data_seed"])
+    raise ValueError(f"unknown dataset {cfg['dataset']!r}")
+
+
 def probe_pairs(cfg):
     """Return the probe pairs (a, b) of a configuration and the mask of test pairs, as numpy arrays."""
+    if cfg.get("dataset", "modular_addition") != "modular_addition":
+        raise ValueError("probe pairs exist only for modular addition")
     p = cfg["p"]
     (X_train, y_train), (X_test, y_test) = make_modular_addition_dataset(
         p=p, train_fraction=cfg["train_fraction"], seed=cfg["data_seed"])
@@ -409,7 +624,7 @@ def train_run(name, verbose=True, on_checkpoint=None, results_dir=None, **overri
 
     If on_checkpoint is given, it is called at every checkpoint as
     on_checkpoint(step, model, K_t, row). K_t is the probe kernel and row is
-    a dictionary of the history values just recorded. Training continues
+    a dictionary of the history values just recorded, extra keys included. Training continues
     from the same model afterwards, so the callback must not change it. The
     callback is not part of the configuration and is not saved.
 
@@ -419,21 +634,47 @@ def train_run(name, verbose=True, on_checkpoint=None, results_dir=None, **overri
     chooses where the files are written. It defaults to RESULTS and is not
     part of the configuration.
 
+    dataset chooses the task, as make_dataset describes. centred=False drops
+    the subtraction of f_0, so the predictor is alpha f. optimizer is "sgd",
+    plain gradient descent, or "adamw", the optimiser of Liu, Michaud and
+    Tegmark (2023), Appendix A. The tangent kernel describes the
+    function-space step only under "sgd" without momentum. momentum is the
+    heavy-ball coefficient of "sgd" and is 0 by default. batch_size=None
+    trains on the full training set at every step. The defaults are the modular
+    addition task, the centred predictor and "sgd", which every run saved
+    before 11 October 2026 used.
+
     If the training loss at a checkpoint is not finite, the run stops there
     without recording that checkpoint. The returned dictionary then has
     diverged set to True and diverged_step set to that step.
+
+    The keys added on 11 October 2026 change nothing when left at their
+    defaults. parameterisation "deep_standard" or "deep_ntk" with depth set
+    trains a DeepBiasFreeMLP. With kernel_method "closed_form" such a run
+    also records, for each layer l, the centred alignment A_Wl of that
+    layer's kernel term, its log norm ratio S_Wl to its value at step 0, and
+    its share share_Wl of the trace of the kernel. lr_schedule chooses a
+    learning rate that changes during training, under "sgd" only.
+    "curvature" recomputes the top Gauss-Newton eigenvalue lam_t of the loss
+    on the full training set every lr_update_interval steps and sets
+    eta_t = eta (lam_0 / lam_t). "norm" sets
+    eta_t = eta (||theta_0|| / ||theta_t||)^lr_norm_power after every step.
+    Both cap the factor on eta at lr_cap. The per-step decay eta_kappa is
+    kept fixed when eta changes. With a schedule the history records eta,
+    the rate for the steps after the checkpoint, and under "curvature" also
+    lam, the latest eigenvalue. These extra history keys appear only for
+    the runs they describe, so the history of every other run is unchanged.
     """
     unknown = set(overrides) - set(DEFAULTS)
     if unknown:
         raise TypeError(f"unknown configuration keys: {sorted(unknown)}")
     cfg = normalise_checkpoints({**DEFAULTS, **overrides})
     config = dict(name=name, **cfg)
-    p, alpha = cfg["p"], cfg["alpha"]
+    alpha = cfg["alpha"]
     out_dir = Path(results_dir) if results_dir is not None else RESULTS
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    (X_train, y_train), (X_test, y_test) = make_modular_addition_dataset(
-        p=p, train_fraction=cfg["train_fraction"], seed=cfg["data_seed"])
+    (X_train, y_train), (X_test, y_test) = make_dataset(cfg)
     X_train, y_train, X_test, y_test = [t.to(DEVICE) for t in (X_train, y_train, X_test, y_test)]
 
     # The probe set is fixed for the run. select_probe says which pairs each choice of probe takes.
@@ -442,26 +683,80 @@ def train_run(name, verbose=True, on_checkpoint=None, results_dir=None, **overri
     parts = [~probe_is_test, probe_is_test]
 
     torch.manual_seed(cfg["seed"])
-    model = build_model(cfg["parameterisation"], 2 * p, cfg["hidden_dim"], p,
-                        cfg["activation"], cfg["init_scale"]).to(DEVICE)
+    if cfg["depth"] is None:
+        model = build_model(cfg["parameterisation"], X_train.shape[1], cfg["hidden_dim"], y_train.shape[1],
+                            cfg["activation"], cfg["init_scale"]).to(DEVICE)
+    else:
+        model = build_model(cfg["parameterisation"], X_train.shape[1], cfg["hidden_dim"], y_train.shape[1],
+                            cfg["activation"], cfg["init_scale"], depth=cfg["depth"]).to(DEVICE)
     model_0 = copy.deepcopy(model)
     for q in model_0.parameters():
         q.requires_grad = False
 
     lr = cfg["eta_0"] / alpha ** 2
     weight_decay = cfg["eta_kappa"] / lr
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr, weight_decay=weight_decay)
+    # AdamW multiplies the weights by 1 - lr weight_decay each step, so eta_kappa
+    # is the per-step decay under both optimisers.
+    if cfg["optimizer"] == "sgd":
+        optimizer = torch.optim.SGD(model.parameters(), lr=lr, weight_decay=weight_decay,
+                                    momentum=cfg["momentum"])
+    elif cfg["optimizer"] == "adamw":
+        optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+    else:
+        raise ValueError(f"unknown optimizer {cfg['optimizer']!r}")
     loss_fn = nn.MSELoss()
 
     with torch.no_grad():
         f0_train, f0_test = model_0(X_train), model_0(X_test)
 
+    # With centred=False the initial function is kept, as in Liu, Michaud and
+    # Tegmark (2023), whose large initialisations start from a large random output.
     def predict(X, f0):
-        return alpha * (model(X) - f0)
+        return alpha * (model(X) - f0) if cfg["centred"] else alpha * model(X)
 
     params_0 = torch.cat([q.detach().flatten() for q in model.parameters()]).clone()
     norm_0 = torch.linalg.norm(params_0).item()
-    K_0 = probe_kernel(model, x_probe, cfg["kernel_method"])
+    # A DeepBiasFreeMLP with the closed form also records per-layer terms.
+    layer_terms = isinstance(model, DeepBiasFreeMLP) and cfg["kernel_method"] == "closed_form"
+
+    def kernel_now():
+        if layer_terms:
+            terms = entk_closed_form_deep(model, x_probe, parts=True)
+            return sum(terms).float(), terms
+        return probe_kernel(model, x_probe, cfg["kernel_method"]), None
+
+    K_0, layer_0 = kernel_now()
+
+    # The learning-rate schedule, off by default. lr_state holds the rate in
+    # force and, under "curvature", the eigenvalues.
+    schedule = cfg["lr_schedule"]
+    lr_state = dict(lr=lr)
+    if schedule is not None:
+        if cfg["optimizer"] != "sgd":
+            raise ValueError("lr_schedule is implemented for sgd only")
+        if schedule not in ("curvature", "norm"):
+            raise ValueError(f"unknown lr_schedule {schedule!r}")
+
+    def current_norm():
+        with torch.no_grad():
+            return math.sqrt(sum((q.detach() ** 2).sum().item() for q in model.parameters()))
+
+    def curvature_now(step):
+        model.eval()
+        f0 = f0_train if cfg["centred"] else None
+        lam = gauss_newton_top_eigenvalue(model, X_train, alpha=alpha, f0=f0, seed=cfg["seed"] + step)
+        model.train()
+        return lam
+
+    def set_lr(factor):
+        new_lr = lr * min(factor, cfg["lr_cap"])
+        for g in optimizer.param_groups:
+            g["lr"] = new_lr
+            g["weight_decay"] = cfg["eta_kappa"] / new_lr
+        lr_state["lr"] = new_lr
+
+    if schedule == "curvature":
+        lr_state["lam_0"] = lr_state["lam"] = curvature_now(0)
 
     history = {k: [] for k in HISTORY_KEYS}
     saved_steps, saved_kernels = [], []
@@ -480,7 +775,7 @@ def train_run(name, verbose=True, on_checkpoint=None, results_dir=None, **overri
             params_t = torch.cat([q.flatten() for q in model.parameters()])
             weight_norm = torch.linalg.norm(params_t).item()
             param_dist = (torch.linalg.norm(params_t - params_0) / norm_0).item()
-        K_t = probe_kernel(model, x_probe, cfg["kernel_method"])
+        K_t, layer_t = kernel_now()
         S_t, R_t = compute_scale_and_rotation(K_0, K_t)
         S_c, R_c = compute_centred_scale_and_rotation(K_0, K_t)
         A_t = compute_task_alignment(K_t, y_probe)
@@ -503,11 +798,27 @@ def train_run(name, verbose=True, on_checkpoint=None, results_dir=None, **overri
                                        S_t, R_t, S_c, R_c, A_t, A_u, param_dist, weight_norm,
                                        yKy, K_norm, *part_terms]):
             history[k].append(v)
+        extra = {}
+        if layer_terms:
+            trace_K = sum(torch.trace(T) for T in layer_t).item()
+            for l, (T, T0) in enumerate(zip(layer_t, layer_0), start=1):
+                extra[f"A_W{l}"] = compute_task_alignment(T.float(), y_probe)
+                n_t, n_0 = torch.linalg.norm(T).item(), torch.linalg.norm(T0).item()
+                extra[f"S_W{l}"] = math.log(n_t / n_0) if n_t > 0 and n_0 > 0 else float("nan")
+                extra[f"share_W{l}"] = torch.trace(T).item() / trace_K if trace_K > 0 else float("nan")
+        if schedule is not None:
+            extra["eta"] = lr_state["lr"]
+            if schedule == "curvature":
+                extra["lam"] = lr_state["lam"]
+        for k, v in extra.items():
+            history.setdefault(k, []).append(v)
         if step % cfg["kernel_save_interval"] == 0:
             saved_steps.append(step)
             saved_kernels.append(K_t.cpu().numpy().astype(np.float32))
         if on_checkpoint is not None:
-            on_checkpoint(step, model, K_t, {k: history[k][-1] for k in HISTORY_KEYS})
+            # The row holds every history value of this checkpoint, the extra keys of a
+            # deep or scheduled run included. For other runs that is HISTORY_KEYS alone.
+            on_checkpoint(step, model, K_t, {k: v[-1] for k, v in history.items()})
         model.train()
         return True
 
@@ -518,6 +829,13 @@ def train_run(name, verbose=True, on_checkpoint=None, results_dir=None, **overri
             return step % cfg["eval_interval"] == 0
         return step in checkpoints
 
+    # With batch_size set, each step takes the next batch_size training points
+    # of a random order that is drawn again once fewer remain. One step is
+    # then one minibatch, not one epoch.
+    batch_size = cfg["batch_size"]
+    batch_gen = torch.Generator().manual_seed(cfg["seed"])
+    order = []
+
     t0 = time.time()
     diverged_step = None
     if not evaluate(0):
@@ -526,9 +844,20 @@ def train_run(name, verbose=True, on_checkpoint=None, results_dir=None, **overri
         if diverged_step is not None:
             break
         optimizer.zero_grad()
-        loss = loss_fn(predict(X_train, f0_train), y_train)
+        if batch_size is None:
+            loss = loss_fn(predict(X_train, f0_train), y_train)
+        else:
+            if len(order) < batch_size:
+                order = torch.randperm(len(X_train), generator=batch_gen).tolist()
+            idx, order = order[:batch_size], order[batch_size:]
+            loss = loss_fn(predict(X_train[idx], f0_train[idx]), y_train[idx])
         loss.backward()
         optimizer.step()
+        if schedule == "norm":
+            set_lr((norm_0 / current_norm()) ** cfg["lr_norm_power"])
+        elif schedule == "curvature" and step % cfg["lr_update_interval"] == 0:
+            lr_state["lam"] = curvature_now(step)
+            set_lr(lr_state["lam_0"] / lr_state["lam"] if lr_state["lam"] > 0 else float("inf"))
         if is_checkpoint(step):
             if not evaluate(step):
                 diverged_step = step
