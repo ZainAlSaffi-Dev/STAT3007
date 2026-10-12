@@ -1,30 +1,30 @@
 {
  "closed_form": {
   "runs": 720,
-  "largest": 1.7425815030946978e-06,
+  "largest": 1.7173415471916087e-06,
   "limit": 0.0001,
   "passed": true
  },
  "identities": {
-  "A against the aim identity": 3.427813588530171e-15,
-  "A against the history field A_t": 1.164141953252651e-06,
-  "A_uncentred against the history field A_u": 6.081289669612744e-07,
+  "A against the aim identity": 4.218847493575595e-15,
+  "A against the history field A_t": 4.399347497380246e-06,
+  "A_uncentred against the history field A_u": 6.054865920868124e-07,
   "D^2 against exp2S_term + 1 - cross_term": 1.5916157281026244e-12,
-  "R against the history field R_c": 4.391184728058661e-06,
-  "S against the history field S_c": 3.4343073824771864e-06,
-  "share_k0 against R / 2": 3.699297812520541e-16,
+  "R against the history field R_c": 4.663297203055805e-06,
+  "S against the history field S_c": 3.5029780316442327e-06,
+  "share_k0 against R / 2": 3.5388358909926865e-16,
   "the three shares against a sum of one": 5.551115123125783e-16
  },
  "reproduction": {
-  "runs_compared": 52,
-  "exact_in_training_fields": 52,
+  "runs_compared": 16,
+  "exact_in_training_fields": 16,
   "mismatches": [],
   "kernel_fields_largest_relative": 1.4474869816639587e-05,
   "note": "Training fields must agree exactly. Kernel fields differ at float32 rounding because the saved runs used the autograd kernel."
  },
  "tier0_slice": {
-  "runs": 15,
-  "agree": 15,
+  "runs": 3,
+  "agree": 3,
   "disagreements": []
  }
 }

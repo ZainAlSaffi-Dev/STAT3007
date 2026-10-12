@@ -1,0 +1,414 @@
+\documentclass[a4paper,11pt]{article} % Don't change this
+\usepackage{fullpage} % Don't change this
+
+\usepackage{titling} % Don't change this
+\pretitle{\vspace{-6em}\begin{center}\larger[2]\bf} % Don't change this
+\postauthor{\end{center}} % Don't change this
+\preauthor{\vspace{-2em}\begin{center}\smaller[1]} % Don't change this
+\postauthor{\end{center}\vspace{-5em}} % Don't change this
+
+\usepackage[shortlabels]{enumitem} % Don't change this
+\setlist{itemsep=0em,topsep=0.3em} % Don't change this
+
+%%% Some useful packages.
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+\usepackage{relsize}
+\usepackage{cleveref}
+\crefname{table}{Table}{Tables}
+\crefname{figure}{Figure}{Figures}
+
+%%% Add additional packages or macros below
+\usepackage{booktabs}
+\usepackage{microtype}
+
+% This file holds the text that brings the width arm (Tier 2) into the golden
+% report. It is written against the golden report of 4 October 2026, the
+% 21-page docs/report_golden.pdf, whose source is docs/report_golden.tex. The master source
+% and its bibliography live elsewhere, so this file compiles on its own.
+%
+% Citations. \citepas{key}{text} prints "(text)" and \citetas{key}{text}
+% prints "text". The key is the key of the golden report's ref.bib on the
+% branch feat/grid. When the text is pasted into the master source, replace
+% \citepas{key}{...} with \citep{key} and \citetas{key}{...} with \citet{key}.
+% Every source cited here is already in the golden report's reference list.
+%
+% Cross references. \gref{label}{text} prints the number that the label has in
+% the 21-page PDF. Replace it with \eqref{label} or \cref{label} when pasting.
+% Where the pushed source has no label yet, the label is left empty.
+\newcommand{\citepas}[2]{(#2)}
+\newcommand{\citetas}[2]{#2}
+\newcommand{\gref}[2]{#2}
+
+\newcommand{\TODO}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+\newcommand{\where}[1]{\par\smallskip\noindent\textit{\small Where: #1}\par\smallskip}
+\newcommand{\placeholderfigure}[1]{%
+  \fbox{\parbox[c][4.5cm][c]{0.9\linewidth}{\centering\TODO{#1}}}}
+
+\begin{document}
+
+\title{The width arm: additions to the golden report}
+\author{Group G2, Tier 2}
+\date{}
+\maketitle
+
+\section*{How to use this file}
+
+Each block below names the section of the golden report that it extends. It
+also says whether its text is inserted as new text or replaces existing text.
+Red markers stand for numbers and figures that wait on the width data. No
+number from the Tier 2 runs of 26 September 2026 is used. Those runs share one
+split across seeds, use the trace kernel and time grokking from memorisation,
+so none of their numbers holds under the definitions of the golden report.
+
+Section, equation, table and figure numbers refer to the 21-page golden report
+of 4 October 2026.
+
+% =====================================================================
+\section*{Block 1. Section 1, Introduction}
+\where{insert as a new paragraph after the paragraph that ends ``None of them
+measures the shape of the kernel.''}
+
+Width gives a test of these accounts that does not depend on the weight decay.
+In \gref{eq:kernelflow}{(1)} the weight decay enters only the term
+$-2(k-1)\lambda\Theta_t$. That term is proportional to the kernel, so it
+changes the scale of the kernel and leaves its shape as it is. Only $T_t$ can
+change the shape, and $T_0$ has expectation of order $n^{-1}$ in the width $n$
+\citepas{lewkowyczTrainingDynamicsDeep2021}{Lewkowycz and Gur-Ari, 2021}. If
+$T_t$ stays of that order along training and shape change sets the grokking
+time, a wider network should grok later at a fixed weight decay. The grokking
+time of \citetas{kimGrokkingWeightDecayClock2026}{Kim (2026)} scales as
+$(1-\beta)/(\eta\lambda)$ and holds the width at most through a logarithmic
+factor. We therefore add a width arm to the grid and ask which of the two the
+event times follow.
+
+% =====================================================================
+\section*{Block 2. Section 3.1, Task, network and training}
+\where{insert after the sentence that gives the readout factor
+$c_N=N^{-1/2}$ of the NTK parameterisation and $c_N=N^{-1}$ of the mean-field
+parameterisation.}
+
+Every width in this report uses the NTK factor $c_N=N^{-1/2}$. In the
+infinite-width limit the NTK stays constant and the network trains as a kernel
+method \citepas{jacotNeuralTangentKernel2020}{Jacot, Gabriel, and Hongler,
+2020}, so with this factor a wider network is lazier at a fixed $\alpha$. The
+mean-field factor keeps the dynamics non-degenerate as the width grows
+\citepas{chizatLazyTrainingDifferentiable2020}{Chizat, Oyallon, and Bach,
+2020}, and under it the width would not act as a setting of laziness. A width
+effect measured here belongs to the NTK parameterisation.
+
+\where{replace the last sentence of the subsection, ``The grid sets the product
+$\eta\lambda$ directly.''}
+
+The grid sets the product $\eta\lambda$ and the width $N$ directly.
+
+% =====================================================================
+\section*{Block 3. Section 3.5, Event times}
+\where{insert after the sentence that ends ``while (12) takes the pilot cell and
+the cells of the second stage together, $\eta\lambda=0$ included, with
+$\eta\lambda$ itself.''}
+
+The width arm adds two fits of \gref{eq:aft}{(10)}. The first takes the cells
+at the $\alpha$ of the pilot cell without weight decay, with the single
+covariate $\ln N$. The second takes the cells with
+$0<\eta\lambda\le\TODO{largest level of the crossed arm}$ at every width, with
+the covariates $\ln N$, $\ln\eta\lambda$ and their product. Both logarithms are
+centred at the middle of the grid before the product is formed, so the first
+two coefficients are the slopes at that point. The width enters as $\ln N$.
+Indicators of its levels would fail at the wide widths. When every seed of a
+level is censored, the likelihood of an indicator for that level keeps rising
+as its coefficient grows, so the indicator has no finite maximum likelihood
+estimate. The model
+\gref{eq:aalen}{(12)} takes $\ln N$ beside $\eta\lambda$. Its intervals
+resample seeds with all their runs, as above, so the runs of one seed at every
+width stay together. The relative risk model \gref{}{(13)} is also fitted with
+$\ln N$ added to $Z(t)$. If the width acts on the event only through $S_t$,
+$R_t$ and $A_t$, the coefficient of $\ln N$ in that fit should be close to zero
+\citepas{kalbfleischStatisticalAnalysisFailure2002}{Kalbfleisch and Prentice,
+2002}.
+
+% =====================================================================
+\section*{Block 4. Section 3.6, Choice of levels}
+\where{insert as a new paragraph at the end of the subsection.}
+
+The levels of the width arm were not chosen by this design. The widths form a
+geometric grid with ratio 2,
+$N\in\{50,100,200,400,800,1600\}$. The weight decays of the crossed arm,
+$\eta\lambda\in\TODO{levels}$, lie below the lower end
+$\eta\lambda=5\times10^{-4}$ of the scan. That is the range in which the
+grokking time falls with the weight decay, and the fits of the second stage
+say nothing about it. Every cell of the width arm has a budget of
+$200\,000$ steps, twice the budget of the pilot cell and of the $\alpha$ arm.
+A width cell is compared with those arms at the shorter budget, by treating
+every event after $100\,000$ steps as censored there.
+
+% =====================================================================
+\section*{Block 5. New Section 4.2.3, Width}
+\where{insert as a new subsubsection after Section 4.2.2, Weight decay.}
+
+\subsubsection*{4.2.3\quad Width}
+
+This subsection changes the width of the pilot cell and holds every other
+setting fixed, with $\alpha=1$ and $\eta\lambda=0$. The widths are
+$N\in\{50,100,200,400,800,1600\}$, each with \TODO{number of seeds} seeds and a
+budget of $200\,000$ steps. \Cref{tab:width} gives the memorisation step and
+the grokking step at level $0.95$ for each width, and \cref{fig:widthsurvival}
+the Kaplan-Meier estimate of the probability of not yet having grokked.
+\TODO{State how the memorisation step changes with $N$, and how the grokking
+step changes with $N$. State at which widths no seed reaches each level within
+the budget.} \Cref{tab:widthaft} gives the coefficient of $\ln N$ in
+\gref{eq:aft}{(10)} for each event and level.
+
+% Notes from the 5-seed dataset of 3 October 2026, kept here only as a guide to
+% what to check. They use the sum kernel for A_t and must not be quoted. At
+% alpha 1 and no weight decay the median memorisation step fell from about
+% 10,000 steps at N = 50 to about 55 at N = 1600. Both N = 50 and N = 100
+% grokked at level 0.95 on every seed. From N = 200 upwards no seed reached
+% level 0.80 within 200,000 steps.
+
+\begin{table}[H]
+  \centering
+  \caption{The sweep over width at the settings of the pilot cell. The
+    memorisation level is training accuracy $0.99$ and the grokking level is
+    test accuracy $0.95$. Medians, minima and maxima are over the seeds that
+    reached the event.}
+  \label{tab:width}
+  \begin{tabular}{rrrrrr}
+    \toprule
+    & Memorised & \multicolumn{4}{c}{Grokked} \\
+    \cmidrule(lr){2-2}\cmidrule(lr){3-6}
+    $N$ & Median & Median & Minimum & Maximum & Reached \\
+    \midrule
+    50   & \TODO{} & \TODO{} & \TODO{} & \TODO{} & \TODO{} \\
+    100  & \TODO{} & \TODO{} & \TODO{} & \TODO{} & \TODO{} \\
+    200  & \TODO{} & \TODO{} & \TODO{} & \TODO{} & \TODO{} \\
+    400  & \TODO{} & \TODO{} & \TODO{} & \TODO{} & \TODO{} \\
+    800  & \TODO{} & \TODO{} & \TODO{} & \TODO{} & \TODO{} \\
+    1600 & \TODO{} & \TODO{} & \TODO{} & \TODO{} & \TODO{} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \placeholderfigure{Kaplan-Meier curves by width at level 0.95, drawn as in
+    Figure 5, with Greenwood's exponential interval dashed.}
+  \caption{Kaplan-Meier estimates of the probability of not yet having grokked
+    at level $0.95$, by width at the settings of the pilot cell, with
+    Greenwood's exponential interval dashed
+    \citepas{kalbfleischStatisticalAnalysisFailure2002}{Kalbfleisch and
+    Prentice, 2002, Sec.~1.4.1}.}
+  \label{fig:widthsurvival}
+\end{figure}
+
+\where{add these rows to Table 5, as the width arm.}
+
+\begin{table}[H]
+  \centering
+  \caption{Rows of the width arm for Table 5: the coefficient of $\ln N$ in the
+    log-normal accelerated failure time model \gref{eq:aft}{(10)}, with its
+    $95\%$ interval, at the settings of the pilot cell.}
+  \label{tab:widthaft}
+  \begin{tabular}{llllrrr}
+    \toprule
+    Arm & Event & Level & Covariate & Coefficient & Lower & Upper \\
+    \midrule
+    width & memorised & 0.99 & $\ln N$ & \TODO{} & \TODO{} & \TODO{} \\
+    width & grokked   & 0.80 & $\ln N$ & \TODO{} & \TODO{} & \TODO{} \\
+    width & grokked   & 0.90 & $\ln N$ & \TODO{} & \TODO{} & \TODO{} \\
+    width & grokked   & 0.95 & $\ln N$ & \TODO{} & \TODO{} & \TODO{} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% =====================================================================
+\section*{Block 6. New Section 4.2.4, Width and weight decay together}
+\where{insert as a new subsubsection after Block 5.}
+
+\subsubsection*{4.2.4\quad Width and weight decay together}
+
+Section 4.2.2 finds that above the break more weight decay delays grokking,
+and that its fits say nothing below $\eta\lambda=5\times10^{-4}$, where the
+time falls. This subsection crosses that lower range with the widths of
+Section 4.2.3, at $\alpha=1$, with $\eta\lambda\in\TODO{levels}$ and
+\TODO{number of seeds} seeds per cell. \Cref{fig:widthdecay} gives the log
+grokking time against $\ln\eta\lambda$ at each width, and \cref{tab:crossed}
+the coefficients of the crossed fit of \gref{eq:aft}{(10)}. \TODO{State the
+signs of the coefficients of $\ln N$ and $\ln\eta\lambda$ and whether each
+interval excludes zero. State whether the product term is needed, and what its
+sign says about how the effect of weight decay changes with width.}
+
+\Cref{tab:widthphases} gives the phase of every run at the last step, at the
+threshold $0.9$ of Section 4.2.2. \TODO{State the largest $\eta\lambda$ at
+which each width still groks, and whether that edge moves as $N$ grows.}
+
+% Notes from the 5-seed dataset of 3 October 2026, kept here only as a guide to
+% what to check. At eta lambda = 3e-4 the runs at N = 800 memorised, but no
+% seed reached level 0.95 within 200,000 steps. At N = 1600 no seed memorised.
+% At eta lambda = 1e-3, 2 of the 5 seeds at N = 50 memorised and no seed at any
+% other width did. At eta lambda = 3e-3 no seed memorised at any width.
+
+The model \gref{eq:aalen}{(12)} with $\eta\lambda$ and $\ln N$ is fitted to
+every cell of the width arm, $\eta\lambda=0$ included, and Figure 8 gains a
+panel for $\ln N$. \TODO{State whether the cumulative regression function of
+$\ln N$ rises, falls or stays flat along $t$.}
+
+\begin{figure}[H]
+  \centering
+  \placeholderfigure{Log grokking time at level 0.95 against $\ln\eta\lambda$,
+    one line per width. Filled marks are observed events and open marks are runs
+    censored at the budget, as in Figure 4.}
+  \caption{Log grokking time at level $0.95$ against $\ln\eta\lambda$ for each
+    width of the crossed arm. Filled marks are observed events and open marks
+    are runs censored at the budget.}
+  \label{fig:widthdecay}
+\end{figure}
+
+\begin{table}[H]
+  \centering
+  \caption{Coefficients of the crossed fit of the log-normal accelerated
+    failure time model \gref{eq:aft}{(10)} on the cells with $\eta\lambda>0$,
+    with their $95\%$ intervals. The two logarithms are centred at the middle of
+    the grid before their product is formed.}
+  \label{tab:crossed}
+  \begin{tabular}{lllrrr}
+    \toprule
+    Event & Level & Covariate & Coefficient & Lower & Upper \\
+    \midrule
+    memorised & 0.99 & $\ln N$                      & \TODO{} & \TODO{} & \TODO{} \\
+    memorised & 0.99 & $\ln\eta\lambda$             & \TODO{} & \TODO{} & \TODO{} \\
+    memorised & 0.99 & $\ln N\cdot\ln\eta\lambda$   & \TODO{} & \TODO{} & \TODO{} \\
+    grokked   & 0.95 & $\ln N$                      & \TODO{} & \TODO{} & \TODO{} \\
+    grokked   & 0.95 & $\ln\eta\lambda$             & \TODO{} & \TODO{} & \TODO{} \\
+    grokked   & 0.95 & $\ln N\cdot\ln\eta\lambda$   & \TODO{} & \TODO{} & \TODO{} \\
+    \bottomrule
+  \end{tabular}
+
+  \smallskip
+  \TODO{add the rows for the grokking levels 0.80 and 0.90.}
+\end{table}
+
+\begin{table}[H]
+  \centering
+  \caption{Phase of the runs of the width arm at the last step, at the
+    threshold $0.9$, following
+    \citetas{pracherSpectralTheoryGrokking2026}{Pracher et al. (2026)}. Each
+    entry gives the number of seeds that grok, memorise, forget or do not fit.}
+  \label{tab:widthphases}
+  \TODO{one row per width and one column per level of $\eta\lambda$,
+    $\eta\lambda=0$ included.}
+\end{table}
+
+% =====================================================================
+\section*{Block 7. Sections 4.3 and 4.4, the kernel across width}
+\where{insert at the end of Section 4.3, The kernel at the grokking event.}
+
+\Cref{tab:widthkernel} gives $S_t$, $R_t$ and $A_t$ at the grokking event at
+level $0.95$ for each width without weight decay. $S_t$ and $R_t$ are taken on
+the kernel of the summed logits and $A_t$ on the tangent kernel of all logits,
+as in \gref{eq:statistics}{(6)}. \TODO{State how each statistic at the event
+changes with $N$.}
+
+\begin{table}[H]
+  \centering
+  \caption{The statistics \gref{eq:statistics}{(6)} at the grokking event at
+    level $0.95$, by width at the settings of the pilot cell. Medians over the
+    seeds that grokked, with the minimum and maximum in brackets.}
+  \label{tab:widthkernel}
+  \begin{tabular}{rlll}
+    \toprule
+    $N$ & $S_t$ & $R_t$ & $A_t$ \\
+    \midrule
+    50   & \TODO{} & \TODO{} & \TODO{} \\
+    100  & \TODO{} & \TODO{} & \TODO{} \\
+    200  & \TODO{} & \TODO{} & \TODO{} \\
+    400  & \TODO{} & \TODO{} & \TODO{} \\
+    800  & \TODO{} & \TODO{} & \TODO{} \\
+    1600 & \TODO{} & \TODO{} & \TODO{} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\where{add to Section 4.4, What times the event.}
+
+Table 6 is fitted again on the runs of the width arm with $\ln N$ added to
+$Z(t)$ (\cref{tab:widthcox}). \TODO{State whether the coefficient of $\ln N$ is
+close to zero once $S_t$, $R_t$ and $A_t$ are in the model, and which of the
+three carries the effect of width.}
+
+\begin{table}[H]
+  \centering
+  \caption{Coefficients of the relative risk model with time-dependent
+    covariates
+    \citepas{kalbfleischStatisticalAnalysisFailure2002}{Kalbfleisch and
+    Prentice, 2002, Eq.~6.14} on $S_t$, $R_t$, $A_t$ and $\ln N$, with their
+    $95\%$ intervals and $p$-values, on the runs of the width arm.}
+  \label{tab:widthcox}
+  \begin{tabular}{lllrrrr}
+    \toprule
+    Event & Level & Covariate & Coefficient & Lower & Upper & $p$ \\
+    \midrule
+    grokked & 0.95 & $S_t$  & \TODO{} & \TODO{} & \TODO{} & \TODO{} \\
+    grokked & 0.95 & $R_t$  & \TODO{} & \TODO{} & \TODO{} & \TODO{} \\
+    grokked & 0.95 & $A_t$  & \TODO{} & \TODO{} & \TODO{} & \TODO{} \\
+    grokked & 0.95 & $\ln N$ & \TODO{} & \TODO{} & \TODO{} & \TODO{} \\
+    \bottomrule
+  \end{tabular}
+
+  \smallskip
+  \TODO{add the rows for memorisation and for the grokking levels 0.80 and
+    0.90.}
+\end{table}
+
+% =====================================================================
+\section*{Block 8. Appendix B, Model checks}
+\where{insert after Figure 7.}
+
+\begin{figure}[H]
+  \centering
+  \placeholderfigure{Log-normal probability plot of the grokking times at level
+    0.95 for each width, drawn as in Figure 7.}
+  \caption{Log-normal probability plot of the grokking times at level $0.95$
+    for each width of the width arm. Each observed time is placed at the normal
+    quantile of its plotting position $(i-0.5)/n$, and runs censored at the
+    budget are left out
+    \citepas{nelsonAcceleratedTestingStatistical1990}{Nelson, 1990, Ch.~3,
+    Sec.~4.2}. Parallel straight lines support the log-normal model
+    \gref{eq:aft}{(10)}.}
+  \label{fig:widthprobability}
+\end{figure}
+
+% =====================================================================
+\section*{Decisions for the group}
+
+These points depart from the golden report or are not settled by it. The
+group should approve each one before the blocks above go into the master
+source.
+
+\begin{enumerate}
+  \item The golden report has no width arm, and \texttt{CLAUDE.md} names a
+    regression on width and weight decay as the head claim. The blocks above
+    add width as a covariate of the report's own models. The group should
+    confirm that the report takes this form.
+  \item The width arm has a budget of $200\,000$ steps, where the pilot cell
+    and the $\alpha$ arm have $100\,000$. Block 4 says how the arms are
+    compared.
+  \item The width arm has \TODO{number} seeds per cell, where the pilot cell
+    and the $\alpha$ arm have 12.
+  \item The width levels and the weight decays of the crossed arm were not
+    chosen by the design of Section 3.6.
+  \item The width enters the fits as $\ln N$ in place of indicators, for the
+    reason given in Block 3.
+  \item The crossed fit uses only the cells up to \TODO{largest level}. The
+    cells above that level are kept in the Kaplan-Meier estimates, in the
+    phases and in the model \gref{eq:aalen}{(12)}. The choice selects cells,
+    and every run in a chosen cell is kept, so it is consistent with Section
+    3.5. It must still be stated in the report.
+  \item Section 4.2.3 reports level $0.95$. The golden report uses that level
+    in every subsection except Section 4.2.2, which uses $0.90$.
+\end{enumerate}
+
+\end{document}

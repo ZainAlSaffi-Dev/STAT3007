@@ -9,8 +9,10 @@ scale, rotation and alignment relate to each other and to the grokking time.
 The design is the crossed grid of alpha, width and weight decay, with five
 seeds per cell. Everything else is fixed as ntk_lib.load_cell fixes it for the
 Tier 1 grid: NTK parameterisation, base learning rate 100, p = 23, training
-fraction 0.9, data seed 42, relu, and the mixed probe of the report's Kernel
-metrics section. The baseline cell, alpha 1, width 100 and no decay, is the
+fraction 0.9, relu, and the mixed probe of the report's Kernel metrics
+section. Each seed draws its own split of the pairs, as golden report
+section 3.1 asks, from data seed 42 + seed. Seed 0 keeps the split of the
+saved Tier 0 runs, so the validation can still compare against them. The baseline cell, alpha 1, width 100 and no decay, is the
 setup of Kumar et al. (2024), Appendix 8.3, arXiv v3, and the alpha slice at
 width 100 without decay is the Tier 0 sweep. The width by decay part is the
 Tier 2 grid of the report.
@@ -68,6 +70,8 @@ ALPHAS = [0.5, 1.0, 2.0]
 WIDTHS = [50, 100, 200, 400, 800, 1600]
 DECAYS = [0.0, 3e-6, 1e-5, 3e-5, 1e-4, 3e-4, 1e-3, 3e-3]
 SEEDS = [0, 1, 2, 3, 4]
+# Each seed has its own split of the pairs, from data seed DATA_SEED_BASE + seed.
+DATA_SEED_BASE = 42
 STEPS = 200_000
 LINEAR_INTERVAL = 1000
 N_LOG = 120
@@ -126,7 +130,7 @@ def run_id(width, alpha, eta_kappa, seed):
 def run_config(width, alpha, eta_kappa, seed, steps):
     """The keyword arguments of ntk_lib.train_run for one run."""
     return dict(parameterisation="ntk", hidden_dim=width, alpha=alpha, eta_0=100.0, eta_kappa=eta_kappa,
-                seed=seed, steps=steps, eval_interval=LINEAR_INTERVAL, kernel_save_interval=steps,
+                seed=seed, data_seed=DATA_SEED_BASE + seed, steps=steps, eval_interval=LINEAR_INTERVAL, kernel_save_interval=steps,
                 checkpoint_steps=checkpoint_grid(steps), probe="mixed", kernel_method="closed_form")
 
 
@@ -581,6 +585,8 @@ rcol("alpha", "The laziness knob alpha.", "Kumar et al. (2024), Appendix 8.1, Eq
 rcol("width", "The hidden width N.")
 rcol("eta_kappa", "The weight decay eta lambda.", "docs/report.tex, The laziness and weight-decay knobs")
 rcol("seed", "The model seed.")
+rcol("data_seed", "The seed of the split of the pairs into training and test sets, 42 + seed.",
+     "docs/report_golden.pdf, section 3.1")
 rcol("lr", "The learning rate eta_0 / alpha^2.", "ntk_lib.train_run")
 rcol("weight_decay", "The decay coefficient eta_kappa / lr passed to torch.optim.SGD.", "ntk_lib.train_run")
 rcol("status", "ok, diverged (the training loss stopped being finite) or failed (an exception).")
@@ -653,7 +659,7 @@ def run_row(meta, frame, out_dir):
     c = meta["config"]
     lr = c["eta_0"] / c["alpha"] ** 2
     row = dict(run_id=meta["run_id"], alpha=c["alpha"], width=c["hidden_dim"], eta_kappa=c["eta_kappa"],
-               seed=c["seed"], lr=lr, weight_decay=c["eta_kappa"] / lr, status=meta["status"],
+               seed=c["seed"], data_seed=c.get("data_seed", 42), lr=lr, weight_decay=c["eta_kappa"] / lr, status=meta["status"],
                error=meta.get("error") or "", diverged_step=meta.get("diverged_step"), steps=c["steps"],
                last_step=meta.get("last_step"), n_checkpoints=meta.get("n_checkpoints"), seconds=meta["seconds"],
                callback_seconds=meta.get("callback_seconds"), feature_version=meta["feature_version"],
@@ -808,7 +814,7 @@ def cmd_assemble(args, log):
                   steps=sorted(runs["steps"].unique().tolist()))
     manifest = dict(
         written=time.strftime("%Y-%m-%dT%H:%M:%S"), argv=sys.argv, git=git_state(), versions=versions(),
-        design=design, fixed=dict(parameterisation="ntk", eta_0=100.0, p=23, train_fraction=0.9, data_seed=42,
+        design=design, fixed=dict(parameterisation="ntk", eta_0=100.0, p=23, train_fraction=0.9, data_seed=f"{DATA_SEED_BASE} + seed",
                                   activation="relu", init_scale=1.0, probe="mixed", probe_size=256,
                                   kernel_method="closed_form", linear_interval=LINEAR_INTERVAL, n_log=N_LOG),
         feature_version=F.FEATURE_VERSION, krr_ridge=F.KRR_RIDGE, sharpness_iters=F.SHARPNESS_ITERS,
@@ -854,7 +860,10 @@ def cmd_validate(args, log):
         mine_path = RUNS / f"{m['run_id']}.json"
         if not saved_path.exists() or not mine_path.exists():
             continue
-        saved, mine = json.loads(saved_path.read_text())["history"], json.loads(mine_path.read_text())["history"]
+        saved_run, mine_run = json.loads(saved_path.read_text()), json.loads(mine_path.read_text())
+        if saved_run["config"]["data_seed"] != mine_run["config"]["data_seed"]:
+            continue
+        saved, mine = saved_run["history"], mine_run["history"]
         index = {s: i for i, s in enumerate(mine["step"])}
         shared = [(index[s], j) for j, s in enumerate(saved["step"]) if s in index]
         if not shared:
@@ -896,6 +905,8 @@ def cmd_validate(args, log):
             continue
         saved_run = json.loads(saved_path.read_text())
         mine_run = json.loads((RUNS / f"{m['run_id']}.json").read_text())
+        if saved_run["config"]["data_seed"] != mine_run["config"]["data_seed"]:
+            continue
         keep = set(saved_run["history"]["step"]) & set(mine_run["history"]["step"])
         saved = L.accuracy_crossings(restrict(saved_run, keep), 1.0)
         mine = L.accuracy_crossings(restrict(mine_run, keep), 1.0)

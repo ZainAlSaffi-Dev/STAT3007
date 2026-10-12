@@ -170,6 +170,15 @@ Notation. H = I - (1/n) 1 1^T. Kc = H K H is the centred kernel and k = Kc / ||K
 | `R_first_logit` | The rotation term of the centred kernel of the first output alone. The report names this kernel as a robustness check. | - | docs/report.tex, Kernel metrics section; ntk_lib.entk_closed_form |
 | `A_first_logit` | The centred alignment of the centred kernel of the first output alone. The report names this kernel as a robustness check. | - | docs/report.tex, Kernel metrics section; ntk_lib.entk_closed_form |
 
+### report_kernel
+
+| name | meaning | formula | source |
+| --- | --- | --- | --- |
+| `S_sum` | Scale, the plain ratio of Frobenius norms to step 0, of the kernel of the sum of the logits divided by sqrt(p), on the test pairs of the run. These are the S_t, R_t, D_t and A_t of the golden report. | - | docs/report_golden.pdf, Equations 5 and 6; ntk_lib.sum_kernel |
+| `R_sum` | Shape change, one minus the uncentred cosine to step 0, of the kernel of the sum of the logits divided by sqrt(p), on the test pairs of the run. These are the S_t, R_t, D_t and A_t of the golden report. | - | docs/report_golden.pdf, Equations 5 and 6; ntk_lib.sum_kernel |
+| `D_sum` | Variation, the Frobenius norm of the change from step 0 over the norm at step 0, of the kernel of the sum of the logits divided by sqrt(p), on the test pairs of the run. These are the S_t, R_t, D_t and A_t of the golden report. | - | docs/report_golden.pdf, Equations 5 and 6; ntk_lib.sum_kernel |
+| `A_sum` | Centred alignment with Y Y^T, of the kernel of the sum of the logits divided by sqrt(p), on the test pairs of the run. These are the S_t, R_t, D_t and A_t of the golden report. | - | docs/report_golden.pdf, Equations 5 and 6; ntk_lib.sum_kernel |
+
 ### spectrum
 
 | name | meaning | formula | source |
@@ -243,6 +252,7 @@ Notation. H = I - (1/n) 1 1^T. Kc = H K H is the centred kernel and k = Kc / ||K
 | `width` | The hidden width N. | - | - |
 | `eta_kappa` | The weight decay eta lambda. | - | docs/report.tex, The laziness and weight-decay knobs |
 | `seed` | The model seed. | - | - |
+| `data_seed` | The seed of the split of the pairs into training and test sets, 42 + seed. | - | docs/report_golden.pdf, section 3.1 |
 | `lr` | The learning rate eta_0 / alpha^2. | - | ntk_lib.train_run |
 | `weight_decay` | The decay coefficient eta_kappa / lr passed to torch.optim.SGD. | - | ntk_lib.train_run |
 | `status` | ok, diverged (the training loss stopped being finite) or failed (an exception). | - | - |
