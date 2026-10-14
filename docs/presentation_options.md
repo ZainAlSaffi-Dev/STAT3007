@@ -6,7 +6,7 @@ This note compares the tools we could use to build the slides for the G2 grokkin
 
 Our clips are rendered by Manim at 1920 by 1080 pixels and 30 frames per second on a white background. They are written to `animations/out/mp4/`, and a still frame of each scene goes to `animations/out/stills/`. The clips are short and silent, and the README in `animations/` says the deck was planned for PowerPoint or LaTeX. The report itself is written in LaTeX, so most of our equations already exist as LaTeX source that we can copy into the slides.
 
-The project brief says the talk should give enough technical detail to count as a scientific presentation. It also says the talk should not be a summary of the report. Both points favour a tool that makes it easy to show a few equations and a few animations, with little text.
+The project brief says the talk should give enough technical detail to count as a scientific presentation. That favours a tool that makes it easy to show a few equations and a few animations, with little text. The brief also asks for the slides to be uploaded as a `.ppt` or a `.pdf` file, so whichever tool we use must export one of those. (An earlier version of this note said that the brief forbids the talk from summarising the report. The brief says that about the reflective essay.)
 
 ## Summary table
 

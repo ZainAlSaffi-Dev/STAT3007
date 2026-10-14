@@ -9,8 +9,9 @@ here. Read that file first.
 
 The group needs two kinds of animation. One kind explains the maths to the five
 of us, where being right matters more than looking good. The other kind is short
-clips for the presentation, which will be built in PowerPoint or LaTeX. The two
-live in `explainer/` and `slides/`. A still frame from either can go into the
+clips for the presentation, which is built with Quarto in `presentation/`. The
+deck finds a rendered clip in `out/mp4/` by its scene name. The two live in
+`explainer/` and `slides/`. A still frame from either can go into the
 report, so every scene exports one.
 
 ## Honesty

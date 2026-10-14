@@ -1,9 +1,11 @@
 # Animations for the G2 grokking project
 
 Two audiences. `explainer/` holds longer pieces that explain the maths to the
-group. `slides/` holds short silent clips for the presentation, which will be
-built in PowerPoint or LaTeX. Every scene also writes a still frame, so the
-report and the deck can share one picture.
+group. `slides/` holds short silent clips for the presentation, which is built
+with Quarto in `presentation/`. The deck plays a clip as soon as it is rendered
+into `out/mp4/`, and `presentation/PLAN.md` lists the scenes it needs. Every
+scene also writes a still frame, so the report and the deck can share one
+picture.
 
 The rules for writing a scene are in `CLAUDE.md` in this folder. Read it and the
 root `CLAUDE.md` before adding anything.

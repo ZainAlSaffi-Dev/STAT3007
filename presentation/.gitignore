@@ -1,0 +1,14 @@
+# Quarto writes these when it renders the deck. Render again to get them back.
+slides.html
+slides_files/
+.quarto/
+
+# Rendered clips are large. Render them in animations/ or copy them here.
+assets/video/*
+!assets/video/.gitkeep
+
+# PDF exports. Keep the final one outside git, or force-add it on purpose.
+exports/
+
+/.quarto/
+**/*.quarto_ipynb
