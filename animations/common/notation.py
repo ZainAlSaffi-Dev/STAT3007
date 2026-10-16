@@ -63,15 +63,14 @@ FIT = r"\log T = c + a \log N + b \log(\eta\lambda) + \gamma \log N \log(\eta\la
 SHAPE_CLOCK = r"a > 0,\quad b \approx 0"
 DECAY_CLOCK = r"a \approx 0,\quad b \approx -1"
 
-# The strings below belong to the explainer scenes TurnAndAim and
-# AimOverTraining and to ScaleRotationLockstep. They work on the centred probe
+# The strings below belong to the scenes TurnAndAim and AimOverTraining,
+# which the deck does not show. They work on the centred probe
 # kernel of the dense runs, where docs/report.tex of September wrote S_t as a
 # log ratio. The deck does not use them.
 K_CENTRED = r"\widetilde{K}"
 K_NORMALISED = r"\widehat{K}"
 CENTRING = r"H = I - \tfrac{1}{n}\mathbf{1}\mathbf{1}^\top"
 TARGET_GRAM = r"\widetilde{G} = H Y Y^\top H"
-MOVEMENT_CENTRED = r"D = \frac{\lVert \widetilde{K}_t - \widetilde{K}_0 \rVert_F}{\lVert \widetilde{K}_0 \rVert_F}"
 
 # The aim and the identity that ties alignment to rotation. This is the
 # group's own algebra, written out in repoduced-code/term_dependence.py. It is
