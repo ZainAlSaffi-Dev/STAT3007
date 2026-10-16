@@ -221,11 +221,10 @@ Speaker: TBD.
 Message: three published accounts give three different clocks, and none of
 them looks at the shape of the kernel.
 
-Say: Recent papers disagree about what sets the delay. One says the weight
-norm. One says the weight-decay rate. One says grokking is a move from lazy to
-rich training, where the network's kernel starts to adapt. To decide between
-them we need to measure the kernel itself, so the next part explains what the
-kernel is.
+Say: Recent papers disagree about what sets the delay. The candidates are the
+weight norm, the weight-decay rate, and a move from lazy to rich training,
+where the network's kernel starts to adapt. To decide between them we need to
+measure the kernel itself, so the next part explains what the kernel is.
 :::
 
 # The tangent kernel {.act time="0:05"}
@@ -412,8 +411,8 @@ is the centred alignment of @cortesAlgorithmsLearningKernels2024.
 ::: {.g2-small}
 $K_t$ is the tangent kernel of the summed logits divided by $\sqrt{p}$, on the
 53 test pairs of a run [@mohamadiFastWellFoundedApproximation2022]. $C$ centres
-a matrix and $Y$ holds the one-hot targets. We call $R_t$ the rotation, as the
-report does. It measures any change of shape.
+a matrix and $Y$ holds the one-hot targets. We call $R_t$ the rotation,
+although it measures any change of shape.
 :::
 
 ::: {.notes}
@@ -676,8 +675,7 @@ cells they have not seen.
 ::: {.notes}
 Speaker: TBD.
 
-Say: Here are the three tests in order. We start with the baseline, then go
-through them one by one.
+Say: We start with the baseline and then take the three tests in order.
 :::
 
 # Results {.act time="0:05"}
@@ -939,7 +937,7 @@ tested a causal link.
 ::: {.column width="40%" .g2-compact}
 - Rotation alone predicts the grokking time best.
 - Adding scale to rotation raises $R^2$ from {{< var EtenRRsq >}} to
-  {{< var EtenSRRsq >}}, so rotation does not carry everything.
+  {{< var EtenSRRsq >}}.
 - Alignment adds little. All three together reach {{< var EtenSRARsq >}}.
 
 ::: {.g2-small}
@@ -1098,8 +1096,8 @@ rotation before reading it as feature learning.
 ::: {.g2-card .is-rotation}
 [Rotation]{.g2-card-title}
 
-At a fixed width, rotation is the statistic most tied to grokking. Reaching it
-is not enough to grok.
+At a fixed width, rotation is the statistic most tied to grokking. Reaching
+the usual rotation is not enough to grok.
 :::
 
 ::: {.g2-card .is-ink}
@@ -1118,10 +1116,11 @@ Next step: test whether the early rate of rotation falls as $1/N$.
 ::: {.notes}
 Speaker: TBD.
 
-Say: There are three things to take away. First, the standard kernel distance is mostly
-growth, so split it. Second, rotation is the statistic most tied to grokking
-at a fixed width, but it is not sufficient. Third, the grokking time depends on
-both width and weight decay. The published clocks are each part of the answer.
+Say: The usual kernel distance mostly records growth, so split it before you
+read it as feature learning. At a fixed width, rotation is the statistic most
+tied to grokking, but reaching it does not make a network grok. The grokking
+time depends on both width and weight decay, and each published clock explains
+one part of it.
 :::
 
 ## Thank you {time="0:05"}
