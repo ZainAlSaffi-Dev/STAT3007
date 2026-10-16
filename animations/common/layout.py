@@ -6,12 +6,65 @@ instead of reaching the deck.
 """
 
 import numpy as np
-from manim import DOWN, LEFT, UP, RESAMPLING_ALGORITHMS, ImageMobject, Text, config
+from manim import (DOWN, LEFT, RIGHT, UP, RESAMPLING_ALGORITHMS, Axes, Circle, ImageMobject, Text, VGroup,
+                   VMobject, config)
 from manim.utils.images import change_to_rgba_array
 
 from . import palette
 
 MARGIN = 0.5
+
+# Every scene imports this module, so this one line gives every Text the font of the deck.
+Text.set_default(font=palette.FONT)
+
+
+def tag(text, size=palette.TAG):
+    """A small grey note in the bottom right corner, such as "schematic"."""
+    return Text(text, font_size=size, color=palette.GRAY).to_corner(DOWN + RIGHT, buff=0.3)
+
+
+def step_axes(x_length, y_length, y_range=(0, 1, 1), y_labels=(0, 1), last_step=200_000,
+              labelled=(1, 100, 10_000), size=palette.LABEL_COLUMN):
+    """Axes with the training step on a log scale, and their tick labels.
+
+    The x coordinate is log10 of the step, so step 1 sits at 0 and a tick marks
+    every power of ten. Plot a series with axes.plot_line_graph(np.log10(steps),
+    values) after leaving out step 0. The steps in labelled carry a number, and
+    so do the values in y_labels. Returns the axes and a group of the labels;
+    move the two together.
+    """
+    axes = Axes(x_range=(0, np.log10(last_step), 1), y_range=y_range, x_length=x_length, y_length=y_length,
+                tips=False, axis_config=dict(color=palette.INK, stroke_width=3, tick_size=0.1))
+    labels = VGroup()
+    for step in labelled:
+        number = Text(f"{step:,}", font_size=size, color=palette.INK)
+        labels.add(number.next_to(axes.c2p(np.log10(step), y_range[0]), DOWN, buff=0.25))
+    for value in y_labels:
+        number = Text(f"{value:g}", font_size=size, color=palette.INK)
+        labels.add(number.next_to(axes.c2p(0, value), LEFT, buff=0.25))
+    return axes, labels
+
+
+def event_marker(point, colour, filled):
+    """A round marker for an event on a curve: hollow for memorisation, filled for grokking."""
+    return Circle(radius=0.13, stroke_color=colour, stroke_width=6, fill_color=colour if filled else palette.PAPER,
+                  fill_opacity=1).move_to(point)
+
+
+def curve_until(axes, x, y, x_end, colour, width=7):
+    """The part of a measured curve left of x_end, ending exactly at x_end.
+
+    Call it inside always_redraw with x_end read from a ValueTracker, so that
+    several curves sweep across the axes together.
+    """
+    keep = x <= x_end
+    xs, ys = x[keep], y[keep]
+    if keep.any() and not keep.all():
+        xs, ys = np.append(xs, x_end), np.append(ys, np.interp(x_end, x, y))
+    points = [axes.c2p(a, b) for a, b in zip(xs, ys)] or [axes.c2p(x[0], y[0])]
+    line = VMobject(stroke_color=colour, stroke_width=width)
+    line.set_points_as_corners(points if len(points) > 1 else points * 2)
+    return line
 
 
 def _check_width(mob, what, text):

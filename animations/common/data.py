@@ -18,9 +18,8 @@ Runs made from 24 September 2026 on also hold S_c, R_c, A_t and A_u on the
 training part and the test part of the probe, as S_c_train, S_c_test and so
 on. The grid runs use the mixed probe of the report, 203 training pairs and
 53 test pairs. The dense runs keep the probe of the first 256 training pairs.
-The centred terms are S_c and R_c. The report computes all three timing
-variables on the centred kernel, so a scene wants S_c and R_c, not S_t and
-R_t, unless it is showing the raw comparison on purpose.
+The centred terms S_c and R_c of these runs belong to the explainer scenes. The
+deck uses the statistics of the report, described below.
 
 The probe kernels themselves are saved as name_kernels.npz alongside the
 JSON. Those files are in .gitignore, so they exist only on the machine that
@@ -38,10 +37,26 @@ load_curves reads one of them in the same form as load_run, so history works
 on it. model_fitting/data/data_dictionary.md defines every column. The long
 table of all seeds is a parquet file that git ignores, and this environment
 cannot read parquet in any case.
+
+The deck clips follow the restructured report, report_v2. Its statistics are
+measured on the tangent kernel of the summed logits over sqrt(p), on the 53
+test pairs of each run. They are the columns S_sum, R_sum and A_sum of the
+curves above and of the report's own extract in report_v2/code/data. Four
+sources serve the clips.
+
+- load_report_runs reads report_runs.csv of that extract: one row per run of
+  the 720, with the events at each level and the statistics at each event.
+- report_numbers reads the results of one report item from
+  report_v2/code/out/numbers, and deck_number reads the string that the slides
+  print for a number, from presentation/_variables.yml.
+- load_n100, load_split and load_weights read the files in animations/data,
+  which extract_deck_data.py writes from the report extract and from the full
+  sweep. Git keeps them, so the clips render on any machine.
 """
 
 import csv
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -52,6 +67,9 @@ REPRO = REPO / "repoduced-code"
 RESULTS = REPRO / "results"
 DATASET = REPO / "model_fitting" / "data"
 CURVES = DATASET / "curves"
+REPORT_CODE = REPO / "report_v2" / "code"
+DECK = REPO / "presentation"
+DECK_DATA = Path(__file__).resolve().parents[1] / "data"
 
 _MISSING = (
     "Call available() for the runs that exist. A dense run is written by "
@@ -173,15 +191,14 @@ def _parse(value):
         return value
 
 
-def load_runs_table():
-    """Return runs.csv of the dataset as a dictionary of column name to array, one entry per run.
+def load_runs_table(path=DATASET / "runs.csv"):
+    """Return a runs table as a dictionary of column name to array, one entry per run.
 
-    Numeric columns are float arrays, with NaN where the value is empty, for
-    example the grokking time of a run that never memorised. The flag columns
-    are bool arrays, unless a run left one empty, and the text columns are
-    object arrays.
+    The default is runs.csv of the dataset. Numeric columns are float arrays,
+    with NaN where the value is empty, for example the grokking time of a run
+    that never memorised. The flag columns are bool arrays, unless a run left
+    one empty, and the text columns are object arrays.
     """
-    path = DATASET / "runs.csv"
     if not path.exists():
         raise FileNotFoundError(f"{path} does not exist. repoduced-code/dataset_sweep.py assemble writes it.")
     with open(path, newline="") as f:
@@ -197,6 +214,73 @@ def load_runs_table():
         else:
             table[key] = np.asarray(values, dtype=object)
     return table
+
+
+def load_report_runs():
+    """Return report_runs.csv of the report extract, in the form load_runs_table gives.
+
+    Its events follow report_v2 Section 3.4. t_mem is the first checkpoint at
+    which training accuracy reaches 0.99, and t_grok95 the first at which test
+    accuracy reaches 0.95. A run that misses a level has censored_<level> True
+    and its time set to the budget of 200,000 steps.
+    """
+    return load_runs_table(REPORT_CODE / "data" / "report_runs.csv")
+
+
+def report_numbers(item):
+    """Return the results of one report item, such as "E03", from report_v2/code/out/numbers."""
+    return json.loads((REPORT_CODE / "out" / "numbers" / f"{item}.json").read_text())["results"]
+
+
+def deck_number(name):
+    """Return the string that the slides print for a number, such as deck_number("EthreeNhundredRRatio").
+
+    It reads presentation/_variables.yml with the pattern that filters/g2.lua uses,
+    so a clip prints exactly what the slide prints. The strings may hold the
+    minus sign U+2212, which MathTex needs written as "-".
+    """
+    text = (DECK / "_variables.yml").read_text()
+    match = re.search(rf'^{re.escape(name)}:\s*"(.*?)"', text, flags=re.MULTILINE)
+    if match is None:
+        raise KeyError(f"{name} is not in presentation/_variables.yml. make_numbers.py writes that file.")
+    return match.group(1)
+
+
+def _deck_file(name):
+    path = DECK_DATA / name
+    if not path.exists():
+        raise FileNotFoundError(f"{path} does not exist. animations/extract_deck_data.py writes it.")
+    with np.load(path) as data:
+        return {key: data[key] for key in data.files}
+
+
+def load_n100():
+    """Return the 120 runs at width 100 of the report extract, at all 307 checkpoints.
+
+    The dictionary holds run_id, alpha, eta_kappa and seed with one entry per
+    run, step with one entry per checkpoint, and train_acc, test_acc, S_sum,
+    R_sum and A_sum with one row per run and one column per checkpoint.
+    """
+    return _deck_file("n100_checkpoints.npz")
+
+
+def load_split():
+    """Return the arrays a, b and is_test of the 529 pairs under data seed 42, the split of every seed 0 run.
+
+    Pair i is (a[i], b[i]), in the order of kernels.one_hot_pairs. 476 pairs train
+    and 53 test.
+    """
+    return _deck_file("split_seed42.npz")
+
+
+def load_weights(name):
+    """Return the saved steps and the weights W1 and W2 of a run whose weights are in animations/data.
+
+    W1 has shape (steps, N, 2p) and W2 has shape (steps, p, N). Only the
+    baseline run ntk_N100_a1_wd0_s0 is there for now.
+    """
+    weights = _deck_file(f"{name}_weights.npz")
+    return weights["steps"], weights["W1"].astype(float), weights["W2"].astype(float)
 
 
 def grokking_time(run, tau_train, tau_test):

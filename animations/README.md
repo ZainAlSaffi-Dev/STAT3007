@@ -86,15 +86,17 @@ output folders. Video goes to `out/mp4/`, which git ignores. Stills go to
 ```
 animations/
   common/              shared code; every scene imports from here
-    data.py            loads saved runs and probe kernels from repoduced-code/results
-    kernels.py         numpy versions of the kernel terms, the aim and the torus average
+    data.py            loads saved runs, the report extract, the deck data and the slide numbers
+    kernels.py         numpy versions of the report's kernel and statistics, the aim and the torus average
     layout.py          titles, captions, labels and heat maps
-    notation.py        LaTeX strings for every symbol, matching docs/report.tex
+    notation.py        LaTeX strings for every symbol, matching report_v2/overleaf/main.tex
     palette.py         colours and type sizes
+  data/                the deck data that extract_deck_data.py writes; committed
   slides/              short clips for the deck
   explainer/           longer pieces for the group
   scene_template.py    a working scene to copy when starting a new one
   render_all.py        renders every scene and reports which ones fail
+  extract_deck_data.py writes data/ from the report extract and the full sweep
   smoke.py             checks that Manim, LaTeX and video output all work
   manim.cfg            frame size, frame rate, background and output folders
 ```
@@ -112,10 +114,10 @@ goes into `common/`. A colour goes into `palette.py`, a symbol into
    up. The comment in the template says this too.
 3. Rename the class for the idea it shows, and rewrite the docstring and
    `construct()`.
-4. Load every measured curve through `common/data.py`. `data.available()`
-   lists the saved runs, and `data.history(run, "step", "S_c")` returns the
-   series. Take every symbol from `common/notation.py` and every colour from
-   `common/palette.py`.
+4. Load every measured curve through `common/data.py`. For the deck,
+   `data.load_curves(data.dataset_run_id(100, 1.0, 0))` returns a seed 0 run
+   and `data.history(run, "step", "S_sum")` returns one series. Take every
+   symbol from `common/notation.py` and every colour from `common/palette.py`.
 5. Render it with `-ql` until it looks right, then with `-qh` and `-qh -s`.
 6. Add a row to the table below and go through the checklist at the end of
    `CLAUDE.md`.
@@ -155,6 +157,25 @@ Two parts of it are committed, so a scene can use them on any machine.
 
 `model_fitting/data/data_dictionary.md` defines every column. Seeds 1 to 4
 and the weights exist only on the machine that ran the sweep.
+
+The deck clips follow `report_v2`, whose statistics are the columns `S_sum`,
+`R_sum` and `A_sum`. Three more sources serve them, and all of them are
+committed.
+
+- The report extract in `report_v2/code/data/`. `data.load_report_runs()`
+  reads its runs table, with the memorisation and grokking steps of every run.
+  `data.report_numbers("E03")` reads the results of one report item.
+- `presentation/_variables.yml`, the numbers that the slides print.
+  `data.deck_number("EthreeNhundredRRatio")` returns one of them as the slide
+  shows it.
+- `data/` in this folder, which `extract_deck_data.py` writes once with the
+  root environment. `n100_checkpoints.npz` holds the 120 runs at width 100 at
+  all 307 checkpoints. `split_seed42.npz` marks the 53 test pairs of the seed
+  0 runs. `ntk_N100_a1_wd0_s0_weights.npz` holds the weights of the baseline
+  run at its 48 saved steps, so that `kernels.sum_kernel` can rebuild the
+  report's kernel on all 529 pairs. The script checks that the rebuilt kernel
+  gives the report's statistics and that the seed 0 curves above match the
+  report extract.
 
 ## Scenes
 
