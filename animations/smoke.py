@@ -19,7 +19,7 @@ from common import notation, palette
 class SmokeTest(Scene):
     def construct(self):
         circle = Circle(radius=1.5, color=palette.BLUE)
-        formula = MathTex(notation.DECOMPOSITION, color=palette.INK).scale(0.8)
+        formula = MathTex(notation.IDENTITY, color=palette.INK).scale(0.8)
         formula.next_to(circle, direction=[0, -1, 0], buff=0.8)
         self.play(Create(circle))
         self.play(Write(formula))

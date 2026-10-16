@@ -1,0 +1,576 @@
+/*-- scss:defaults --*/
+
+// The G2 deck theme.
+//
+// The colours match report_v2/code/common.py and animations/common/palette.py,
+// so a statistic has the same colour in the report figures, the Manim clips and
+// the slides. Change a colour here only together with those two files.
+//
+// The slides are 1920 by 1080, the frame size of the Manim clips, and the page is
+// white so that a clip sits on a slide without a visible edge.
+
+@import url("https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=Source+Code+Pro:wght@500&display=swap");
+
+// Paper and ink.
+$g2-paper: #ffffff;
+$g2-ink: #0b0b0b;
+$g2-muted: #52514e;
+$g2-faint: #8a8986;
+$g2-rule: #e4e3df;
+$g2-wash: #f6f5f2;
+$g2-night: #121315;
+$g2-night-text: #f4f3ef;
+$g2-night-muted: #b9b7b0;
+
+// One hue per statistic. Scale is blue, rotation is orange and alignment is aqua.
+$g2-scale: #2a78d6;
+$g2-rotation: #eb6834;
+$g2-alignment: #1baf7a;
+
+// Text in a statistic colour uses a darker step of the same ramp, from
+// report_v2/code/common.py, so it reaches 4.5:1 contrast on white. Bars,
+// borders and swatches keep the base colours above.
+$g2-scale-text: #1c5cab;
+$g2-rotation-text: #c9501f;
+$g2-alignment-text: #11704e;
+
+// Width uses the violet of the report figures. Training curves are grey and test
+// curves are ink, as in the report, so that accuracy never reads as a statistic.
+$g2-width: #6a51a3;
+$g2-train: #8a8986;
+$g2-test: #0b0b0b;
+
+// Placeholders are amber, a colour that no statistic uses.
+$g2-todo: #a8690f;
+$g2-todo-wash: #fff7e6;
+
+$body-bg: $g2-paper;
+$body-color: $g2-ink;
+$text-muted: $g2-muted;
+$link-color: $g2-scale;
+$link-color-hover: #1c5cab;
+$selection-bg: #cfe1f7;
+$selection-color: $g2-ink;
+$dark-bg-text-color: $g2-night-text;
+$dark-bg-link-color: #86b6ef;
+
+// Quarto copies these lists into CSS variables without their quotes, and a
+// family name with a digit, such as Source Sans 3, is invalid unquoted. The
+// unquote() keeps the inner quotes in the output.
+$font-family-sans-serif: unquote('"Source Sans 3", "Helvetica Neue", Arial, sans-serif');
+$font-family-monospace: unquote('"Source Code Pro", Menlo, Consolas, monospace');
+$presentation-heading-font: unquote('"Source Serif 4", Georgia, serif');
+$presentation-heading-color: $g2-ink;
+$presentation-heading-font-weight: 600;
+$presentation-heading-letter-spacing: -0.01em;
+$presentation-heading-line-height: 1.12;
+$presentation-heading-text-transform: none;
+
+$presentation-font-size-root: 46px;
+$presentation-font-smaller: 0.72;
+$presentation-line-height: 1.35;
+$presentation-h1-font-size: 2.5em;
+$presentation-h2-font-size: 1.42em;
+$presentation-h3-font-size: 1.05em;
+$presentation-h4-font-size: 0.9em;
+$presentation-block-margin: 0.55em;
+$presentation-slide-text-align: left;
+$presentation-title-slide-text-align: left;
+
+/*-- scss:rules --*/
+
+// Colour words and symbols by statistic. Wrap a word or an inline formula, for
+// example [rotation $R_t$]{.c-rotation}. A formula inherits the colour.
+.reveal .c-scale { color: $g2-scale-text; }
+.reveal .c-rotation { color: $g2-rotation-text; }
+.reveal .c-alignment { color: $g2-alignment-text; }
+
+// A key: a swatch in the statistic colour before ink text, as in
+// [rotation $R_t$]{.g2-key .is-rotation}. Use it in tables and result boxes,
+// where the colour should mark identity without colouring the words.
+.reveal .g2-key::before {
+  content: "";
+  display: inline-block;
+  width: 0.62em;
+  height: 0.62em;
+  border-radius: 3px;
+  margin-right: 0.35em;
+  background: $g2-faint;
+  vertical-align: 0.02em;
+}
+
+.reveal .g2-key.is-scale::before { background: $g2-scale; }
+.reveal .g2-key.is-rotation::before { background: $g2-rotation; }
+.reveal .g2-key.is-alignment::before { background: $g2-alignment; }
+.reveal .c-width { color: $g2-width; }
+.reveal .c-muted { color: $g2-muted; }
+.reveal .c-train { color: $g2-train; }
+.reveal .c-test { color: $g2-test; }
+
+// Headings.
+.reveal .slides section.slide.level2 > h2 {
+  margin-top: 64px;
+  margin-bottom: 0.5em;
+  max-width: 30em;
+}
+
+.reveal .slides section h3 {
+  font-family: $font-family-sans-serif;
+  font-weight: 700;
+  color: $g2-muted;
+  letter-spacing: 0.02em;
+}
+
+// The label that tells the audience which act a slide belongs to. The filter
+// writes it after the heading of every level 2 slide.
+.reveal .g2-kicker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-size: 0.48em;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: $g2-muted;
+  line-height: 1;
+}
+
+.reveal .g2-kicker .g2-kicker-num {
+  color: $g2-ink;
+  font-variant-numeric: tabular-nums;
+}
+
+.reveal .g2-kicker .g2-flag {
+  border: 2px solid $g2-todo;
+  color: $g2-todo;
+  border-radius: 999px;
+  padding: 4px 14px;
+  letter-spacing: 0.08em;
+}
+
+.reveal .g2-track {
+  display: inline-flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.reveal .g2-track i {
+  display: inline-block;
+  width: 56px;
+  height: 7px;
+  border-radius: 4px;
+  background: $g2-rule;
+}
+
+.reveal .g2-track i.done { background: $g2-faint; }
+.reveal .g2-track i.now { background: $g2-ink; }
+
+// Act slides. The filter gives each one a dark background, its number and the
+// track, so the audience sees where the talk is.
+.reveal .slides section.g2-act h1 {
+  color: $g2-night-text;
+  font-size: 2.3em;
+  max-width: 13em;
+}
+
+.reveal .slides section.g2-act h1 .g2-act-num {
+  display: block;
+  font-size: 0.42em;
+  font-family: $font-family-sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: $g2-night-muted;
+  margin-bottom: 0.4em;
+}
+
+.reveal .slides section.g2-act p {
+  color: $g2-night-muted;
+  font-size: 1.05em;
+  max-width: 28em;
+}
+
+.reveal .slides section.g2-act .g2-track {
+  margin: 1.2em 0 0 0;
+}
+
+.reveal .slides section.g2-act .g2-track i { background: #3a3b3f; }
+.reveal .slides section.g2-act .g2-track i.done { background: #7d7b75; }
+.reveal .slides section.g2-act .g2-track i.now { background: $g2-night-text; }
+
+// The title slide.
+.reveal .slides section.g2-title-slide > h2 { display: none; }
+
+.reveal .g2-title-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 40px;
+  align-items: center;
+  height: 960px;
+}
+
+.reveal .g2-title-grid .g2-eyebrow {
+  font-size: 0.55em;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: $g2-muted;
+  margin: 0 0 0.6em 0;
+}
+
+.reveal .g2-title-grid .g2-title {
+  font-family: $presentation-heading-font;
+  font-weight: 600;
+  font-size: 3.1em;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.25em 0;
+  color: $g2-ink;
+}
+
+.reveal .g2-title-grid .g2-subtitle {
+  font-size: 1.15em;
+  color: $g2-muted;
+  margin: 0 0 1.4em 0;
+  max-width: 20em;
+}
+
+.reveal .g2-title-grid .g2-authors {
+  font-size: 0.75em;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.reveal .g2-title-grid .g2-meta {
+  font-size: 0.6em;
+  color: $g2-muted;
+  margin-top: 0.6em;
+}
+
+.reveal .g2-title-art svg {
+  width: 100%;
+  height: auto;
+}
+
+.reveal .g2-title-art text {
+  font-family: $font-family-sans-serif;
+}
+
+// Cards, for three things side by side, such as the three statistics.
+.reveal .g2-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 44px;
+  margin-top: 0.4em;
+}
+
+.reveal .g2-cards.two { grid-template-columns: repeat(2, 1fr); }
+
+.reveal .g2-card {
+  border-top: 12px solid $g2-rule;
+  padding-top: 18px;
+}
+
+.reveal .g2-card.is-scale { border-top-color: $g2-scale; }
+.reveal .g2-card.is-rotation { border-top-color: $g2-rotation; }
+.reveal .g2-card.is-alignment { border-top-color: $g2-alignment; }
+.reveal .g2-card.is-ink { border-top-color: $g2-ink; }
+
+// A card title is a span, written [Title]{.g2-card-title}. A heading would make
+// pandoc wrap the card in a section, which reveal.js would count as a slide.
+.reveal .g2-card .g2-card-title {
+  display: block;
+  margin: 0 0 0.3em 0;
+  font-size: 0.62em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: $g2-muted;
+}
+
+.reveal .g2-card .g2-card-title { color: $g2-ink; }
+
+.reveal .g2-card > p:first-child { margin-top: 0; }
+
+.reveal .g2-card p,
+.reveal .g2-card li {
+  font-size: 0.72em;
+}
+
+// Cards with larger type, for a slide that carries only the cards.
+.reveal .g2-cards.big .g2-card p { font-size: 0.95em; }
+.reveal .g2-cards.big .g2-card .g2-card-title { font-size: 0.7em; }
+
+// Smaller text for a column that holds several sentences or a formula.
+.reveal .g2-compact { font-size: 0.8em; }
+
+// A large sentence that carries the message of a slide.
+.reveal .g2-lead {
+  font-size: 1.12em;
+  line-height: 1.3;
+  max-width: 30em;
+}
+
+// Small print: sources, settings and footnotes.
+.reveal .g2-small {
+  font-size: 0.62em;
+  color: $g2-muted;
+}
+
+.reveal .g2-source {
+  font-size: 0.55em;
+  color: $g2-muted;
+  margin-top: 0.8em;
+}
+
+// A box that holds one result in numbers.
+.reveal .g2-result {
+  background: $g2-wash;
+  border-left: 10px solid $g2-ink;
+  padding: 18px 26px;
+  font-size: 0.8em;
+}
+
+.reveal .g2-result.is-scale { border-left-color: $g2-scale; }
+.reveal .g2-result.is-rotation { border-left-color: $g2-rotation; }
+.reveal .g2-result.is-alignment { border-left-color: $g2-alignment; }
+
+.reveal .g2-result p { margin: 0.2em 0; }
+
+// Tables.
+.reveal table {
+  font-size: 0.62em;
+  border-collapse: collapse;
+}
+
+.reveal table th {
+  border-bottom: 3px solid $g2-ink;
+  text-align: left;
+  font-weight: 700;
+}
+
+.reveal table td {
+  border-bottom: 1px solid $g2-rule;
+  vertical-align: middle;
+}
+
+.reveal table th,
+.reveal table td {
+  padding: 0.35em 0.6em;
+}
+
+// Citations stay quiet.
+.reveal .citation { color: $g2-muted; }
+
+// Figures and clips.
+.reveal .g2-video,
+.reveal .g2-still {
+  display: block;
+  width: 100%;
+  max-height: 820px;
+  object-fit: contain;
+  margin: 0 auto;
+}
+
+// A figure on a slide. Write ![](path){.g2-fig}. The figures from
+// make_figures.py are 16 by 9. In a column the column width sets their size,
+// and across the slide this height does, so that a caption still fits below.
+// Quarto stretches a figure that is alone on a slide and sets its size inline.
+// The height limit then cuts only its height, so object-fit keeps its shape.
+.reveal img.g2-fig {
+  display: block;
+  max-width: 100%;
+  max-height: 800px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  margin: 0 auto 0.3em auto;
+}
+
+// A small amber tag that marks an interim figure, such as a report figure that
+// still has to be redrawn for the slides.
+.reveal .g2-todo-chip {
+  display: inline-block;
+  border: 2px solid $g2-todo;
+  background: $g2-todo-wash;
+  color: $g2-todo;
+  border-radius: 999px;
+  padding: 0 14px;
+  margin-right: 10px;
+  font-weight: 600;
+}
+
+// The reference list runs in two columns in small type.
+.reveal #refs {
+  column-count: 2;
+  column-gap: 60px;
+  font-size: 0.56em;
+  line-height: 1.3;
+}
+
+.reveal #refs .csl-entry {
+  break-inside: avoid;
+  margin-bottom: 0.5em;
+}
+
+// Placeholders. The filter adds the header line to every placeholder. Amber
+// marks work that is still to do, so nobody mistakes a placeholder for a result.
+.reveal .g2-placeholder {
+  border: 3px dashed $g2-todo;
+  background: $g2-todo-wash;
+  border-radius: 18px;
+  padding: 22px 30px;
+  min-height: 420px;
+  text-align: left;
+  color: $g2-muted;
+}
+
+.reveal .g2-placeholder.tall { min-height: 700px; }
+
+.reveal .g2-placeholder .g2-ph-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.5em;
+  margin-bottom: 12px;
+}
+
+.reveal .g2-placeholder .g2-ph-kind {
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: $g2-todo;
+}
+
+.reveal .g2-placeholder .g2-ph-name {
+  font-family: $font-family-monospace;
+  font-size: 1.15em;
+  color: $g2-ink;
+}
+
+.reveal .g2-placeholder .g2-chip {
+  border: 2px solid $g2-todo;
+  border-radius: 999px;
+  padding: 2px 14px;
+  color: $g2-todo;
+}
+
+.reveal .g2-placeholder ol,
+.reveal .g2-placeholder ul,
+.reveal .g2-placeholder p {
+  font-size: 0.56em;
+  margin-top: 0.3em;
+  margin-bottom: 0.3em;
+}
+
+.reveal .g2-placeholder li { margin-bottom: 0.25em; }
+
+// Bar charts built by the filter from a .g2-bars list. The bars carry the
+// colour and the text stays in ink. Thin bars grow from one baseline, the grid
+// is hairline and solid, and each value sits at the tip of its bar.
+.reveal .g2-barchart {
+  font-size: 0.66em;
+  margin: 0.4em 0 0 0;
+}
+
+.reveal .g2-bar-row,
+.reveal .g2-bar-axis {
+  display: grid;
+  grid-template-columns: 9.5em 1fr;
+  column-gap: 0.6em;
+  align-items: stretch;
+}
+
+.reveal .g2-bar-label {
+  align-self: center;
+  text-align: right;
+  color: $g2-ink;
+  line-height: 1.1;
+}
+
+.reveal .g2-bar-track {
+  position: relative;
+  min-height: 1.75em;
+  margin-right: 3.5em;
+  border-left: 2px solid $g2-muted;
+  background-image: linear-gradient(to right, $g2-rule 0 2px, transparent 2px);
+  background-size: var(--g2-grid, 20%) 100%;
+  background-repeat: repeat-x;
+}
+
+.reveal .g2-bar {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 0.85em;
+  border-radius: 0 6px 6px 0;
+  background: #3d3c3a;
+}
+
+.reveal .g2-bar.is-scale { background: $g2-scale; }
+.reveal .g2-bar.is-rotation { background: $g2-rotation; }
+.reveal .g2-bar.is-alignment { background: $g2-alignment; }
+
+.reveal .g2-bar-value {
+  position: absolute;
+  top: 50%;
+  transform: translate(0.4em, -50%);
+  color: $g2-ink;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.reveal .g2-axis-track {
+  min-height: 1.4em;
+  border-left-color: transparent;
+  background-image: none;
+}
+
+.reveal .g2-tick {
+  position: absolute;
+  top: 0.2em;
+  transform: translateX(-50%);
+  color: $g2-muted;
+  font-size: 0.8em;
+  font-variant-numeric: tabular-nums;
+}
+
+.reveal .g2-bar-title {
+  margin-left: 10.1em;
+  color: $g2-muted;
+  font-size: 0.85em;
+}
+
+// The progress bar shows the three colours in order as the talk moves on.
+.reveal .progress {
+  height: 6px;
+  color: $g2-ink;
+}
+
+.reveal .progress span {
+  background: linear-gradient(90deg, $g2-scale 0 33.33%, $g2-rotation 33.33% 66.66%, $g2-alignment 66.66% 100%);
+  background-size: 100vw 100%;
+  background-repeat: no-repeat;
+}
+
+// The footer and the slide number.
+.reveal .footer {
+  font-size: 0.4em;
+  color: $g2-faint;
+}
+
+.reveal .slide-number {
+  font-size: 0.4em !important;
+  color: $g2-faint !important;
+  background: transparent !important;
+}
+
+// Backup slides carry a plain label in place of the act track.
+.reveal .slides section.g2-backup-slide .g2-kicker { color: $g2-faint; }

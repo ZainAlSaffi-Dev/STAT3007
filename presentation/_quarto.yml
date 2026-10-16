@@ -1,0 +1,43 @@
+# The Quarto project for the G2 seminar deck. README.md explains how to build it.
+#
+# Only slides.qmd is rendered. README.md and PLAN.md stay as Markdown files.
+project:
+  type: default
+  render:
+    - slides.qmd
+
+# The filter labels the acts, swaps placeholders for clips and adds up the time.
+filters:
+  - filters/g2.lua
+
+bibliography: ref.bib
+link-citations: false
+
+format:
+  revealjs:
+    theme: [default, theme/g2.scss]
+    # The frame size of the Manim clips, so that a clip fills a slide exactly.
+    width: 1920
+    height: 1080
+    margin: 0.06
+    center: false
+    # One calm transition everywhere. Slides marked auto-animate move the
+    # elements they share, which is how an equation builds up over two slides.
+    transition: fade
+    transition-speed: default
+    background-transition: fade
+    auto-animate-duration: 0.7
+    auto-animate-easing: ease-in-out
+    slide-number: c/t
+    show-slide-number: all
+    progress: true
+    hash: true
+    controls: auto
+    menu:
+      side: left
+    preview-links: false
+    footer: "Scale or Shape? · Group G2 · STAT3007"
+    pdf-separate-fragments: false
+    # Set this to true to pack the deck into one HTML file. It makes the file
+    # large once the clips exist, and the formulas still need a network.
+    embed-resources: false
