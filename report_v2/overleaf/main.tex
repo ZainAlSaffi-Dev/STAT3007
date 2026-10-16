@@ -108,22 +108,24 @@ Zac Kienzle (s4803349) $\cdot$ Samuel Rieger (s4904959)}
 \end{draftnote}
 
 \begin{abstract}
-  Grokking is delayed generalisation, and what sets the length of the delay is
-  disputed. Recent accounts time it by the weight norm, by the scale of the
+  Grokking is the well documented phenomena of delayed generalisation, but what sets the length of the delay is disputed. Recent accounts time it by scale-like parameters: the weight norm, by the scale of the
   logits, or by the weight-decay rate. We split the movement of the neural
   tangent kernel into a change of scale and a rotation, and measure both, with
   the kernel's alignment to the labels, on 720 runs of a two-layer network
   learning modular addition. The runs cross laziness, width and weight decay.
-  The usual distance between the kernel and its initial value mostly records
-  the growth of the kernel. At a fixed width, rotation is the statistic most
+  % The usual distance between the kernel and its initial value mostly records
+  % the growth of the kernel.
+  We find that at a fixed width, rotation is the statistic most
   tied to the grokking step, yet networks can reach that rotation without
   grokking. Across widths no statistic takes a fixed value at grokking. The
   grokking time grows with width and falls with weight decay, with exponents
-  of \EsixMainA{} and \EsixMainB{}, which neither a rotation clock nor a
+  of \EsixMainA{} and \EsixMainB{}, which neither a rotation clock (meaning rotation sets the grokking time) nor a
   weight-decay clock predicts alone. Read before any run groks, rotation is the
   best single predictor of the grokking time on held-out settings, and scale
-  adds information that rotation lacks. Each published clock therefore
-  describes one part of what sets the grokking time.
+  adds information that rotation lacks. Each published grokking description, as well as our hypothesis of rotation, therefore describes one part of what sets the grokking time 
+  
+  % Each published clock therefore
+  % describes one part of what sets the grokking time.
 \end{abstract}
 
 % =====================================================================
@@ -133,11 +135,13 @@ Zac Kienzle (s4803349) $\cdot$ Samuel Rieger (s4904959)}
 Grokking is the delayed generalisation that
 \citet{powerGrokkingGeneralizationOverfitting2022} found on small algorithmic
 datasets. A network fits its training data early, and its test accuracy rises
-from chance long afterwards. Modular addition learned by a two-layer perceptron
+significantly long afterwards. Modular addition learned by a two-layer perceptron
 is a small instance of it. Full-batch gradient descent on the squared error
 groks there with no explicit regularisation
 \citep{gromovGrokkingModularArithmetic2023}. What sets the length of the delay
 is an open question.
+
+% \cite{jacot2018ntk} defines the Neural Tangent Kernel to relate the behaviour of neural networks to kernel ridge regression. 
 
 One account holds that grokking is a transition from lazy training to rich
 training \citep{kumarGrokkingTransitionLazy2024}. In lazy training the network
@@ -150,16 +154,20 @@ A kernel can grow in scale while its eigenvectors stay fixed. It can also
 rotate, so that its eigenvectors change.
 
 The difference matters for the accounts of the grokking time. Recent work times
-grokking by the weight norm \citep{khanhWeightNormSets2026}, by the scale of the
-logits \citep{khanhWhatDoesWeight2026}, or by the weight-decay rate
+grokking by the scale-like parameters: weight norm \citep{khanhWeightNormSets2026}, scale of the
+logits \citep{khanhWhatDoesWeight2026}, or the weight-decay rate
 \citep{kimGrokkingWeightDecayClock2026,pracherSpectralTheoryGrokking2026}. The
 result that \citet{kumarGrokkingTransitionLazy2024} cite for weight decay forcing
 the kernel to change is that of \citet{lewkowyczTrainingDynamicsDeep2021}, in
 which the kernel only shrinks. None of these accounts measures whether the
 kernel rotates.
 
+Rotation is important for the lazy-to-rich account of grokking. A kernel that only grows keeps its eigenvectors, so a
+large distance does not by itself show that features were learned.
+
+
 We ask what sets the grokking time: the shape of the kernel, its scale, or the
-weight-decay rate. Our hypothesis is that rotation sets it. We measure three
+weight-decay rate. Our hypothesis is that rotation (change in shape) sets it. We measure three
 statistics of the empirical tangent kernel along training: its scale $S_t$, its
 rotation $R_t$ and its alignment $A_t$ with the labels. We do so on a grid of
 720 runs that crosses laziness, width and weight decay. Our contributions are as
@@ -168,33 +176,26 @@ follows.
   \item We split the movement of the kernel into a change of scale and a
     rotation, and use each one as a timing variable. On the baseline of
     \citet{kumarGrokkingTransitionLazy2024}, the usual distance is mostly a
-    change of scale: at $\alpha=1$ the scale carries \NtwoAOneGrok{} of $D_t^2$
+    change of scale: at $\alpha=1$ the scale accounts for \NtwoAOneGrok{} of $D_t^2$
     at grokking.
-  \item We test whether grokking happens at a fixed value of each statistic. A
-    placebo test reads each run at another run's grokking step, so a statistic
-    that merely stays in a narrow band does not pass.
-  \item We cross width with weight decay and fit how the grokking time scales
-    with each. A rotation clock and a weight-decay clock predict different
-    exponents.
-  \item We test whether the statistics, read before any run groks, predict when
-    it will. Unlike the settings that produced them, these statistics can be
-    measured in any network.
+  \item We test whether grokking happens at a fixed value of each       statistic with a placebo test using a different runs grokking time to prevent misclassifying statistics
+    that merely stay in a narrow band.
+  \item We fit a power law for how the grokking time scales
+    with model width and weight-decay. Rotation setting grokking time and weight-decay setting grokking time predict different exponents 
+  \item We test whether the statistics can be used to predict grokking ahead of time. 
   % Tier 4' is commented out (11 October 2026). Restore this item with it.
   % \item \TODO{A theory contribution, if \cref{sec:tier4} keeps one. Its form
   %   depends on the option the group chooses there.}
 \end{enumerate}
-We find that rotation matters most and is not enough on its own: the grokking
+We find that rotation is the most important sole statistic, but it is not enough on its own: the grokking
 time depends on both width and weight decay.
 
 The works we cite each follow one quantity: the distance the kernel moves
 \citep{mohamadiWhyYouGrok2024}, the weight norm \citep{khanhWeightNormSets2026},
 the logit scale \citep{khanhWhatDoesWeight2026}, or the weight-decay rate
 \citep{kimGrokkingWeightDecayClock2026,pracherSpectralTheoryGrokking2026}. This
-report separates the growth of the tangent kernel from its rotation, and sets a
-scale clock, a rotation clock and a weight-decay clock against each other on one
-grid. The split also bears on the evidence for
-the lazy-to-rich account. A kernel that only grows keeps its eigenvectors, so a
-large distance does not by itself show that features were learned.
+report separates the growth of the tangent kernel from its rotation, and compares the hypotheses of scale, rotation, and weigh-decay settings the grokking time one one grid. 
+
 
 % =====================================================================
 \section{Related Work}\label{sec:related}
@@ -260,16 +261,16 @@ source. Add it to ref.bib only after checking it on arXiv.}
 
 \paragraph{Predictions.}
 \Cref{tab:predictions} sets out what each account predicts for the three tests
-of this report. If rotation sets the clock and $T_t$ stays of order $1/N$ along
+of this report. If rotation sets the grokking time and $T_t$ stays of order $1/N$ along
 training, a wider network rotates more slowly and groks later at a fixed weight
-decay. The weight decay should then matter little. A weight-decay clock predicts
+decay. The weight decay should then matter little. A weight-decay clock (meaning weight-decay sets grokking time) predicts
 the opposite. Each account was tested on its own, so these predictions have not
 been set against each other on one grid. The weight-decay accounts also leave
 open what sets the time without weight decay. \Citet[p.~3, arXiv
 v1]{kimGrokkingWeightDecayClock2026} lists that case, and the creation of new
 directions by feature learning, among the things its mechanism does not
-explain. Rotation of the tangent kernel measures one form of such feature
-learning (our reading).
+explain. We believe that rotation of the tangent kernel measures one form of such feature
+learning.
 
 \begin{table}[H]
   \centering\small
@@ -308,7 +309,7 @@ learning (our reading).
 
 \subsection{Task, network and training}\label{sec:setup}
 
-The task is modular addition with modulus $p=23$, at the baseline of
+The task we train on is modular addition with modulus $p=23$, at the baseline of
 \citet[App.~8.3, arXiv v3]{kumarGrokkingTransitionLazy2024}. Each pair $(a,b)$ of
 residues is encoded as the concatenation $x_{a,b}\in\mathbb{R}^{2p}$ of the
 one-hot codes of $a$ and $b$. Its target $y_{a,b}\in\mathbb{R}^{p}$ is the
@@ -373,6 +374,7 @@ the size of $T_t$ in \eqref{eq:kernelflow}, and so how fast the kernel can
 rotate. The weight decay $\eta\lambda$ sets the clock of
 \citet{kimGrokkingWeightDecayClock2026}. The grid has $3\times6\times8=144$
 cells and 720 runs, and every run finished.
+\TODO{reword to not use cells, or define what cells mean}
 
 \subsection{Scale, rotation and alignment}\label{sec:statistics}
 
@@ -420,26 +422,26 @@ accuracy reaches 0.99. Its grokking step $T$ is the first checkpoint at which
 its test accuracy reaches 0.95. Appendix~\ref{app:levels} repeats the analysis
 at the levels 0.80 and 0.90. Both events are counted from step 0. A run that
 does not reach a level within 200\,000 steps is kept, and its grokking step is
-recorded as censored at the budget. The events are read on the checkpoint grid,
+recorded as censored at the budget (200\,000 steps). The events are read on the checkpoint grid described above,
 so each one is known to lie between two checkpoints. The gap to the
 checkpoint before is at most \NthreeGrok{} of the grokking step and
-\NthreeMem{} of the memorisation step. We use accuracy rather than loss because
-the test loss levels off above zero after the test accuracy is perfect. In the
-baseline cell it stays between \NfourMin{} and \NfourMax{}.
+\NthreeMem{} of the memorisation step. 
+% We use accuracy rather than loss because
+% the test loss levels off above zero after the test accuracy is perfect. In the
+% baseline cell it stays between \NfourMin{} and \NfourMax{}.
 
 \subsection{Analysis}\label{sec:analysis}
 
 \paragraph{Thresholds (Tier 1).} For each statistic we take its value at the
 grokking step of every run that groks, and measure the spread across runs by the
 standard deviation (SD). A statistic can have a small spread because it stays in
-a narrow band all through training. The placebo test separates the two cases.
-It reads each run at the grokking step of another run, drawn by a random
+a narrow band all through training, so we include a placebo test to separate the two cases.
+The placebo test reads each run at the grokking step of another run, drawn by a random
 permutation with no fixed points, and measures the SD again. The tightening
 ratio is the median placebo SD over 2\,000 permutations divided by the SD at the
 true events, and $p$ is the share of permutations whose SD is no larger. A
 ratio near 1 means the statistic is not tied to the event. The SD carries the
-units of its statistic, so the comparison between statistics rests on the
-ratio and on $p$.
+units of its statistic, so may not be compared directly.
 
 \paragraph{Scaling (Tier 2).} We fit the log-normal accelerated failure time
 model
@@ -448,6 +450,7 @@ model
   + \sigma\varepsilon,\qquad \varepsilon\sim\mathcal{N}(0,1),
   \label{eq:aft}
 \end{equation}
+\TODO{i think this needs more explanation for our audience}
 by maximum likelihood. A censored run contributes the probability that its
 grokking step exceeds the budget
 \citep{kalbfleischStatisticalAnalysisFailure2002}. Both logarithms are centred at
