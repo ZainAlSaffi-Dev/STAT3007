@@ -987,33 +987,40 @@ Say: Rotation and scale interact. Growth of the kernel shortens the grokking
 time more when the kernel has also rotated more.
 :::
 
-## The kernel statistics do not beat knowing the settings {.optional time="0:30"}
+## Trees on the same three statistics rank runs better than a linear model {.optional time="0:30"}
 
 :::: {.columns}
 ::: {.column width="55%"}
 ![](assets/figures/E8_ladder.png){.g2-fig}
 :::
 ::: {.column width="45%"}
-- On an unseen $\alpha$, each statistic alone ranks runs only a little better
-  than chance: {{< var EeightAonly >}} for $A_t$, {{< var EeightSonly >}} for
-  $S_t$ and {{< var EeightRonly >}} for $\log R_t$. A score of 0.5 is
-  chance.
+- On an unseen $\alpha$, a linear model on $S_t$, $\log R_t$ and $A_t$
+  scores {{< var EeightLinear >}}. Products of the statistics raise this to
+  {{< var EeightInter >}}. A score of 0.5 is chance.
+- Boosted trees on the same three numbers reach {{< var EeightXgb >}}. So
+  the link to the grokking time is non-linear.
 - A recurrent network on the history reaches {{< var EeightGru >}}. A model
-  given the settings reaches {{< var EeightRef >}}.
-- A share of {{< var EtenBetweenLogR >}} of the spread of $\log R_t$ lies
-  between cells, so the statistics cannot tell which seed of a cell groks
-  first.
+  given the settings still does best, at {{< var EeightRef >}}.
 :::
 ::::
 
 ::: {.notes}
 Speaker: TBD.
 
-Message: an honest limit of Tier 3$'$.
+Message: the statistics are tied to the grokking time in a non-linear way,
+and even the best model on them does not beat knowing the settings.
 
-Say: The kernel statistics are measurable in any network, which is why they
-are interesting. But in our grid they do not predict better than knowing the
-width and weight decay, and they do not give an earlier warning.
+Say: Here each model ranks the runs of a value of alpha it has never seen,
+scored by the concordance. A score of 0.5 is chance. A linear model on the
+three statistics scores {{< var EeightLinear >}}, and products of the
+statistics take it to {{< var EeightInter >}}. Boosted trees on the same three
+numbers reach {{< var EeightXgb >}}, so the link is non-linear. Kernel ridge
+scores only {{< var EeightKrr >}}, because it learns only from the runs that
+grok. A recurrent network that reads the whole history reaches
+{{< var EeightGru >}}. A model given the width and the weight decay does best,
+at {{< var EeightRef >}}. A share of {{< var EtenBetweenLogR >}} of the spread
+of log R lies between cells, so the statistics cannot tell which seed of a
+cell groks first.
 :::
 
 ## Tier 4: does the split hold beyond modular addition? {time="0:30"}

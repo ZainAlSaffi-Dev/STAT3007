@@ -69,7 +69,7 @@ The times include 5 seconds for each act slide. The render log prints these tota
 | 25 | Results | Width sets the rotation, and at a fixed width weight decay shrinks the scale | slide figure E7 | optional | 0:30 |
 | 26 | Results | Tier 3′: rotation is the best single predictor, and scale adds what rotation lacks | live bar chart from E10 | core | 0:40 |
 | 27 | Results | Growth shortens the grokking time more when the kernel has also rotated | slide figure E9 | optional | 0:25 |
-| 28 | Results | The kernel statistics do not beat knowing the settings | slide figure E8 | optional | 0:30 |
+| 28 | Results | Trees on the same three statistics rank runs better than a linear model | slide figure E8 | optional | 0:30 |
 | 29 | Results | Tier 4: does the split hold beyond modular addition? | figure MnistResult, to make | core | 0:30 |
 | 30 | What we found | Limitations | text | core | 0:25 |
 | 31 | What we found | Rotation matters most, and the clock is mixed | three cards | core | 0:30 |
