@@ -30,7 +30,7 @@ import common as C  # noqa: E402
 OUT = HERE / 'assets' / 'figures'
 
 # A figure is drawn at 100 pixels per inch of the 1920 by 1080 slide, so type of s points shows at
-# 1.39 s pixels. A figure in a 55% column is 1056 pixels wide. E2 fills the slide below its title.
+# 1.39 s pixels. Tick labels of 21 points show at 29 pixels, a little above the deck's small print. A figure in a 55% column is 1056 pixels wide. E2 fills the slide below its title.
 # The PNGs are saved at twice that resolution.
 COLUMN = (10.56, 5.94)
 WIDE = (14.58, 8.2)
@@ -47,8 +47,8 @@ plt.rcParams.update({
     # The deck sets Source Sans 3 with Helvetica Neue as its fallback. Matplotlib finds only the
     # fallback here, as Manim does for the clips. Formulas use the TeX fonts, as MathJax does.
     'font.family': 'Helvetica Neue', 'mathtext.fontset': 'cm', 'axes.unicode_minus': False,
-    'font.size': 20, 'axes.titlesize': 22, 'axes.labelsize': 22, 'xtick.labelsize': 19, 'ytick.labelsize': 19,
-    'legend.fontsize': 19, 'lines.linewidth': 2.4, 'lines.markersize': 9, 'axes.linewidth': 1.2,
+    'font.size': 22, 'axes.titlesize': 24, 'axes.labelsize': 24, 'xtick.labelsize': 21, 'ytick.labelsize': 21,
+    'legend.fontsize': 21, 'lines.linewidth': 2.4, 'lines.markersize': 9, 'axes.linewidth': 1.2,
     'grid.linewidth': 1.0, 'xtick.major.width': 1.2, 'ytick.major.width': 1.2, 'xtick.major.size': 6,
     'ytick.major.size': 6, 'xtick.minor.size': 3.5, 'ytick.minor.size': 3.5,
     'figure.dpi': 100, 'savefig.dpi': 200, 'savefig.bbox': 'standard',
@@ -104,7 +104,7 @@ def e2():
             ax.set_xlim(-0.6, len(levels) - 0.4)
             ax.grid(axis='x', visible=False)
             ax.set_title(f"ratio {e3[group][stat]['sd']['tightening']:.2f}", loc='right', color=C.MUTED,
-                         fontsize=19)
+                         fontsize=21)
             if r == 0:
                 ax.set_title(C.STAT_NAME[stat], loc='left', color=C.STAT_RAMP[stat][4], fontweight='bold')
         axes[r, 0].set_ylabel(label)
@@ -177,7 +177,7 @@ def e5():
     ax.text(x1 * 1.12, t0 * x0 / x1, 'slope $-1$', color=C.MUTED, va='center')
     ax.axhline(C.BUDGET, color=C.MUTED, lw=1.2)
     ax.text(2.6e-6, C.BUDGET * 1.07, 'Open circles did not grok within 200,000 steps.', color=C.MUTED, va='bottom',
-            fontsize=17)
+            fontsize=19)
     ax.set_xscale('log')
     ax.set_yscale('log')
     decays = sorted(a1.eta_kappa.unique())
@@ -188,7 +188,7 @@ def e5():
     ax.set_xlim(2.2e-6, 9e-3)
     ax.set_xlabel(r'weight decay $\eta\lambda$')
     ax.set_ylabel('grokking step $T$')
-    ax.legend(loc='lower left', ncol=2, handlelength=1.4, columnspacing=1.0, borderaxespad=0.2, fontsize=18)
+    ax.legend(loc='lower left', ncol=2, handlelength=1.4, columnspacing=1.0, borderaxespad=0.2, fontsize=20)
     save(fig, 'E5_scaling')
 
 
@@ -213,7 +213,7 @@ def e7():
         cb.outline.set_visible(False)
         if stat == 'R':
             cb.ax.yaxis.set_major_formatter(POW10)
-    axes[0].set_title(r'median over seeds at $t^{*}$', loc='right', color=C.MUTED, fontsize=19)
+    axes[0].set_title(r'median over seeds at $t^{*}$', loc='right', color=C.MUTED, fontsize=21)
     axes[1].set_xlabel(r'weight decay $\eta\lambda$')
     save(fig, 'E7_mechanism')
 
@@ -231,14 +231,14 @@ def e8():
               ('kernel ridge', 'kernel ridge', None), ('XGBoost', 'boosted trees', None),
               ('GRU on history', 'recurrent network', None)]
     fig, ax = plt.subplots(figsize=COLUMN, layout='constrained')
-    for i, (key, _, stat) in enumerate(models):
-        mean = ladder[key]['mean']
+    for i, (name, _, stat) in enumerate(models):
+        mean = ladder[name]['mean']
         ax.barh(i, mean - 0.5, left=0.5, height=0.62, color=C.STAT_COLOUR[stat] if stat else NEUTRAL, zorder=2)
         ax.text(0.875, i, f'{mean:.2f}', ha='right', va='center')
     ref = ladder['settings reference']['mean']
     # The two lines stop below their labels.
     ax.vlines(ref, -0.55, len(models) - 0.45, color=C.TEXT, ls='--', lw=2, zorder=3)
-    ax.text(ref, -0.7, f'given the settings, {ref:.2f}', ha='center', va='bottom')
+    ax.text(ref + 0.004, -0.7, f'given the settings, {ref:.2f}', ha='right', va='bottom')
     ax.vlines(0.5, -0.55, len(models) - 0.45, color=C.MUTED, lw=1.4, ls=':', zorder=1)
     ax.text(0.5, -0.7, 'chance', ha='center', va='bottom', color=C.MUTED)
     ax.set_yticks(range(len(models)), [label for _, label, _ in models])
