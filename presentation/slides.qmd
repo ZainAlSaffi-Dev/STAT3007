@@ -580,7 +580,7 @@ How can one experiment tell the three clocks apart?
 
 ## Each account predicts a different result {time="0:30"}
 
-| Account | Fixed value at grokking (Tier 1) | Width exponent $a$ (Tier 2) | Decay exponent $b$ (Tier 2) | Early predictor (Tier 3′) |
+| Account | Fixed value at grokking (Tier 1) | Width exponent $a$ (Tier 2) | Decay exponent $b$ (Tier 2) | Early predictor (Tier 3$'$) |
 |:---|:---|:---|:---|:---|
 | [Rotation clock]{.g2-key .is-rotation}, our hypothesis | $R_t$ reaches a threshold | $a > 0$, since $T_t$ shrinks with width (ours) | $b \approx 0$ | $R_t$ |
 | Weight-decay clock [@kimGrokkingWeightDecayClock2026; @pracherSpectralTheoryGrokking2026] | Not stated | $a \approx 0$ (ours) | $b \approx -1$ | $\eta\lambda$ alone |
@@ -660,7 +660,7 @@ $\log T$.
 :::
 
 ::: {.g2-card .is-ink}
-[Tier 3′]{.g2-card-title}
+[Tier 3$'$]{.g2-card-title}
 
 Which statistic, read before any run groks, predicts $T$? Models are scored on
 cells they have not seen.
@@ -898,11 +898,11 @@ the grokking time depends on both. These are associations, and we have not
 tested a causal link.
 :::
 
-## Tier 3′: rotation is the best single predictor, and scale adds what rotation lacks {time="0:40"}
+## Tier 3$'$: rotation is the best single predictor, and scale adds what rotation lacks {time="0:40"}
 
 :::: {.columns}
 ::: {.column width="60%"}
-::: {.g2-bars .stepwise max="0.6" label="Held-out R² of log T, with one cell held out at a time"}
+::: {.g2-bars .stepwise max="0.6" label="Held-out $R^2$ of $\log T$, with one cell held out at a time"}
 - [$A_t$]{.is-alignment var="EtenARsq"}
 - [$S_t$]{.is-scale var="EtenSRsq"}
 - [$\log R_t$]{.is-rotation var="EtenRRsq"}
@@ -993,7 +993,7 @@ time more when the kernel has also rotated more.
 ::: {.notes}
 Speaker: TBD.
 
-Message: an honest limit of Tier 3′.
+Message: an honest limit of Tier 3$'$.
 
 Say: The kernel statistics are measurable in any network, which is why they
 are interesting. But in our grid they do not predict better than knowing the
@@ -1017,7 +1017,7 @@ width and weight decay, and they do not give an earlier warning.
 ::: {.figure-todo name="MnistResult"}
 1. The MNIST counterpart of the baseline figure: accuracy, $S_t$, $R_t$ and
    $A_t$ against step.
-2. The Tier 1 to Tier 3′ summaries, if the sweep finishes in time.
+2. The Tier 1 to Tier 3$'$ summaries, if the sweep finishes in time.
 3. Fallback: one exploration run, labelled as exploration.
 4. Check first: the MNIST runs measure the kernel on a mixed probe of 128
    training and 128 test images, and record $S_t$ as a log ratio.
@@ -1165,7 +1165,7 @@ sign. Wider networks memorise sooner, so the width effect on grokking is not a
 delay in fitting the training data.
 :::
 
-## Tier 3′ in numbers
+## Tier 3$'$ in numbers
 
 | Statistics at $t^*$ | Held-out $R^2$ | Concordance |
 |:---|:---|:---|

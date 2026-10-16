@@ -69,6 +69,8 @@ Never type a result. Every number from the experiments is a variable with the na
 The width exponent is {{< var EsixMainA >}}.
 ```
 
+A number that the report sets in math mode, such as a signed value or a power of ten, arrives as inline math, for example `$-0.63$`, and MathJax renders it. Any other number is plain text. No Unicode character stands in for math anywhere in the deck: write a formula, a prime or a minus sign in `$...$`.
+
 When `report_v2/code/make_all.py` changes the numbers, run `python presentation/make_numbers.py` and render again. The comment next to each variable in `_variables.yml` names the JSON file and the key it comes from. Settings such as the widths or the step budget are not results and can be typed.
 
 ### Animations
@@ -91,7 +93,7 @@ A div with the class `figure-todo` and a `name` stands for a static figure still
 A div with the class `g2-bars` draws a bar chart from report variables, so a chart never shows a typed number:
 
 ```markdown
-::: {.g2-bars .stepwise max="0.6" label="Held-out R² of log T"}
+::: {.g2-bars .stepwise max="0.6" label="Held-out $R^2$ of $\log T$"}
 - [$A_t$]{.is-alignment var="EtenARsq"}
 - [$\log R_t$]{.is-rotation var="EtenRRsq"}
 - [All three]{var="EtenSRARsq"}

@@ -233,17 +233,26 @@ def report_numbers(item):
 
 
 def deck_number(name):
-    """Return the string that the slides print for a number, such as deck_number("EthreeNhundredRRatio").
+    """Return the Markdown that the slides print for a number, such as deck_number("EthreeNhundredRRatio").
 
     It reads presentation/_variables.yml with the pattern that filters/g2.lua uses,
-    so a clip prints exactly what the slide prints. The strings may hold the
-    minus sign U+2212, which MathTex needs written as "-".
+    so a clip shows what the slide shows. A number that the report sets in math
+    mode comes as inline math, such as "$-0.63$". Any other number is plain text,
+    such as "2,983". deck_tex gives either one as LaTeX for MathTex.
     """
     text = (DECK / "_variables.yml").read_text()
     match = re.search(rf'^{re.escape(name)}:\s*"(.*?)"', text, flags=re.MULTILINE)
     if match is None:
         raise KeyError(f"{name} is not in presentation/_variables.yml. make_numbers.py writes that file.")
-    return match.group(1)
+    return re.sub(r"\\(.)", r"\1", match.group(1))
+
+
+def deck_tex(name):
+    """Return the number of deck_number(name) as LaTeX for MathTex, so no Unicode stands in for math."""
+    text = deck_number(name)
+    if text.startswith("$") and text.endswith("$"):
+        return text[1:-1]
+    return text.replace(",", "{,}").replace("%", r"\%")
 
 
 def _deck_file(name):

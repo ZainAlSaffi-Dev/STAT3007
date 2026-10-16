@@ -110,7 +110,7 @@ class PlaceboTest(Scene):
             shown = placebo[np.argmin(np.abs(sd_placebo - np.median(sd_placebo)))]
             panels.append(Panel(true, shown, colour, centre, jitter))
             name = VGroup(MathTex(symbol, font_size=MATH, color=text_colour),
-                          MathTex(r"\times\," + data.deck_number(ratio_name).replace("−", "-"),
+                          MathTex(r"\times\," + data.deck_tex(ratio_name),
                                   font_size=MATH, color=palette.INK))
             names.add(name.arrange(RIGHT, buff=0.35).move_to([centre, BOTTOM - 0.7, 0]))
 

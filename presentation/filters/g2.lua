@@ -190,18 +190,29 @@ local function load_variables()
   for line in handle:lines() do
     local key, value = line:match('^([%w_]+):%s*"(.-)"')
     if key then
-      variables[key] = value
+      -- Undo the YAML escapes, so that "$3\\times10^{-4}$" reads as $3\times10^{-4}$.
+      variables[key] = (value:gsub("\\(.)", "%1"))
     end
   end
   handle:close()
   return variables
 end
 
+-- A number that the report sets in math mode arrives as $...$ and is drawn as
+-- inline math. Any other number is plain text.
+local function number_inline(text)
+  local tex = text:match("^%$(.*)%$$")
+  if tex then
+    return pandoc.Math("InlineMath", tex)
+  end
+  return pandoc.Str(text)
+end
+
 local function to_number(text)
   if not text then
     return nil
   end
-  local clean = text:gsub("\u{2212}", "-"):gsub(",", ""):gsub("^%+", "")
+  local clean = text:gsub("%$", ""):gsub(",", ""):gsub("^%+", "")
   return tonumber(clean)
 end
 
@@ -272,7 +283,7 @@ function bar_chart(el)
     local width = math.max(0, math.min(bar.value, max)) / max * 100
     local track = pandoc.Span({
       pandoc.Span({}, pandoc.Attr("", { "g2-bar", bar.colour }, { style = string.format("width: %.2f%%;", width) })),
-      pandoc.Span({ pandoc.Str(bar.text) }, pandoc.Attr("", { "g2-bar-value" },
+      pandoc.Span({ number_inline(bar.text) }, pandoc.Attr("", { "g2-bar-value" },
         { style = string.format("left: %.2f%%;", width) })),
     }, pandoc.Attr("", { "g2-bar-track" }, { style = grid }))
     local classes = { "g2-bar-row" }
@@ -281,7 +292,7 @@ function bar_chart(el)
     end
     rows:insert(pandoc.Div({
       pandoc.Plain({ pandoc.Span(bar.label, pandoc.Attr("", { "g2-bar-label" })), track }),
-    }, pandoc.Attr("", classes, { title = pandoc.utils.stringify(bar.label) .. ": " .. bar.text })))
+    }, pandoc.Attr("", classes, { title = pandoc.utils.stringify(bar.label) .. ": " .. (bar.text:gsub("%$", "")) })))
   end
 
   -- The axis: tick labels under the bars and a title below them.
@@ -298,8 +309,9 @@ function bar_chart(el)
       pandoc.Span(ticks, pandoc.Attr("", { "g2-bar-track", "g2-axis-track" })) }),
   }, pandoc.Attr("", { "g2-bar-axis" })))
   if el.attributes["label"] then
-    rows:insert(pandoc.Div({ pandoc.Plain({ pandoc.Str(el.attributes["label"]) }) },
-      pandoc.Attr("", { "g2-bar-title" })))
+    -- The label is read as Markdown, so that it can hold math such as $R^2$.
+    local label = pandoc.utils.blocks_to_inlines(pandoc.read(el.attributes["label"], "markdown").blocks)
+    rows:insert(pandoc.Div({ pandoc.Plain(label) }, pandoc.Attr("", { "g2-bar-title" })))
   end
 
   local classes = pandoc.List({ "g2-barchart" })

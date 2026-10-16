@@ -24,29 +24,22 @@ TARGET = HERE / "_variables.yml"
 # One macro per line: \newcommand{\Name}{value}% source
 MACRO = re.compile(r"^\\newcommand\{\\(?P<name>[A-Za-z]+)\}\{(?P<value>.*)\}%\s*(?P<source>.*)$")
 
-SUPERSCRIPT_POWER = re.compile(r"10\^\{(?P<power>-?\d+)\}")
+def markdown(value):
+    """Turn the LaTeX of one number into the Markdown that the slides show.
 
-
-def plain(value):
-    """Turn the LaTeX of one number into text that Quarto renders as Markdown.
-
-    A thin space between thousands becomes a comma, a minus sign becomes the
-    Unicode minus, and a power of ten becomes a Markdown superscript, so that
-    3\\times10^{-4} reads as 3 × 10^−4^.
+    A value that the report sets in math mode, inside \\ensuremath, becomes
+    inline math, so that MathJax renders a sign, a power of ten or a comparison
+    as LaTeX does in the report: \\ensuremath{3\\times10^{-4}} becomes
+    $3\\times10^{-4}$. Any other value is a plain number. A thin space between
+    thousands becomes a comma and \\% becomes %. No Unicode stands in for math.
     """
     text = value.strip()
     wrapped = re.fullmatch(r"\\ensuremath\{(.*)\}", text)
     if wrapped:
-        text = wrapped.group(1)
-    text = text.replace("\\,", ",")
-    text = text.replace("\\%", "%")
-    text = SUPERSCRIPT_POWER.sub(lambda m: "10^" + m.group("power").replace("-", "\u2212") + "^", text)
-    text = text.replace("\\times", " \u00d7 ")
-    text = re.sub(r"\s+", " ", text).strip()
-    if text.startswith("-"):
-        text = "\u2212" + text[1:]
-    if "\\" in text:
-        raise ValueError(f"cannot turn {value!r} into plain text")
+        return "$" + wrapped.group(1).strip() + "$"
+    text = text.replace("\\,", ",").replace("\\%", "%")
+    if re.search(r"[\\$^_]", text) or text.startswith(("-", "+")):
+        raise ValueError(f"{value!r} holds math outside \\ensuremath, so it cannot be written as a plain number")
     return text
 
 
@@ -63,7 +56,7 @@ def main():
         match = MACRO.match(raw.strip())
         if not match:
             continue
-        text = plain(match.group("value"))
+        text = markdown(match.group("value"))
         quoted = text.replace("\\", "\\\\").replace('"', '\\"')
         lines.append(f'{match.group("name")}: "{quoted}"  # {match.group("source")}')
         count += 1

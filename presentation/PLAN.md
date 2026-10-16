@@ -183,7 +183,7 @@ Every citation uses an entry from `ref.bib`, which copies the verified entries o
 - **Optional slides.** Which of the eleven survive.
 - **Laptop or room computer.** The HTML deck plays clips but needs our own laptop and, for the formulas, a network connection. The PDF works anywhere but shows clips as stills. Bring both.
 - **The AI-use statement.** The closing slide has a draft. It should match the statement in the report.
-- **One reference title.** The Lewkowycz and Gur-Ari entry in the verified bibliography escapes its formula, so the reference list prints `$l_2$` literally. Fixing it means changing the verified entry, so check the title on arXiv first and change the report's copy too.
+- **One reference title.** The Lewkowycz and Gur-Ari entry in the verified bibliography escapes its formula, so the reference list printed `$l_2$` literally. The arXiv abstract page, checked on 16 October 2026, writes the formula as $L_2$ in math with a capital L. The deck's `ref.bib` now does the same. The copies in `report_v2/overleaf/ref.bib` and `docs/ref.bib` still escape it, and changing them is the group's call.
 
 ## 11. Schedule
 
