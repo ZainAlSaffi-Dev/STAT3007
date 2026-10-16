@@ -623,9 +623,11 @@ recorded as more than 200,000, which is a censored time.
 :::
 :::
 ::: {.column width="42%"}
-::: {.figure-todo name="GridDiagram"}
-1. A block of 3 by 6 by 8 cells, one per setting.
-2. The same block comes back in the results, coloured by outcome.
+::: {.anim scene="GridOfRuns" status="renders" source="design, report_runs.csv" length="15 s"}
+1. Three panels of 6 by 8 cells, one per value of $\alpha$, with the width $N$
+   down and the weight decay $\eta\lambda$ across.
+2. Then the counts appear. There are $3 \times 6 \times 8 = 144$ cells with 5
+   seeds each, so 720 runs. The clip reads the counts from the runs table.
 :::
 :::
 ::::
