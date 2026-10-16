@@ -57,9 +57,9 @@ The times include 5 seconds for each act slide. The render log prints these tota
 | 13 | The tangent kernel | On this task, the change of shape has a visible pattern | clip KernelOnTheTorus | optional | 0:30 |
 | 14 | The tangent kernel | In theory, weight decay only rescales the kernel | clip KernelFlow | core | 0:25 |
 | 15 | The experiment | Each account predicts a different result | table | core | 0:30 |
-| 16 | The experiment | We trained 720 networks across laziness, width and weight decay | figure GridDiagram, to make | core | 0:25 |
+| 16 | The experiment | We trained 720 networks across laziness, width and weight decay | clip GridOfRuns | core | 0:25 |
 | 17 | The experiment | Three tests, one for each column of the table | three cards | optional | 0:15 |
-| 18 | Results | Baseline: the network memorises early, groks late, and its kernel mostly grows | report figure E1 | core | 0:30 |
+| 18 | Results | Baseline: the network memorises early, groks late, and its kernel mostly grows | clip BaselineKernel | core | 0:30 |
 | 19 | Results | Tier 1: at a fixed width, rotation is the statistic most tied to grokking | clip PlaceboTest | core | 0:45 |
 | 20 | Results | The statistics at the grokking step of every run | report figure E2 | optional | 0:25 |
 | 21 | Results | Reaching that rotation is not enough to grok | text | core | 0:20 |
@@ -116,29 +116,34 @@ Colour carries meaning in every slide, figure and clip: scale is blue, rotation 
 
 ## 7. Animations
 
-The deck has eleven animation placeholders. The filter in `filters/g2.lua` swaps each one for its clip as soon as the clip exists, so a scene goes into the deck by being rendered. The rules for writing a scene are in `animations/CLAUDE.md`.
+The deck has thirteen animations, and every one of them renders. The filter in `filters/g2.lua` swaps each placeholder for its clip as soon as the clip exists, so a scene goes into the deck by being rendered. The rules for writing a scene are in `animations/CLAUDE.md`, and `animations/README.md` describes each scene. The clips were built on 16 October 2026 on the machine that holds the full sweep.
 
-| Priority | Scene | Slide | Kind | Data | State | What it needs |
-|---|---|---|---|---|---|---|
-| 1 | `GrokkingTimeline` | 2 | measured | baseline $\alpha = 1$, seed 0 | planned in `animations/README.md` | Count $T$ from step 0 with test accuracy 0.95, as the report does. The README describes the older gap definition. |
-| 1 | `NTKFromScratch` | 5 | schematic | none | planned | The storyboard in the slide. |
-| 1 | `ScaleVersusRotation` | 8 | schematic | none | planned | Show both growth and a change of shape, and say "schematic" on screen. |
-| 1 | `PlaceboTest` | 19 | measured | E03, from `report_v2/code/data` | new | Port the permutation from `report_v2/code/E03_placebo.py`. |
-| 2 | `LazyVersusRich` | 6 | schematic, then measured | E01 | planned | The last beat uses the baseline runs at three values of $\alpha$. |
-| 2 | `IdentityLevelSets` | 12 | identity, then measured | baseline | exists as `ScaleRotationLockstep` | Move it to the report's plain-ratio $S_t$ and uncentred $R_t$. |
-| 2 | `KernelFlow` | 14 | schematic | none | new | Keep the claim to what Eq. S5 says. |
-| 2 | `ModularAdditionTable` | 3 | data | the split of seed 0 | new | Use the split of data seed 42. |
-| 3 | `TwoClocks` | 23 | measured | E06 fit | planned | Draw the two predicted planes and the fitted one. |
-| 3 | `KernelAsArrows` | 10 | schematic | none | new | Matrices as arrows with the Frobenius inner product. |
-| 3 | `KernelOnTheTorus` | 13 | measured | the three dense runs | renders | It uses the old probe of 256 training pairs. The report's kernel has only 53 test pairs, too few for this picture, so the scene needs the kernel on all 529 pairs, rebuilt from saved weights. |
+| Priority | Scene | Slide | Kind | Data | Length |
+|---|---|---|---|---|---|
+| 1 | `GrokkingTimeline` | 2 | measured | baseline $\alpha = 1$, seed 0, and its events in `report_runs.csv` | 19.7 s |
+| 1 | `NTKFromScratch` | 5 | schematic, then measured | the weights of the baseline at step 0, kernel on all 529 pairs | 29.9 s |
+| 1 | `ScaleVersusRotation` | 8 | schematic | exact 2 by 2 kernels | 25.0 s |
+| 1 | `PlaceboTest` | 19 | measured | the 78 runs of width 100 that grok, with the 2,000 shuffles of E03 | 25.0 s |
+| 2 | `LazyVersusRich` | 6 | schematic, then measured | the baseline at $\alpha$ = 0.5, 1 and 2, seed 0 | 24.7 s |
+| 2 | `IdentityLevelSets` | 12 | identity, then measured | the baseline, seed 0 | 20.0 s |
+| 2 | `KernelFlow` | 14 | schematic | Eqs. S5 and S6 of Lewkowycz and Gur-Ari, checked in arXiv v2 | 20.0 s |
+| 2 | `ModularAdditionTable` | 3 | data | the split of data seed 42 | 15.1 s |
+| new | `GridOfRuns` | 16 | design | the settings and counts of `report_runs.csv` | 14.9 s |
+| new | `BaselineKernel` | 18 | measured | the five baseline seeds; replaces report figure E1 | 24.9 s |
+| 3 | `TwoClocks` | 23 | fit and predictions | the main row of `E06.json` | 20.0 s |
+| 3 | `KernelAsArrows` | 10 | schematic | arrows drawn for the picture | 19.9 s |
+| 3 | `KernelOnTheTorus` | 13 | measured | the weights of the baseline, kernel on all 529 pairs | 30.0 s |
 
-These points about the existing animation code have to be settled before any existing scene goes into the deck.
+These points were settled while building the clips.
 
-- `animations/common/notation.py` still holds the definitions of the September draft: a log scale ratio on the centred kernel and the matching form of the identity. The report now uses $S_t = \lVert K_t \rVert_F / \lVert K_0 \rVert_F$ on the uncentred kernel and $D_t^2 = S_t^2 - 2S_t(1 - R_t) + 1$. Change `notation.py` before rendering anything that shows these symbols.
-- `animations/common/palette.py` uses blue for training and orange for test. Those are the colours of scale and rotation. The report uses grey for training and ink for test, and the clips should do the same.
-- The turn-and-aim identity in `TurnAndAim` and `AimOverTraining` needs $R_t$ on the centred kernel. The report's $R_t$ is uncentred, so the identity does not hold for it. Those two scenes are left out of the deck.
-- The seed 0 curves in `model_fitting/data/curves/` predate the per-seed splits of 3 October. Seed 0 used data seed 42 in both sweeps, so its curves may well match, but check them against `report_v2/code/data/checkpoints_slim.parquet` before use. That extract holds every checkpoint of all 720 runs and is the better source.
-- Where a scene needs a pause in the middle, end a Manim section there with `self.next_section()` and render with `--save_sections`. Each section is then its own clip, and the slide can name it with the `clip` attribute. Check the file names Manim writes before relying on them.
+- `animations/common/notation.py` now holds the report's definitions: the plain-ratio $S_t$, the uncentred $R_t$, the centred $A_t$ and $D_t^2 = (S_t - 1)^2 + 2S_tR_t$.
+- `animations/common/palette.py` now draws training accuracy in grey and test accuracy in ink, as the report does, and every Text uses Helvetica Neue, the deck's fallback font.
+- The seed 0 curves in `model_fitting/data/curves/` match `report_v2/code/data/checkpoints_slim.parquet` to within 4.8e-7. `animations/extract_deck_data.py` checks this every time it runs.
+- `TurnAndAim` and `AimOverTraining` stay out of the deck, because their identity needs the centred $R_t$. They still render.
+- Slide 12 plots the scale part against the rotation part on one scale, so that lines of equal $D_t$ are diagonals and the baseline path visibly stays close to the growth axis.
+- `TwoClocks` draws two slices through the centre of the fit in place of three planes in 3D, which Manim's renderer could not show readably.
+- On slide 13 the change of the report's uncentred kernel falls on the shared-input cross and rises most along the sum line and the difference line. The scene asserts this before it draws the lines.
+- No clip pauses in the middle. If a run-through shows that a clip outruns its speaker, end a Manim section there with `self.next_section()` and render with `--save_sections`. Each section is then its own clip, which the slide can name with the `clip` attribute.
 
 ## 8. Figures
 
@@ -146,7 +151,7 @@ The results slides show the report figures for now, each with an amber tag. They
 
 | Figure | Slide | Source | State |
 |---|---|---|---|
-| E1 baseline | 18 | `report_v2/code/E01_baseline.py` | report figure on the slide; restyle |
+| E1 baseline | 18 | `report_v2/code/E01_baseline.py` | replaced by the clip `BaselineKernel` |
 | E2 statistics at grokking | 20 | `E02_thresholds.py` | report figure; restyle or drop |
 | E4 time and outcome map | 24 | `E04_map.py` | report figure; restyle |
 | E5 scaling | 22 | `E05_scaling.py` | report figure; restyle, one panel |
@@ -154,7 +159,7 @@ The results slides show the report figures for now, each with an amber tag. They
 | E8 prediction ladder | 28 | `E08_ladder.py` | report figure; the label "given the settings" overlaps a bar and the axis title is cut off |
 | E9 surface | 27 | `E09_surface.py` | report figure; restyle |
 | Tier 3′ subsets | 26 | `E10.json` through `_variables.yml` | done: the filter draws the bars |
-| GridDiagram | 16 | none | to make |
+| GridDiagram | 16 | none | replaced by the clip `GridOfRuns` |
 | MnistResult | 29 | `mnist/sweep/`, once it has run | waits on the sweep |
 
 The simplest route to the slide versions is a slide style in the same scripts: a second call to the plotting function with a larger font size and a 16 by 9 figure, saved to `presentation/assets/figures/`. The report figures and the slide figures then come from one place.

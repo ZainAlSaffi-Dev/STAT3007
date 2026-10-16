@@ -30,7 +30,7 @@ The course takes the slides as a `.ppt` or a `.pdf` file, so we upload a PDF. Re
 python presentation/export_pdf.py
 ```
 
-It writes `presentation/exports/slides.pdf`, one page per slide, using Chrome, Chromium or Edge in headless mode. If it cannot find a browser, set the `CHROME` environment variable, or run `quarto install chrome-headless-shell`. By hand, open `slides.html?print-pdf` in Chrome and print to PDF with no margins and with background graphics on.
+It writes `presentation/exports/slides.pdf`, one page per slide, using Chrome, Chromium or Edge in headless mode. It serves the repository on a local port and waits until every formula is set and every font has loaded before it prints, because printing straight from the file gave blank or garbled pages. If it cannot find a browser, set the `CHROME` environment variable, or run `quarto install chrome-headless-shell`. By hand, open `slides.html?print-pdf` in Chrome and print to PDF with no margins and with background graphics on.
 
 A slide with a clip prints the clip's still, so render the stills before the final export. Optional slides print too, so hide the ones the group cuts before exporting.
 

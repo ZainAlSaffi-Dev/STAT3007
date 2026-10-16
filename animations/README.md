@@ -81,6 +81,11 @@ render can delete the files another is still using.
 output folders. Video goes to `out/mp4/`, which git ignores. Stills go to
 `out/stills/`, which git keeps.
 
+Every quality writes to the same file, `out/mp4/<Scene>.mp4`, and the deck
+plays that file. So a run at `-ql`, including `uv run python render_all.py`,
+replaces the deck's clips with low-quality ones. Before a talk, render the
+clips again with `uv run python render_all.py -q h`.
+
 ## How the folder is laid out
 
 ```
@@ -199,12 +204,10 @@ committed.
 | `AimOverTraining` | slides | the three dense runs | renders | Rotation, aim and alignment against step. The strongest decay turns early with an aim near zero. At step 30,000 the three cells have turned about as far and differ in aim. |
 | `IdentityLevelSets` | slides | identity, then the seed 0 curve of `ntk_N100_a1_wd0_s0` | deck, slide 12 | The scale part (S_t - 1)^2 against the rotation part 2 S_t R_t on one scale, where lines of equal D_t are diagonals. Growth and a change of shape reach D_t = 0.5 along the two axes. Then a zoom out to the baseline run, which ends near (12.5, 0.67), close to the growth axis. It replaced `ScaleRotationLockstep`, which used the centred terms of the September draft. |
 
-"Renders" means the scene renders at `-ql` without an error. None of them has
-been reviewed at `-qh` for the deck yet. The planned scenes are free to take.
-The schematic ones, `NTKFromScratch`, `LazyVersusRich` and
-`ScaleVersusRotation`, need no data. `GrokkingTimeline`, `TheConfound` and
-`ThreeTermsOneAxis` can use the Tier 0 and Tier 1 runs that are already
-saved.
+"Deck, slide n" means the clip plays on that slide of `presentation/slides.qmd`
+and renders at `-qh`. "Renders" means the scene renders at `-ql` without an
+error. `TheConfound` and `ThreeTermsOneAxis` are still planned and are not in
+the deck.
 
 ## What the kernel scenes rest on
 
