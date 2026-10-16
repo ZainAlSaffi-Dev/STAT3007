@@ -505,14 +505,17 @@ features. That is why we track scale and rotation separately.
 
 ## On this task, the change of shape has a visible pattern {.optional time="0:30"}
 
-::: {.anim .tall scene="KernelOnTheTorus" status="renders, uses the old probe kernel" source="measured: three dense runs" length="30 s"}
-1. The kernel averaged over pairs with the same offsets $(a - a', b - b')$. At
-   step 0 it is a cross, which is plain input overlap.
+::: {.anim .tall scene="KernelOnTheTorus" status="renders" source="measured: baseline, seed 0, all 529 pairs" length="30 s"}
+1. The report's kernel on all 529 pairs, averaged over pairs with the same
+   offsets $(a - a', b - b')$. At step 0 it is a cross, which is plain input
+   overlap.
 2. The target is the line $a + b \equiv a' + b'$.
-3. The change of the normalised kernel from step 0 to step 30,000 forms an X.
-   One arm is the target line, and the other is the line $a - b \equiv a' - b'$.
-4. Before use: check it against the kernel the report measures. The scene uses
-   the old probe of 256 training pairs.
+3. The change of the normalised kernel from step 0 to step 31,000 falls on the
+   cross and rises most along an X. One arm is the target line, and the other
+   is the line $a - b \equiv a' - b'$.
+4. The kernel is rebuilt from the saved weights of the baseline run with seed 0.
+   The report measures it on the 53 test pairs, which are too few for this
+   picture.
 :::
 
 ::: {.notes}
@@ -522,9 +525,10 @@ Message: rotation is a concrete change in which pairs the network treats as
 similar.
 
 Say: This is the measured kernel change on our task. At the start the kernel
-only knows which pairs share an input. Over training it changes along two
-diagonals. One is where the sums agree, which is the structure of the answer.
-The other is where the differences agree, which the answer does not contain.
+only knows which pairs share an input. Over training those pairs become less
+alike, and the kernel changes most along two diagonals. One is where the sums
+agree, which is the structure of the answer. The other is where the
+differences agree, which the answer does not contain.
 :::
 
 ## In theory, weight decay only rescales the kernel {time="0:25"}

@@ -112,20 +112,20 @@ def _rgb(hex_colour):
     return np.array([int(h[i:i + 2], 16) for i in (0, 2, 4)], float)
 
 
-def diverging_pixels(values, vmax):
-    """Map a 2D array to RGB pixels, NEGATIVE below zero, PAPER at zero, POSITIVE above.
+def diverging_pixels(values, vmax, negative=palette.NEGATIVE, positive=palette.POSITIVE):
+    """Map a 2D array to RGB pixels, negative below zero, PAPER at zero, positive above.
 
     Values beyond plus or minus vmax are drawn at full colour.
     """
     x = np.clip(np.asarray(values, float) / vmax, -1.0, 1.0)[..., None]
-    paper, neg, pos = _rgb(palette.PAPER), _rgb(palette.NEGATIVE), _rgb(palette.POSITIVE)
+    paper, neg, pos = _rgb(palette.PAPER), _rgb(negative), _rgb(positive)
     rgb = np.where(x >= 0, paper + x * (pos - paper), paper - x * (neg - paper))
     return rgb.round().astype(np.uint8)
 
 
-def heat_map(values, vmax, side):
+def heat_map(values, vmax, side, negative=palette.NEGATIVE, positive=palette.POSITIVE):
     """A square image of a 2D array with one sharp block per entry."""
-    image = ImageMobject(diverging_pixels(values, vmax))
+    image = ImageMobject(diverging_pixels(values, vmax, negative, positive))
     image.set_resampling_algorithm(RESAMPLING_ALGORITHMS["nearest"])
     image.height = side
     return image
@@ -141,6 +141,6 @@ def grey_map(values, vmax, side):
     return image
 
 
-def set_pixels(image, values, vmax):
+def set_pixels(image, values, vmax, negative=palette.NEGATIVE, positive=palette.POSITIVE):
     """Redraw a heat map in place, for use inside an updater."""
-    image.pixel_array = change_to_rgba_array(diverging_pixels(values, vmax))
+    image.pixel_array = change_to_rgba_array(diverging_pixels(values, vmax, negative, positive))
