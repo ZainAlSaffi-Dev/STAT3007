@@ -71,3 +71,8 @@ LABEL = 28
 LABEL_COLUMN = 56
 LABEL_WIDE = 40
 TAG = 36
+
+# Every scene imports this module, so this line gives every Text the font above.
+from manim import Text  # noqa: E402
+
+Text.set_default(font=FONT)

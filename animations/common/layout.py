@@ -14,9 +14,6 @@ from . import palette
 
 MARGIN = 0.5
 
-# Every scene imports this module, so this one line gives every Text the font of the deck.
-Text.set_default(font=palette.FONT)
-
 
 def tag(text, size=palette.TAG):
     """A small grey note in the bottom right corner, such as "schematic"."""
