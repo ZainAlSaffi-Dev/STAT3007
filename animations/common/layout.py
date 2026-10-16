@@ -6,8 +6,8 @@ instead of reaching the deck.
 """
 
 import numpy as np
-from manim import (DOWN, LEFT, RIGHT, UP, RESAMPLING_ALGORITHMS, Axes, Circle, ImageMobject, Text, VGroup,
-                   VMobject, config)
+from manim import (DOWN, LEFT, RIGHT, UP, RESAMPLING_ALGORITHMS, Axes, Circle, Ellipse, ImageMobject, Line, Text,
+                   VGroup, VMobject, config)
 from manim.utils.images import change_to_rgba_array
 
 from . import palette
@@ -49,6 +49,23 @@ def event_marker(point, colour, filled):
     """A round marker for an event on a curve: hollow for memorisation, filled for grokking."""
     return Circle(radius=0.13, stroke_color=colour, stroke_width=6, fill_color=colour if filled else palette.PAPER,
                   fill_opacity=1).move_to(point)
+
+
+def kernel_ellipse(K, unit, colour, centre=(0, 0, 0), width=7):
+    """A 2 by 2 kernel drawn as an ellipse, with its eigenvectors as axes and its eigenvalues as their lengths.
+
+    A semi-axis of the ellipse is unit times its eigenvalue. Returns the ellipse
+    and its two axes as one group.
+    """
+    values, vectors = np.linalg.eigh(np.asarray(K, float))
+    centre = np.asarray(centre, float)
+    v_long, v_short = np.append(vectors[:, 1], 0), np.append(vectors[:, 0], 0)
+    ellipse = Ellipse(width=2 * unit * values[1], height=2 * unit * values[0], color=colour, stroke_width=width)
+    ellipse.rotate(np.arctan2(v_long[1], v_long[0])).move_to(centre)
+    axes = VGroup(Line(centre - unit * values[1] * v_long, centre + unit * values[1] * v_long),
+                  Line(centre - unit * values[0] * v_short, centre + unit * values[0] * v_short))
+    axes.set_stroke(colour, width=width * 0.5)
+    return VGroup(ellipse, axes)
 
 
 def curve_until(axes, x, y, x_end, colour, width=7):
