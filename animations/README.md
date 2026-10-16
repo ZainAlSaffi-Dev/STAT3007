@@ -181,7 +181,7 @@ committed.
 
 | Scene | Folder | Source | Status | What it shows |
 | --- | --- | --- | --- | --- |
-| `NTKFromScratch` | explainer | schematic | planned | A nudge to the weights changes the output. The gradient vector is the feature map. `K(x, x')` is the similarity the network currently believes in. |
+| `NTKFromScratch` | slides | schematic, then the weights of `ntk_N100_a1_wd0_s0` at step 0 | deck, slide 5 | One step on x moves f(x) towards its target by an amount proportional to K(x, x) and f(x') by one proportional to K(x', x). Then the measured kernel on all 529 pairs, with a zoom on the pairs with a at most 4: pairs that share a number start out alike. |
 | `LazyVersusRich` | both | schematic, then `mean_field_alpha1` and `lazy_alpha10` | planned | The one step algebra. The weights move by `eta_0 / alpha`, the output moves by an amount that does not depend on alpha. Large alpha slows feature change and leaves the loss curve alone. |
 | `GrokkingTimeline` | slides | seed 0 curve of `ntk_N100_a1_wd0_s0`, events from `report_runs.csv` | deck, slide 2 | Training and test accuracy on a log step axis from 1 to 200,000. A hollow marker at memorisation, a filled marker at the grokking step T, and a brace from the start to T. |
 | `ScaleVersusRotation` | both | schematic | planned | The kernel as an ellipse. Shrink it with the axes fixed, which is the scale term. Turn it at fixed size, which is the rotation term. Then build Equation `eq:decomp` term by term and show the movement statistic growing while the rotation term stays at zero. |

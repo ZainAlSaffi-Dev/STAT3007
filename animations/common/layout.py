@@ -117,6 +117,16 @@ def heat_map(values, vmax, side):
     return image
 
 
+def grey_map(values, vmax, side):
+    """A square image of a non-negative 2D array, PAPER at zero and INK at vmax or above."""
+    x = np.clip(np.asarray(values, float) / vmax, 0.0, 1.0)[..., None]
+    pixels = (_rgb(palette.PAPER) + x * (_rgb(palette.INK) - _rgb(palette.PAPER))).round().astype(np.uint8)
+    image = ImageMobject(pixels)
+    image.set_resampling_algorithm(RESAMPLING_ALGORITHMS["nearest"])
+    image.height = side
+    return image
+
+
 def set_pixels(image, values, vmax):
     """Redraw a heat map in place, for use inside an updater."""
     image.pixel_array = change_to_rgba_array(diverging_pixels(values, vmax))
