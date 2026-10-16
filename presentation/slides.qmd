@@ -859,12 +859,14 @@ zero, so this holds for the range where every seed groks.
 
 ## What the two clocks would look like {.optional time="0:25"}
 
-::: {.anim .tall scene="TwoClocks" status="planned" source="measured: E06 fit" length="20 s"}
-1. Axes: $\log N$ across, $\log(\eta\lambda)$ into the screen, $\log T$ up.
-2. The rotation clock: a plane that rises with width and is flat in decay.
-3. The weight-decay clock: a plane that is flat in width and falls with slope
-   $-1$ in decay.
-4. Our fitted plane appears between the two.
+::: {.anim .tall scene="TwoClocks" status="renders" source="measured: E06 fit" length="20 s"}
+1. Two slices through the centre of the fit, $\log T$ against $\log N$ and
+   $\log T$ against $\log(\eta\lambda)$.
+2. The rotation clock rises with width with slope $a = 1$ and is flat in decay.
+   This slope is our reading.
+3. The weight-decay clock is flat in width and falls with slope $b = -1$ in
+   decay.
+4. Our fitted lines lie between the two in both slices.
 :::
 
 ::: {.notes}
