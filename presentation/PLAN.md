@@ -160,7 +160,7 @@ The report figures were drawn for an A4 page, so their text is small on a projec
 | E9 surface | 27 | `E09_surface.py` | done |
 | Tier 3′ subsets | 26 | `E10.json` through `_variables.yml` | done: the filter draws the bars |
 | GridDiagram | 16 | none | replaced by the clip `GridOfRuns` |
-| MnistResult | 29 | `mnist/sweep/`, once it has run | waits on the sweep |
+| MnistResult | 29 | `mnist/sweep/`, once it has run | waits on the sweep, which had not run on 16 October 2026 |
 
 This plan first suggested a slide style inside the report scripts, so that both versions come from one place. The slide versions went into a separate script in `presentation/` instead, so that no file in `report_v2` changed. The cost is that the drawing code exists twice, and a change to a report figure has to be made in `make_figures.py` as well.
 

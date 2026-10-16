@@ -1031,12 +1031,16 @@ width and weight decay, and they do not give an earlier warning.
 :::
 ::: {.column width="50%"}
 ::: {.figure-todo name="MnistResult"}
-1. The MNIST counterpart of the baseline figure: accuracy, $S_t$, $R_t$ and
-   $A_t$ against step.
-2. The Tier 1 to Tier 3$'$ summaries, if the sweep finishes in time.
-3. Fallback: one exploration run, labelled as exploration.
-4. Check first: the MNIST runs measure the kernel on a mixed probe of 128
-   training and 128 test images, and record $S_t$ as a log ratio.
+1. On 16 October 2026 the sweep has not run. `mnist/RUN_SWEEP.md` says how to
+   run it, and the notebooks in `mnist/model_fitting/` wait for its output.
+2. Once it has run: accuracy, $S_t$, $R_t$ and $A_t$ against step, then the
+   Tier 1 to Tier 3$'$ summaries.
+3. Fallback: the best exploration cell in
+   `mnist/exploration/results/mnist_optionB/`, labelled as exploration. It
+   groks in 8 of 8 seeds, and its best test accuracy is 0.85 or 0.86.
+4. The exploration runs log $S_t$ as a log ratio and lack the statistics of
+   the summed logits. Only the sweep records $S_t$, $R_t$ and $A_t$ as the
+   report defines them, on 128 training and 128 test images.
 :::
 :::
 ::::
