@@ -61,15 +61,15 @@ The times include 5 seconds for each act slide. The render log prints these tota
 | 17 | The experiment | Three tests, one for each column of the table | three cards | optional | 0:15 |
 | 18 | Results | Baseline: the network memorises early, groks late, and its kernel mostly grows | clip BaselineKernel | core | 0:30 |
 | 19 | Results | Tier 1: at a fixed width, rotation is the statistic most tied to grokking | clip PlaceboTest | core | 0:45 |
-| 20 | Results | The statistics at the grokking step of every run | report figure E2 | optional | 0:25 |
+| 20 | Results | The statistics at the grokking step of every run | slide figure E2 | optional | 0:25 |
 | 21 | Results | Reaching that rotation is not enough to grok | text | core | 0:20 |
-| 22 | Results | Tier 2: the grokking time depends on both width and weight decay | report figure E5 | core | 0:40 |
+| 22 | Results | Tier 2: the grokking time depends on both width and weight decay | slide figure E5 | core | 0:40 |
 | 23 | Results | What the two clocks would look like | clip TwoClocks | optional | 0:25 |
-| 24 | Results | A wider network groks later and stops grokking at a smaller weight decay | report figure E4 | optional | 0:30 |
-| 25 | Results | Width sets the rotation, and at a fixed width weight decay shrinks the scale | report figure E7 | optional | 0:30 |
+| 24 | Results | A wider network groks later and stops grokking at a smaller weight decay | slide figure E4 | optional | 0:30 |
+| 25 | Results | Width sets the rotation, and at a fixed width weight decay shrinks the scale | slide figure E7 | optional | 0:30 |
 | 26 | Results | Tier 3′: rotation is the best single predictor, and scale adds what rotation lacks | live bar chart from E10 | core | 0:40 |
-| 27 | Results | Growth shortens the grokking time more when the kernel has also rotated | report figure E9 | optional | 0:25 |
-| 28 | Results | The kernel statistics do not beat knowing the settings | report figure E8 | optional | 0:30 |
+| 27 | Results | Growth shortens the grokking time more when the kernel has also rotated | slide figure E9 | optional | 0:25 |
+| 28 | Results | The kernel statistics do not beat knowing the settings | slide figure E8 | optional | 0:30 |
 | 29 | Results | Tier 4: does the split hold beyond modular addition? | figure MnistResult, to make | core | 0:30 |
 | 30 | What we found | Limitations | text | core | 0:25 |
 | 31 | What we found | Rotation matters most, and the clock is mixed | three cards | core | 0:30 |
@@ -147,22 +147,24 @@ These points were settled while building the clips.
 
 ## 8. Figures
 
-The results slides show the report figures for now, each with an amber tag. They are accurate, but they were drawn for an A4 page, so their text is small on a projector. Each needs a slide version: 16 by 9, larger type, the deck fonts, and one message per figure.
+The report figures were drawn for an A4 page, so their text is small on a projector. The results slides now show slide versions of them, drawn by `make_figures.py` into `assets/figures/` on 16 October 2026. Each one is 16 by 9, its type matches the clips (Helvetica Neue, the deck's fallback font, with formulas in the TeX fonts), and it keeps to the message of its slide. The script reads the committed data and the saved numbers of `report_v2/code`, so the numbers on the figures are those of the report.
 
 | Figure | Slide | Source | State |
 |---|---|---|---|
 | E1 baseline | 18 | `report_v2/code/E01_baseline.py` | replaced by the clip `BaselineKernel` |
-| E2 statistics at grokking | 20 | `E02_thresholds.py` | report figure; restyle or drop |
-| E4 time and outcome map | 24 | `E04_map.py` | report figure; restyle |
-| E5 scaling | 22 | `E05_scaling.py` | report figure; restyle, one panel |
-| E7 mechanism | 25 | `E07_mechanism.py` | report figure; restyle |
-| E8 prediction ladder | 28 | `E08_ladder.py` | report figure; the label "given the settings" overlaps a bar and the axis title is cut off |
-| E9 surface | 27 | `E09_surface.py` | report figure; restyle |
+| E2 statistics at grokking | 20 | `E02_thresholds.py` | done: one hue per statistic in place of the shading by weight decay, and the tightening ratio on each panel |
+| E4 time and outcome map | 24 | `E04_map.py` | done: no counts or phase letters, since every cell at $\alpha = 1$ has 0 or 5 seeds that grok |
+| E5 scaling | 22 | `E05_scaling.py` | done |
+| E7 mechanism | 25 | `E07_mechanism.py` | done: the two maps stacked, without the number in each cell; the slide now has the figure and the text in two columns |
+| E8 prediction ladder | 28 | `E08_ladder.py` | done: the mean bars only, the models in plain words, and the labels above the plot |
+| E9 surface | 27 | `E09_surface.py` | done |
 | Tier 3′ subsets | 26 | `E10.json` through `_variables.yml` | done: the filter draws the bars |
 | GridDiagram | 16 | none | replaced by the clip `GridOfRuns` |
 | MnistResult | 29 | `mnist/sweep/`, once it has run | waits on the sweep |
 
-The simplest route to the slide versions is a slide style in the same scripts: a second call to the plotting function with a larger font size and a 16 by 9 figure, saved to `presentation/assets/figures/`. The report figures and the slide figures then come from one place.
+This plan first suggested a slide style inside the report scripts, so that both versions come from one place. The slide versions went into a separate script in `presentation/` instead, so that no file in `report_v2` changed. The cost is that the drawing code exists twice, and a change to a report figure has to be made in `make_figures.py` as well.
+
+The report figures on the slides with one figure across the slide (E2 and E7) had been stretched sideways, because Quarto sizes a lone image to fill the slide and the theme then cut only its height. The theme now keeps the shape of every figure with `object-fit: contain`.
 
 ## 9. What the slides may claim
 

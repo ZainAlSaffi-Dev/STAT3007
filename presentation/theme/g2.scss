@@ -376,13 +376,18 @@ $presentation-title-slide-text-align: left;
   margin: 0 auto;
 }
 
-// A report figure on a slide. Write ![](path){.g2-fig}.
+// A figure on a slide. Write ![](path){.g2-fig}. The figures from
+// make_figures.py are 16 by 9. In a column the column width sets their size,
+// and across the slide this height does, so that a caption still fits below.
+// Quarto stretches a figure that is alone on a slide and sets its size inline.
+// The height limit then cuts only its height, so object-fit keeps its shape.
 .reveal img.g2-fig {
   display: block;
   max-width: 100%;
-  max-height: 600px;
+  max-height: 800px;
   width: auto;
   height: auto;
+  object-fit: contain;
   margin: 0 auto 0.3em auto;
 }
 

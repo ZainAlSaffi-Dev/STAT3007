@@ -43,10 +43,12 @@ presentation/
   _quarto.yml        the format: theme, size, transitions, filter, bibliography
   _variables.yml     every number on the slides; written by make_numbers.py
   make_numbers.py    copies report_v2/overleaf/numbers.tex into _variables.yml
+  make_figures.py    draws the slide versions of the report figures into assets/figures
   export_pdf.py      writes the PDF for upload
   filters/g2.lua     act labels, clips, bar charts and the time budget
   theme/g2.scss      colours, fonts and the layout classes
   ref.bib            the references the slides cite, copied from verified bibliographies
+  assets/figures/    the slide figures, written by make_figures.py
   assets/stills/     stills to use in place of animations/out/stills, if needed
   assets/video/      clips to use in place of animations/out/mp4; ignored by git
 ```
@@ -71,7 +73,7 @@ The width exponent is {{< var EsixMainA >}}.
 
 A number that the report sets in math mode, such as a signed value or a power of ten, arrives as inline math, for example `$-0.63$`, and MathJax renders it. Any other number is plain text. No Unicode character stands in for math anywhere in the deck: write a formula, a prime or a minus sign in `$...$`.
 
-When `report_v2/code/make_all.py` changes the numbers, run `python presentation/make_numbers.py` and render again. The comment next to each variable in `_variables.yml` names the JSON file and the key it comes from. Settings such as the widths or the step budget are not results and can be typed.
+When `report_v2/code/make_all.py` changes the numbers, run `python presentation/make_numbers.py` and `make_figures.py` (see Figures below), and render again. The comment next to each variable in `_variables.yml` names the JSON file and the key it comes from. Settings such as the widths or the step budget are not results and can be typed.
 
 ### Animations
 
@@ -87,6 +89,18 @@ An animation is a div that names its Manim scene and holds its storyboard:
 While no clip exists, the slide shows an amber box with the storyboard. Once the scene is rendered in `animations/`, the filter finds the clip in `animations/out/mp4/` and plays it on the slide, with the still from `animations/out/stills/` as its poster. A file in `assets/video/` or `assets/stills/` with the same name takes precedence. Add `clip="Name"` when the file name differs from the scene, and `loop="true"` for a clip that should loop. The rules for writing a scene are in `animations/CLAUDE.md`.
 
 A div with the class `figure-todo` and a `name` stands for a static figure still to make, in the same amber style.
+
+### Figures
+
+The results slides show slide versions of the report figures E2, E4, E5, E7, E8 and E9. `make_figures.py` draws them from the committed data and the saved numbers of `report_v2/code`, with the colours of `report_v2/code/common.py`. Each figure is 16 by 9 and its type matches the clips. Run it from the repository root with the root environment, which has the packages of `pyproject.toml`:
+
+```bash
+.venv/bin/python presentation/make_figures.py
+```
+
+It writes `assets/figures/E<k>_<name>.png` in a few seconds and trains nothing. The drawing code is a copy of the report scripts, so a change to a report figure has to be made in `make_figures.py` as well.
+
+A figure in a column of 55% fills the column. A figure across the slide stops at 800 pixels high, so that a line of caption fits below it.
 
 ### Bar charts
 
@@ -111,7 +125,7 @@ The three statistics have one colour each in every slide, figure and clip: scale
 - `.c-scale`, `.c-rotation` and `.c-alignment` colour a word or two of text. They use darker steps of each colour so the text stays readable.
 - `.g2-cards` lays out two or three cards side by side. Give each card `.g2-card` and a colour class, `.is-scale`, `.is-rotation`, `.is-alignment` or `.is-ink`, and start it with `[Title]{.g2-card-title}`. Do not start a card with a `###` heading, because pandoc would turn the card into a section and reveal.js would count it as a slide.
 - `.g2-result` is a grey box for one result. `.g2-lead` is a large sentence that carries the slide. `.g2-small` and `.g2-source` are small print. `.g2-compact` makes a crowded column smaller.
-- `![](path){.g2-fig}` places a figure. `[Report figure E1, to restyle for slides]{.g2-todo-chip}` marks an interim figure.
+- `![](assets/figures/E4_map.png){.g2-fig}` places a figure. `[To agree as a group]{.g2-todo-chip}` is a small amber tag for something still open.
 
 The colours are set in `theme/g2.scss`, and they match `report_v2/code/common.py` and `animations/common/palette.py`. Change them in all three places or not at all.
 

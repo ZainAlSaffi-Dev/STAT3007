@@ -772,11 +772,11 @@ that. Rotation tightens the most, by a factor of
 
 ## The statistics at the grokking step of every run {.optional time="0:25"}
 
-![](../report_v2/code/out/figures/E2_thresholds.png){.g2-fig}
+![](assets/figures/E2_thresholds.png){.g2-fig}
 
 ::: {.g2-small}
-[Report figure E2, to restyle for slides]{.g2-todo-chip} Top row: width 100,
-grouped by $\alpha$. Bottom row: $\alpha = 1$, grouped by width.
+Each dot is a run at its grokking step, and each bar is a median. The ratio on
+each panel is the tightening ratio of the placebo test.
 :::
 
 ::: {.notes}
@@ -820,11 +820,7 @@ $$
 
 :::: {.columns}
 ::: {.column width="55%"}
-![](../report_v2/code/out/figures/E5_scaling.png){.g2-fig}
-
-::: {.g2-small}
-[Report figure E5, to restyle for slides]{.g2-todo-chip}
-:::
+![](assets/figures/E5_scaling.png){.g2-fig}
 :::
 ::: {.column width="45%"}
 | | $a$ | $b$ |
@@ -877,7 +873,7 @@ Speaker: TBD. Use this clip if the audience needs a picture of the exponents.
 
 :::: {.columns}
 ::: {.column width="55%"}
-![](../report_v2/code/out/figures/E4_map.png){.g2-fig}
+![](assets/figures/E4_map.png){.g2-fig}
 :::
 ::: {.column width="45%"}
 - Without weight decay, only $N = 50$ and $N = 100$ grok within the budget.
@@ -885,10 +881,6 @@ Speaker: TBD. Use this clip if the audience needs a picture of the exponents.
   $N \le 400$, and only up to {{< var EfourEdgeWEighthundred >}} for
   $N = 800$ and $1600$.
 - The weight decay that speeds grokking depends on the width.
-
-::: {.g2-small}
-[Report figure E4, to restyle for slides]{.g2-todo-chip}
-:::
 :::
 ::::
 
@@ -898,15 +890,25 @@ Speaker: TBD. A practical point for anyone tuning weight decay.
 
 ## Width sets the rotation, and at a fixed width weight decay shrinks the scale {.optional time="0:30"}
 
-![](../report_v2/code/out/figures/E7_mechanism.png){.g2-fig}
+:::: {.columns}
+::: {.column width="55%"}
+![](assets/figures/E7_mechanism.png){.g2-fig}
+:::
+::: {.column width="45%" .g2-compact}
+Both maps are read at $t^* = 2{,}430$, before any run groks.
+
+- Up to $\eta\lambda = 3\times10^{-4}$, the rotation changes with the width and
+  hardly with the weight decay.
+- The scale falls with the weight decay at every width.
 
 ::: {.g2-small}
-[Report figure E7, to restyle for slides]{.g2-todo-chip} Among runs that grok,
-width explains {{< var NnineLogRWidth >}} of the spread of $\log R_t$ at
-$t^* = 2{,}430$, and weight decay {{< var NnineLogRDecay >}}. The spread of
-$S_t$ is shared: $\alpha$ {{< var NnineSAlpha >}}, width
-{{< var NnineSWidth >}}, weight decay {{< var NnineSDecay >}}.
+Among runs that grok, width explains {{< var NnineLogRWidth >}} of the spread
+of $\log R_t$, and weight decay {{< var NnineLogRDecay >}}. The spread of
+$S_t$ is shared: $\alpha$ explains {{< var NnineSAlpha >}}, width
+{{< var NnineSWidth >}} and weight decay {{< var NnineSDecay >}}.
 :::
+:::
+::::
 
 ::: {.notes}
 Speaker: TBD.
@@ -968,17 +970,13 @@ on top only takes it to {{< var EtenSRARsq >}}.
 
 :::: {.columns}
 ::: {.column width="55%"}
-![](../report_v2/code/out/figures/E9_surface.png){.g2-fig}
+![](assets/figures/E9_surface.png){.g2-fig}
 :::
 ::: {.column width="45%"}
 In the censored model with all three statistics and their products, the
 coefficient of $S_t \times \log R_t$ is {{< var EnineGamma >}}, with a
 cell-bootstrap interval from {{< var EnineGammalo >}} to
 {{< var EnineGammahi >}}.
-
-::: {.g2-small}
-[Report figure E9, to restyle for slides]{.g2-todo-chip}
-:::
 :::
 ::::
 
@@ -993,7 +991,7 @@ time more when the kernel has also rotated more.
 
 :::: {.columns}
 ::: {.column width="55%"}
-![](../report_v2/code/out/figures/E8_ladder.png){.g2-fig}
+![](assets/figures/E8_ladder.png){.g2-fig}
 :::
 ::: {.column width="45%"}
 - On an unseen $\alpha$, each statistic alone ranks runs only a little better
@@ -1005,10 +1003,6 @@ time more when the kernel has also rotated more.
 - A share of {{< var EtenBetweenLogR >}} of the spread of $\log R_t$ lies
   between cells, so the statistics cannot tell which seed of a cell groks
   first.
-
-::: {.g2-small}
-[Report figure E8, to restyle for slides]{.g2-todo-chip}
-:::
 :::
 ::::
 
