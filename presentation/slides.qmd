@@ -682,8 +682,18 @@ Which clock does the grokking time follow?
 
 ## Baseline: the network memorises early, groks late, and its kernel mostly grows {time="0:30"}
 
-![](../report_v2/code/out/figures/E1_baseline.png){.g2-fig}
-
+:::: {.columns}
+::: {.column width="60%"}
+::: {.anim scene="BaselineKernel" status="renders" source="measured: baseline, 5 seeds" length="25 s"}
+1. $S_t$ on top and $R_t$ below against step, for the five seeds at
+   $\alpha = 1$, $N = 100$ and $\eta\lambda = 0$. The line is the median and
+   the band the range.
+2. A hollow marker at the median memorisation step and a filled one at the
+   median grokking step.
+3. A bar splits $D_t^2$ at grokking into the scale part and the rotation part.
+:::
+:::
+::: {.column width="40%" .g2-compact}
 ::: {.g2-result}
 At $\alpha = 1$ the scale part carries {{< var NtwoAOneGrok >}} of $D_t^2$ at
 grokking. By the last step the scale is $S_t$ = {{< var NtwoAOneSfinal >}},
@@ -692,20 +702,24 @@ within 200,000 steps.
 :::
 
 ::: {.g2-small}
-[Report figure E1, to restyle for slides]{.g2-todo-chip} Lazier networks grok
-later, as in @kumarGrokkingTransitionLazy2024 [Fig. 2(c), arXiv v3].
+Lazier networks grok later, as in @kumarGrokkingTransitionLazy2024 [Fig. 2(c), arXiv v3].
 :::
+:::
+::::
 
 ::: {.notes}
 Speaker: TBD.
 
 Message: on the baseline, the distance is mostly growth.
 
-Say: These are the baseline runs at three values of alpha. The lazier the
-network, the later it groks, which matches Kumar and coauthors. Look at the
-kernel. By the end the scale is {{< var NtwoAOneSfinal >}} times its starting
-value, while the rotation is only {{< var NtwoAOneRfinal >}}. At grokking,
-{{< var NtwoAOneGrok >}} of the squared distance is growth.
+Say: These are the five baseline runs at alpha 1, with the median as the
+line. They memorise at a median step of {{< var NfiveAOneMemMedian >}} and
+grok at a median step of {{< var NfiveAOneGrokMedian >}}. Look at the kernel.
+By the end the scale is {{< var NtwoAOneSfinal >}} times its starting value,
+while the rotation is only {{< var NtwoAOneRfinal >}}. At grokking,
+{{< var NtwoAOneGrok >}} of the squared distance is growth. As Kumar and
+coauthors found, lazier networks grok later, and at alpha 2 no seed groks
+within 200,000 steps.
 :::
 
 ## Tier 1: at a fixed width, rotation is the statistic most tied to grokking {time="0:45"}
