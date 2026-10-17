@@ -1,5 +1,5 @@
 """The prediction models of Tier 3 (E8, E9, E10), ported from model_fitting/3_kernel_only.ipynb and
-model_fitting/4_nonlinear_exploration.ipynb. Their settings are the ones listed in Appendix E.
+model_fitting/4_nonlinear_exploration.ipynb. Their settings are the ones listed in Appendix D.
 
 The data are the 630 runs with eta lambda at most 1e-3, with S_t, log R_t and A_t read at
 t* = 2,430. T is the grokking step at level 0.95, or the budget of 200,000 for a censored run.
@@ -167,7 +167,7 @@ def concordance(data, pred, rows):
 
 
 def settings():
-    """The settings as Appendix E reports them."""
+    """The settings as Appendix D reports them."""
     return {'aft_penalizer_cross_validation': AFT_PENALIZER_CV, 'aft_penalizer_full_data': AFT_PENALIZER_FULL,
             'kernel_ridge_grid': KRR_GRID, 'kernel_ridge_inner_cv': 'GroupKFold(5) by cell',
             'xgboost_base': XGB_BASE, 'xgboost_grid': {'max_depth': [1, 2, 3, 4], 'eta': [0.03, 0.1],

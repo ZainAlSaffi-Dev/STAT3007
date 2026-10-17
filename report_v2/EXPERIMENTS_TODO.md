@@ -10,14 +10,14 @@ The scripts in `report_v2/code/` were built and run on 11 October 2026 with `mak
 
 - **Done:** E1 to E10, E12, E13, E15, E16, and N1 to N9. Each item below says which script made it.
 - **Not run:** E11, E17 and E18. Tier 4' is commented out in `main.tex` at the user's request.
-- **Not run:** E14. It needs the grid-v0.1.0 databases and the R scripts of branch `feat/grid`, so it stays as the golden report's quoted values.
+- **Not run:** E14. It needs the grid-v0.1.0 databases and the R scripts of branch `feat/grid`. Its appendix was dropped on 17 Oct 2026.
 - **Changed by the user on 11 October 2026:** Tier 1 (E2, E3 and E16) measures the spread by the standard deviation, not the CV. The CV planning values in E3 are kept for the record, but they are superseded.
 
 ## Ground rules
 
 - Every item reads from `data/` only. That is the sweep of 3 October 2026 with a separate split for each seed. Its design is α ∈ {0.5, 1, 2}, N ∈ {50, 100, 200, 400, 800, 1600} and ηλ ∈ {0, 3e-6, 1e-5, 3e-5, 1e-4, 3e-4, 1e-3, 3e-3}, with seeds 0 to 4 and a budget of 200,000 steps. It holds 720 runs, and all finished with status `ok`.
 - Do not use `data/runs_seed42/` or `data/seed42_tables/`. They hold the old runs, in which every seed shared one split.
-- The events follow the golden report §3.5 and CLAUDE.md. Memorisation is the first checkpoint with training accuracy ≥ 0.99. Grokking at level ℓ is the first checkpoint with test accuracy ≥ ℓ, with ℓ = 0.95 in the main text and 0.80 and 0.90 in Appendix F. Both are counted from step 0. A run that misses a level is censored at 200,000.
+- The events follow the golden report §3.5 and CLAUDE.md. Memorisation is the first checkpoint with training accuracy ≥ 0.99. Grokking at level ℓ is the first checkpoint with test accuracy ≥ ℓ, with ℓ = 0.95 in the main text and 0.80 and 0.90 in Appendix E. Both are counted from step 0. A run that misses a level is censored at 200,000.
 - The kernel statistics are S, R and A on the kernel of the summed logits over √p, on the 53 test pairs of each run. In `checkpoints.parquet` they are the columns `S_sum`, `R_sum` and `A_sum`. In `report_runs.csv` they are `S_t_at_*`, `R_t_at_*` and `A_t_at_*`. In `report_kernel.parquet` they are `S_t`, `R_t` and `A_t`. S is a plain ratio, so 1 means no change. R is uncentred. A is the centred alignment with Y Yᵀ.
 - The column `eta_kappa` is ηλ.
 - Use Python 3.11 or later with the packages in `pyproject.toml` at the repository root. The fits need `lifelines` and `xgboost`. Record the interpreter and package versions with each output.
@@ -124,7 +124,7 @@ Status words: **carry over** means the number exists and only needs a clean scri
   - Kernel ridge 0.568; XGBoost 0.708; GRU 0.768.
   - Settings reference 0.780.
 - **Port from.** `model_fitting/3_kernel_only.ipynb`.
-- **Output.** `E8_ladder.pdf`. **Status:** done 11 Oct 2026 (`E08_ladder.py`). Redrawn on 17 Oct 2026 at the user's request: the figure shows only each statistic alone, XGBoost and the GRU, with the settings line, and its labels no longer overlap. `E08.json` keeps every rung; the rerun reproduced it exactly.
+- **Output.** `E8_ladder.pdf`. **Status:** done 11 Oct 2026 (`E08_ladder.py`). Redrawn on 17 Oct 2026 at the user's request: the figure shows only each statistic alone, XGBoost and the GRU, with the settings line, and its labels no longer overlap. `E08.json` keeps every rung; the rerun reproduced it exactly. Also on 17 Oct 2026, at the user's request, the settings reference was split into its two parts, XGBoost on log N alone (0.67 on every seed) and on log10 ηλ alone (0.72, seeds 0.71 to 0.73). They are quoted in §4.4 and not drawn. Every earlier value was reproduced. An earlier draft of the same day also fitted a linear AFT on ηλ and XGBoost on ηλ with log R or S for a weight-decay appendix; both were removed with that appendix.
 
 ### E9. The S × log R surface (§4.4, commented out)
 - **Setup.** Grokked runs (or all runs with XGBoost). A is held at its median.
@@ -150,7 +150,7 @@ Status words: **carry over** means the number exists and only needs a clean scri
     - log R + A: 0.39, 0.73
     - all three: 0.57, 0.78
   - Share between cells: log T 0.964, S 0.987, log R 0.993, A 0.563 (notebook 4 Part 2).
-- **Output.** A table. **Status:** done 11 Oct 2026 (`E10_subsets.py`).
+- **Output.** A table. **Status:** done 11 Oct 2026 (`E10_subsets.py`). On 17 Oct 2026 an earlier draft fitted kernel ridge on ηλ, alone and with the statistics, for a weight-decay appendix. It was removed with that appendix, so the script is as it was on 11 Oct.
 
 ### E11. Rate-addition model (Fig. 8, §4.5, option A; on hold)
 - **Not run (11 Oct 2026).** Tier 4' is commented out in `main.tex` at the user's request.
@@ -173,17 +173,17 @@ Status words: **carry over** means the number exists and only needs a clean scri
 ### E13. Grid outcome tables (Appendix C)
 - For each α, a table over N × ηλ giving the seeds that grok out of 5 and the median T95. **Status:** done 11 Oct 2026 (`E13_grid.py`).
 
-### E14. Cross-check from the second pipeline (Appendix D)
+### E14. Cross-check from the second pipeline (dropped)
 - **Source.** The golden report §4.2.2 (`docs/report_golden.tex`, added in commit 7da1996), built from release grid-v0.1.0 on branch `feat/grid`. It has 12 seeds per cell, a budget of 100,000 steps and the decay edge near ηλ ≈ 7e-4.
 - **Task.**
   - Export the broken-line figure as a PDF from that pipeline. Overleaf and Tectonic cannot run PythonTeX.
   - Quote the break ψ = 7.0e-4 [6.8e-4, 7.3e-4] and the outcomes at the four design levels, after rechecking them against the databases.
-- **Status:** not run on 11 Oct 2026 (needs the grid-v0.1.0 databases).
+- **Status:** not run on 11 Oct 2026 (needs the grid-v0.1.0 databases). Dropped on 17 Oct 2026 at the user's request, together with its appendix. The later appendices moved up one letter.
 
-### E15. Prediction model settings (Appendix E)
+### E15. Prediction model settings (Appendix D)
 - Write down the grouped cross-validation, the search grids (XGBoost: depth 1 to 4, learning rate 0.03 or 0.1, minimum child weight 1, 5 or 10, early stopping after 50 rounds), the kernel ridge selection, the GRU (16 hidden units, learning rate 0.01, weight decay 1e-4, early stopping up to 800 epochs) and all seeds. Copy them from notebooks 3 and 4. **Status:** done 11 Oct 2026 (`E15_settings.py`, with `models.py`).
 
-### E16. Sensitivity to the grokking level (Appendix F)
+### E16. Sensitivity to the grokking level (Appendix E)
 - Repeat E3 (with the SD) and E6 at levels 0.80 and 0.90. **Status:** done 11 Oct 2026 (`E16_levels.py`). At 0.80, S and A tighten slightly across widths (p 0.024 and 0.001). At 0.90 only A does (p 0.013; S has p 0.085). R does not at any level. (Corrected 12 Oct 2026: the earlier note said S also tightened at 0.90.)
 
 ### E17. Test the premise of the rotation clock (§4.5, option B)

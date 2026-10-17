@@ -1,7 +1,7 @@
-"""E15. Settings of the prediction models (Appendix E).
+"""E15. Settings of the prediction models (Appendix D).
 
 Writes the settings that models.py fixes, with the XGBoost settings that the validation split chose
-for seed 0 in E8 and the GRU epochs chosen by early stopping, so that Appendix E can be written from
+for seed 0 in E8 and the GRU epochs chosen by early stopping, so that Appendix D can be written from
 one file.
 """
 import common as C

@@ -7,9 +7,13 @@ the AFT objective (5 seeds); and a GRU that reads the statistics at the 25 saved
 (3 seeds). The reference is XGBoost given the settings N and eta lambda, which knows more than a
 general network would report. models.py holds the settings.
 
+Since 17 October 2026 the ladder also splits the settings reference into its two parts: XGBoost on
+log N alone ('width reference') and on log10 eta lambda alone ('decay reference'), 5 seeds each. They
+are not drawn. Section 4.4 compares them with the full reference in the text.
+
 Since 17 October 2026 the figure shows only the rungs in SHOWN: each statistic alone, XGBoost on all
-three statistics at t*, and the GRU on their history up to t*. E08.json still keeps the scores of every
-rung of LADDER, so numbers.tex is unchanged.
+three statistics at t*, and the GRU on their history up to t*, with the settings reference as a line.
+E08.json still keeps the scores of every rung of LADDER.
 
 The method is that of model_fitting/3_kernel_only.ipynb, Parts 3 and 5.
 """
@@ -21,7 +25,8 @@ import models as M
 
 SEEDS = {'xgboost': M.XGB_SEEDS, 'gru': M.GRU_SEEDS, 'validation_split': 'numpy default_rng(seed)'}
 LADDER = ['A only', 'S only', 'log R only', 'linear AFT', 'AFT with interactions', 'kernel ridge', 'XGBoost', 'GRU on history',
-          'settings reference']
+          'settings reference', 'width reference', 'decay reference']
+PARTS = {'settings reference': [0, 1], 'width reference': [0], 'decay reference': [1]}
 SHOWN = {'A only': '$A_t$ alone', 'S only': '$S_t$ alone', 'log R only': '$\\log R_t$ alone',
          'XGBoost': 'all three at $t^\\ast$ (trees)', 'GRU on history': 'all three up to $t^\\ast$ (recurrent)'}
 
@@ -33,7 +38,8 @@ def main():
     log_T = np.log(data['T'].to_numpy())
     folds = {a: ((data.alpha != a).to_numpy(), (data.alpha == a).to_numpy()) for a in alphas}
     scores = {name: {} for name in LADDER}
-    seed_scores = {'XGBoost': {}, 'GRU on history': {}, 'settings reference': {}}
+    seed_scores = {'XGBoost': {}, 'GRU on history': {}, 'settings reference': {}, 'width reference': {},
+                   'decay reference': {}}
     chosen = {}
 
     det = {n: np.zeros(len(data)) for n in LADDER[:6]}
@@ -56,10 +62,10 @@ def main():
 
     Xs = M.settings_matrix(data)
     for seed in M.XGB_SEEDS:
-        for name in ('XGBoost', 'settings reference'):
+        for name in ('XGBoost', *PARTS):
             p = np.zeros(len(data))
             for a, (train, test) in folds.items():
-                X = M.design(data, False, ref=data[train]).to_numpy() if name == 'XGBoost' else Xs
+                X = M.design(data, False, ref=data[train]).to_numpy() if name == 'XGBoost' else Xs[:, PARTS[name]]
                 booster, best = M.tuned_xgb(data, X, train, seed)
                 import xgboost as xgb
                 p[test] = booster.predict(xgb.DMatrix(X[test]))

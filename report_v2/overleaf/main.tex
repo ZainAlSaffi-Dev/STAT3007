@@ -96,8 +96,8 @@ Zac Kienzle (s4803349) $\cdot$ Samuel Rieger (s4904959)}
     already uses.}
   \item Each experiment section opens with its main finding. Every number
     comes from the scripts in \file{report_v2/code/} through
-    \file{numbers.tex}. The only red planning values left are those of E14 in
-    Appendix~\ref{app:edge}.
+    \file{numbers.tex}. No red planning values are left, since the E14
+    cross-check was dropped on 17 October 2026.
   \item The main text must end by page 12. References and appendices do not
     count, and the appendices may take at most 5 pages. Each section shows its
     page budget.
@@ -185,7 +185,7 @@ follows.
   \item We fit a power law for how the grokking time scales
     with model width and weight decay. The hypotheses that rotation sets the
     grokking time and that weight decay sets it predict different exponents.
-  \item We test whether the statistics can be used to predict grokking ahead of time. 
+  \item We test whether the statistics can be used to predict grokking ahead of time.
   % Tier 4' is commented out (11 October 2026). Restore this item with it.
   % \item \TODO{A theory contribution, if \cref{sec:tier4} keeps one. Its form
   %   depends on the option the group chooses there.}
@@ -282,7 +282,8 @@ learning.
   \caption{What each account predicts for the three tests. The exponents are
     those of $\log T = c + a\log N + b\log(\eta\lambda)$. ``Not stated'' means
     that the source makes no claim. Entries marked ``ours'' are our reading of
-    the source.}
+    the source. Tier 3 tests only the predictors that can be measured on a
+    network, so it does not test $\eta\lambda$ alone (\cref{sec:tier3}).}
   \label{tab:predictions}
   \begin{tabular}{L{2.6cm}L{3.3cm}L{2.5cm}L{1.6cm}L{2.1cm}}
     \toprule
@@ -479,7 +480,10 @@ It compares a linear accelerated failure time model on each statistic alone,
 gradient-boosted trees with the accelerated failure time objective
 \citep{chenXGBoostScalableTree2016} on all three, and a gated recurrent unit
 \citep{choLearningPhraseRepresentations2014} that reads all three at the 25
-saved steps up to $\tstar$. Two scores are used. $R^2$ is the share of the
+saved steps up to $\tstar$. The weight decay does not enter as a predictor,
+since it is a setting and not a measurement (\cref{sec:tier3}). As a reference,
+the second test also fits the trees to the settings $N$ and $\eta\lambda$
+together and to each one alone. Two scores are used. $R^2$ is the share of the
 spread in $\log T$ explained on held-out runs. The concordance index is the share
 of pairs of runs that a model puts in the right order, so that 0.5 is a coin toss
 \citep{harrellEvaluatingYieldMedical1982}. Appendix~\ref{app:fitting} gives the
@@ -719,18 +723,21 @@ for $a$ it runs from \EsixMainASeedlo{} to \EsixMainASeedhi.
 \textbf{Finding.} Read before any run groks, rotation is the best single predictor
 of the grokking time on held-out cells. Scale adds information that rotation lacks, and alignment
 adds little. On an unseen $\alpha$, the three statistics together rank runs
-better than any one of them alone, and the settings rank them better still.
+better than any one of them alone. The settings $N$ and $\eta\lambda$ rank them
+better still, and better than either setting alone, which supports the mixed
+clock of \cref{sec:tier2}.
 
 Each account in \cref{tab:predictions} names a different early predictor:
 $R_t$ for the rotation clock, $S_t$ for the norm or scale clock, and
-$\eta\lambda$ alone for the weight-decay clock. This tier asks which of the
-kernel statistics, read at $\tstar$, predicts the grokking time. The settings
-$\alpha$ and $\eta\lambda$ are the controls of this experiment. In
-a general network the laziness and the effective regularisation cannot be read
-off directly, while the tangent kernel can be measured. We therefore ask how much
-of the grokking time the kernel statistics recover on their own. A model that is
-given the settings serves as a reference that knows more than any network would
-report.
+$\eta\lambda$ alone for the weight-decay clock. This tier tests the first two,
+with $A_t$ beside them, and does not test $\eta\lambda$ as a predictor. In our
+grid we set $\eta\lambda$, so it is known exactly. In a general network the
+effective regularisation is not reported and cannot be measured directly. The
+same holds for its laziness. The tangent kernel, by contrast, can be measured
+in any network. We want predictors that carry over to real models, so this tier
+asks how much of the grokking time the kernel statistics recover on their own.
+A model given the settings $N$ and $\eta\lambda$ serves as a reference that
+knows more than a general network would report.
 
 \begin{table}[H]
   \centering\small
@@ -758,7 +765,7 @@ report.
 % chose). Variance shares from model_fitting/4_nonlinear_exploration.ipynb Part 2.
 
 Taken alone, $\log R_t$ explains the most of the grokking time on held-out
-cells (\cref{tab:subsets}). Adding $S_t$ raises $R^2$ from \EtenRRsq{} to
+cells (\cref{tab:subsets}). Adding $S_t$ to $\log R_t$ raises $R^2$ from \EtenRRsq{} to
 \EtenSRRsq, so rotation does not carry all of the information. Adding $A_t$ to
 both raises it only to \EtenSRARsq.
 Between \EtenBetweenLogT{} and \EtenBetweenLogR{} of the spread of $\log T$,
@@ -793,6 +800,13 @@ tested a causal link, and reaching a rotation does not make a network grok
 (\cref{sec:tier1}). Rotation also gives no earlier or better warning than the
 settings themselves.
 
+The settings reference combines width and weight decay. The same trees given
+$\log N$ alone reach \EeightWidthref{}, and given $\eta\lambda$ alone they reach
+\EeightDecayref{} (\EeightDecayrefLo{} to \EeightDecayrefHi{} over seeds). Each
+setting alone therefore ranks runs worse than the two together. This supports
+the mixed clock of \cref{sec:tier2}, in which the grokking time depends on both
+width and weight decay.
+
 % FIGURE E9 AND THE PRODUCT COEFFICIENT COMMENTED OUT on 17 October 2026 at the
 % user's request (Jasper Chong). The finding of this section then said "The
 % best models use rotation and scale together and let them interact." The
@@ -802,7 +816,8 @@ settings themselves.
 % and their products, the coefficient of the product of $S_t$ and $\log R_t$ is
 % \EnineGamma, with a cell-bootstrap interval from \EnineGammalo{} to
 % \EnineGammahi." To restore the figure, remove the leading '% ' from the lines
-% below. Appendix E then also needs its sentence on the product fit back.
+% below. Appendix D (the settings of the prediction models) then also needs its
+% sentence on the product fit back.
 % \begin{figure}[H]
 %   \centering
 %   \includegraphics[width=0.6\linewidth]{figures/E9_surface.pdf}
@@ -949,8 +964,9 @@ own. At a fixed width it is the statistic most tied to the grokking step, yet
 networks can reach that rotation without grokking. The grokking time grows with
 width and falls with weight decay. Width sets the rotation, and at a fixed width
 weight decay shrinks the scale. Early rotation and scale together predict the
-grokking time better than either one alone, so each published clock describes
-one part of it. What is new is the split into scale and rotation, the placebo test,
+grokking time better than either one alone, and width and weight decay together
+predict it better than either setting alone. Each published clock therefore
+describes one part of it. What is new is the split into scale and rotation, the placebo test,
 the crossed grid, and prediction from quantities that any network exposes. A
 next step is to test whether the early rate of rotation falls as $1/N$.
 
@@ -1057,16 +1073,10 @@ at $\alpha=1$ and \EthirteenATwoAllGrok{} at $\alpha=2$.
   \input{tables/E13_grid}
 \end{table}
 
-\section{A cross-check from a second pipeline}\label{app:edge}
-\budget{0.75 page}
-
-\TODO{One paragraph and one figure. A second training pipeline (release
-grid-v0.1.0 on branch feat/grid) ran 12 seeds per cell at the baseline with
-weight decays near the edge, with a budget of 100\,000 steps. The golden report
-gives these results: the grokking time is flat in $\eta\lambda$ below a break
-at \pending{$\eta\lambda\approx7.0\times10^{-4}$}{E14}, rises steeply above it,
-and no seed groks at \pending{$8.28\times10^{-4}$}{E14}. Export the figure as a
-PDF from that pipeline (E14).}
+% APPENDIX D, A CROSS-CHECK FROM A SECOND PIPELINE (E14), DROPPED on 17 October
+% 2026 at the user's request (Jasper Chong). It held only a TODO that quoted the
+% golden report's values from release grid-v0.1.0. Its text is in the git
+% history of main.tex before this date.
 
 \section{Settings of the prediction models}\label{app:fitting}
 \budget{1.0 page}
@@ -1092,7 +1102,8 @@ depths 1 to 4, learning rates 0.03 and 0.1, and minimum child weights 1, 5 and 1
 with up to 1\,000 rounds and early stopping after 50. The setting with the best
 concordance on 20\% of the training cells is refitted on all training runs. The
 seeds are 0 to 4. The reference model is the same search on $\log N$ and
-$\log_{10}(\eta\lambda)$, with $\eta\lambda=0$ set to $10^{-6}$.
+$\log_{10}(\eta\lambda)$, with $\eta\lambda=0$ set to $10^{-6}$. Its two parts are
+the same search on $\log N$ alone and on $\log_{10}(\eta\lambda)$ alone.
 
 \paragraph{Recurrent network.} One gated recurrent layer with 16 units reads
 $A_t$, $S_t$ and $R_t$ at the 25 saved steps up to $\tstar$. $R_t$ enters
@@ -1205,8 +1216,7 @@ band we expect, and what would raise it. The bands are our own estimate.
   conclusion in Section 6. The contribution, AI use and consent sections exist.
   & Good. & \Cref{sec:tier4mnist} (MNIST) is an empty TODO. Fill it or remove it,
   since an empty section reads as missing work. Write the Limitations as prose,
-  with one or two sentences for each point. Run E14 or drop
-  Appendix~\ref{app:edge}, which is still a TODO. Fill in the contribution lines,
+  with one or two sentences for each point. Fill in the contribution lines,
   the acknowledgement and the consent choice, and agree the AI-use text. \\
   \textbf{Correctness and reproducibility.} ``Sufficient technical details are
   provided. The work is reproducible and correct.'' Very good: ``Work is
@@ -1266,7 +1276,7 @@ band we expect, and what would raise it. The bands are our own estimate.
 
 Other requirements of the task sheet. The main text must end by page 12; on
 the build of 17 October 2026, with the red markup in, it ends on page 13, and
-the appendices run from page 13 to page 17. The group set the page limit aside
+the appendices run from page 14 to page 17. The group set the page limit aside
 for this round. The code goes to Blackboard as a separate zip, and each member
 submits a contribution statement.
 
@@ -1319,7 +1329,7 @@ submits a contribution statement.
   \item The Tier 2 intervals resample whole cells and then seeds within cells.
     This settles the open decision on the intervals. Seed-only intervals are in
     \file{E06.json} for comparison.
-  \item E14 (Appendix~\ref{app:edge}) was not rerun. It needs the grid-v0.1.0
+  \item E14 (then Appendix D, dropped on 17 October 2026) was not rerun. It needs the grid-v0.1.0
     databases and the R scripts of branch \file{feat/grid}.
   \item Kumar et al.\ App.~8.1 and 8.3, Sec.~3 and Fig.~2 (arXiv v3) were read
     for Appendix~\ref{app:kumar}. The memorisation steps differ from their
@@ -1432,6 +1442,24 @@ submits a contribution statement.
     gloss of ``weight-decay clock'' in \cref{sec:related}, and the sentence on
     SDs in \cref{sec:analysis}.
   \item The criteria table was rewritten against the marking rubric.
+  \item At Jasper Chong's request, Tier 3 does not test the weight decay as a
+    predictor, and the report now says why. We set $\eta\lambda$, while the
+    effective regularisation of a general network cannot be measured, and the
+    report looks for predictors that carry over to real models. The caption of
+    \cref{tab:predictions}, the Prediction paragraph of \cref{sec:analysis} and
+    the opening of \cref{sec:tier3} each say so. \file{code/E08_ladder.py} now
+    also fits the trees to $\log N$ alone and to $\eta\lambda$ alone. Both rank
+    runs worse than the two settings together, and \cref{sec:tier3}, its
+    finding and the Conclusion use this as support for the mixed clock. The
+    rerun reproduced every earlier value of \file{E08.json}. An earlier draft of
+    the same day put the weight-decay fits (kernel ridge on $\eta\lambda$ alone
+    and with the statistics, and the trees on $\eta\lambda$ with $\log R_t$ or
+    $S_t$) in a new Appendix D. That appendix and its code were removed as
+    confusing. They are not in the git history, so they would need to be
+    rewritten.
+  \item Appendix D, the cross-check from the second pipeline (E14), was dropped.
+    It held only a TODO that quoted the golden report. Its text is in the git
+    history of \file{main.tex} before this date.
 \end{itemize}
 
 \paragraph{Cut from the golden report.} Each item can be restored from the
@@ -1451,7 +1479,8 @@ and its figure files in \file{docs/figures/}.
     the design table, the broken-line figure, the survival figure and the
     accelerated failure time table of the weight-decay arm
     (\file{docs/figures/phases.tex}, \texttt{broken.tex},
-    \texttt{survival.tex}). A short summary stays in Appendix~\ref{app:edge}.
+    \texttt{survival.tex}). A short summary stood in Appendix D until it was
+    dropped on 17 October 2026.
   \item Section 4.2.1: the $\alpha$ sweep with $\alpha=1.5$ and 12 seeds
     (\file{docs/figures/alpha_sweep.pdf}).
   \item Section 3.2: the first-logit kernel as a second output.

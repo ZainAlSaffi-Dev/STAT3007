@@ -35,14 +35,14 @@ Every edit should serve this argument. If a change does not help a reader follow
 
 These were taken by Jasper Chong on 5 October 2026. They are recorded in the changelog in the red draft notes at the end of `main.tex`.
 
-- All results come from `data/`. That is the sweep of 3 October 2026 with 720 runs, 5 seeds and 200,000 steps. The golden report used the grid-v0.1.0 databases on branch `feat/grid` (12 seeds, 100,000 steps), which appear only in Appendix D as a cross-check.
+- All results come from `data/`. That is the sweep of 3 October 2026 with 720 runs, 5 seeds and 200,000 steps. The golden report used the grid-v0.1.0 databases on branch `feat/grid` (12 seeds, 100,000 steps). They appeared in Appendix D as a cross-check until that appendix was dropped on 17 October 2026.
 - The report uses three statistics on one kernel. The kernel is the tangent kernel of the sum of the logits divided by √p, on the 53 test pairs of each run.
   - S is the ratio of Frobenius norms to step 0.
   - R is one minus the uncentred cosine to step 0. It is called "rotation" for now.
   - A is the centred alignment with Y Yᵀ, which is `A_sum` in `data/`.
   - The golden report's A, which uses the tangent kernel of all p logits, is not used.
 - The variation D appears only through the identity D² = S² − 2S(1 − R) + 1, to show that it mixes scale and rotation.
-- The main text uses grokking level 0.95 only. Levels 0.80 and 0.90 go in Appendix F.
+- The main text uses grokking level 0.95 only. Levels 0.80 and 0.90 go in Appendix E.
 - The following are cut from the main text: the spectral measures, Kaplan-Meier with Greenwood's interval, the Aalen model, the time-varying Cox model, the broken line, optimal design and the phase taxonomy. The changelog says where to find each one if the group wants it back.
 - In Tier 3, the model given the settings (width and weight decay) is a reference that knows more than any network would report. It is not a competitor. The reason is that a general network does not report its laziness or its effective regularisation, while its tangent kernel can be measured.
 - "Rotation" stays as the word for R until the group agrees to switch to "shape". A red TODO at the top of `main.tex` records this. Do not do the rename unless asked.
@@ -63,6 +63,10 @@ These were taken by Jasper Chong on 17 October 2026.
 - §4.1 states the reproduction briefly. The comparison with Kumar et al., including the faster memorisation, sits in Appendix B, and a TODO asks whether the report needs that appendix. If it goes, §4.1 must still say that our networks memorise sooner than theirs.
 - Figures E5 (scaling) and E9 (the surface), and the product coefficient γ_SR, are commented out of `main.tex`. With them went the claim that rotation and scale interact. Bring that claim back only together with E9.
 - Tier 3 runs two tests: held-out cells (Table 5) and an unseen α (Fig. E8). Fig. E8 shows each statistic alone, XGBoost on all three, the GRU on their history and the settings line.
+- Tier 3 does not test weight decay as a predictor, although Table 1 names ηλ alone as the early predictor of the weight-decay clock. Here ηλ is set by us and known exactly, while the effective regularisation of a general network cannot be measured, and the report looks for predictors that carry over to real models. The caption of Table 1, the Prediction paragraph of §3.5 and the opening of §4.4 each say so.
+- The settings reference is split into its parts on an unseen α: the trees on log N alone and on ηλ alone (E08). Each part ranks runs worse than the two together. The finding of Tier 3, the closing paragraph of §4.4 and the Conclusion use this as support for the mixed clock.
+- A weight-decay appendix that fitted ηλ alone and paired with the statistics was tried and removed the same day as confusing. Do not bring it back unless asked.
+- Appendix D, the cross-check from the second pipeline (E14), is dropped. The later appendices moved up one letter, so the model settings are Appendix D and the grokking levels Appendix E.
 
 ## What the data allow the report to claim
 
@@ -76,6 +80,7 @@ These limits come from checks on `data/`. A claim that goes past them is wrong, 
 - **Tier 3.** Rotation is the best single statistic, scale adds information that rotation lacks, and alignment adds little.
   - The statistics are almost fully set by the cell, and they carry no signal about which seed of a cell groks first.
   - The settings reference predicts better than any kernel model.
+  - On an unseen α the trees reach 0.67 on log N alone, 0.72 on ηλ alone and 0.79 on both. So ηλ alone ranks runs better than any statistic alone (at most 0.55) and about as well as the trees on all three (0.70). Do not write that rotation or the kernel beats weight decay.
   - Do not claim that the kernel gives an earlier warning than the settings do.
 - **Tier 4'.** Whatever option the group chooses, label as the group's own any model or derivation that no source gives. Option A, the rate-addition model 1/T = r0 N^(−q) + c·ηλ, is the clearest case. No source paper derives it.
   - Two parts come from sources. The weight-decay term of the kernel-flow equation only rescales the kernel (Lewkowycz and Gur-Ari, Eq. S5). The term that rotates the kernel, T_t, is of order 1/N at initialisation, which they credit to Dyer and Gur-Ari. Kim's law makes the decay route's rate grow in proportion to ηλ.

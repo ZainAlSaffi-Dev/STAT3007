@@ -47,18 +47,18 @@ Each test in the main text answers one column of Table 1 of the report (`tab:pre
 | `E06_aft.py` | §4.3, Table 4 | Censored log-normal AFT fits of a, b and γ with cell bootstrap | runs | 9 min |
 | `E05_scaling.py` | §4.3, commented out on 17 Oct 2026 (kept for the seminar) | T against ηλ by width, with the fitted plane | runs, E06 | 1 s |
 | `E07_mechanism.py` | §4.3, Fig. 4 | R and S at t* over N × ηλ; N9 variance shares | runs, kernel | 1 s |
-| `E08_ladder.py` | §4.4 (Tier 3), Fig. 5 | Model ladder on a held-out α; the figure shows five of its rungs | runs, kernel | 1 min |
+| `E08_ladder.py` | §4.4 (Tier 3), Fig. 5 | Model ladder on a held-out α, with the settings as a reference and each setting alone; the figure shows five of its rungs | runs, kernel | 1 min |
 | `E09_surface.py` | §4.4, commented out on 17 Oct 2026 | Kernel ridge surface over S × R; product coefficient γ_SR | runs, kernel | 4 min |
 | `E10_subsets.py` | §4.4, Table 5 | Kernel ridge on subsets of the statistics; variance split | runs, kernel | 1 min |
 | `E12_kumar.py` | Appendix B | The baseline against Kumar et al. (2024), arXiv v3 | E01 | 1 s |
 | `E13_grid.py` | Appendix C | Outcomes over the whole grid | runs, checkpoints | 1 s |
-| `E15_settings.py` | Appendix E | Settings of the prediction models | E08, E09 | 1 s |
-| `E16_levels.py` | Appendix F | E03 and E06 at grokking levels 0.80 and 0.90 | runs, checkpoints, E03, E06 | 1 s |
+| `E15_settings.py` | Appendix D | Settings of the prediction models | E08, E09 | 1 s |
+| `E16_levels.py` | Appendix E | E03 and E06 at grokking levels 0.80 and 0.90 | runs, checkpoints, E03, E06 | 1 s |
 
 Items that are not built:
 
 - E11, E17 and E18 belong to the Tier 4' theory section. That section is commented out in `main.tex`, so they are not built.
-- E14 (Appendix D) needs the databases of the second pipeline (release grid-v0.1.0, branch `feat/grid`), so it is not built.
+- E14 needs the databases of the second pipeline (release grid-v0.1.0, branch `feat/grid`), so it is not built. Its appendix was dropped on 17 Oct 2026.
 
 `out/logs/times.json` holds the run time of each script from the last full run.
 
