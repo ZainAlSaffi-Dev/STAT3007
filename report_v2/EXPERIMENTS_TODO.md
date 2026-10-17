@@ -81,13 +81,13 @@ Status words: **carry over** means the number exists and only needs a clean scri
 - **Check against.** The table in `repoduced-code/tier2_reproduction.md` §7.
 - **Output.** `E4_map.pdf`. **Status:** done 11 Oct 2026 (`E04_map.py`; it asserts the §7 table). The cell N = 800, ηλ = 3e-4 gets the letter G, which means that test accuracy ends above 0.9 without reaching 0.95.
 
-### E5. Scaling with weight decay at each width (Fig. 4, §4.3)
+### E5. Scaling with weight decay at each width (§4.3, commented out)
 - **Setup.** α = 1, ηλ > 0, all widths, 5 seeds.
 - **Method.**
   - Plot log T95 against log ηλ, one line per N, with seeds as points and censored runs as open markers at the budget.
   - Overlay the fitted plane of E6 for the main range.
   - Draw grey reference slopes of 0 and −1.
-- **Output.** `E5_scaling.pdf`. **Status:** done 11 Oct 2026 (`E05_scaling.py`).
+- **Output.** `E5_scaling.pdf`. **Status:** done 11 Oct 2026 (`E05_scaling.py`). On 17 Oct 2026 the figure was commented out of `main.tex` at the user's request, because Table 4 gives the same result. A red TODO in §4.3 suggests it for the seminar.
 
 ### E6. Scaling fits (Table 4, §4.3)
 - **Setup.** α = 1.
@@ -105,14 +105,14 @@ Status words: **carry over** means the number exists and only needs a clean scri
 - **Port from.** `repoduced-code/tier2_consistency.py` part C.
 - **Output.** A table, plus macros. **Status:** done 11 Oct 2026 (`E06_aft.py`). The point estimates of the main row equal the planning values. The cell bootstrap widens the intervals: a is [+0.08, +0.40], b is [−0.92, −0.46] and γ is [−0.37, +0.05]. σ = 0.34.
 
-### E7. Width sets rotation, weight decay sets scale (Fig. 5, §4.3)
+### E7. Width sets rotation, weight decay sets scale (Fig. 4, §4.3)
 - **Setup.** α = 1, all N × ηλ, read at t* = 2,430.
 - **Data.** `report_kernel.parquet` at `step == 2430`.
 - **Method.** Two heatmaps: the median log R and the median S per cell. Also compute N9.
 - **Port from.** `model_fitting/4_nonlinear_exploration.ipynb` Part 2 (the setting maps).
 - **Output.** `E7_mechanism.pdf`. It may be merged into E4. **Status:** done 11 Oct 2026 (`E07_mechanism.py`).
 
-### E8. Model ladder on a held-out α (Fig. 6, §4.4)
+### E8. Model ladder on a held-out α (Fig. 5, §4.4)
 - **Setup.** All 630 runs with ηλ ≤ 1e-3. The statistics are at t* = 2,430, with log R. Hold out one α at a time.
 - **Method.**
   - The ladder: each statistic alone in a linear AFT; the linear AFT; the AFT with interactions; kernel ridge; XGBoost with `survival:aft`; and a GRU on the 25 saved steps up to t*.
@@ -124,15 +124,15 @@ Status words: **carry over** means the number exists and only needs a clean scri
   - Kernel ridge 0.568; XGBoost 0.708; GRU 0.768.
   - Settings reference 0.780.
 - **Port from.** `model_fitting/3_kernel_only.ipynb`.
-- **Output.** `E8_ladder.pdf`. **Status:** done 11 Oct 2026 (`E08_ladder.py`).
+- **Output.** `E8_ladder.pdf`. **Status:** done 11 Oct 2026 (`E08_ladder.py`). Redrawn on 17 Oct 2026 at the user's request: the figure shows only each statistic alone, XGBoost and the GRU, with the settings line, and its labels no longer overlap. `E08.json` keeps every rung; the rerun reproduced it exactly.
 
-### E9. The S × log R surface (Fig. 7, §4.4)
+### E9. The S × log R surface (§4.4, commented out)
 - **Setup.** Grokked runs (or all runs with XGBoost). A is held at its median.
 - **Method.**
   - Draw the kernel ridge prediction over S and log R, with the runs overlaid and the empty region shaded.
   - Also report γ_SR from the AFT with interactions and its cell-bootstrap interval. Planning value: −0.62 [−1.41, −0.12], from notebook 3 Part 2.
 - **Port from.** Notebook 3 Part 4 and notebook 4 Part 5 (maps).
-- **Output.** `E9_surface.pdf`. **Status:** done 11 Oct 2026 (`E09_surface.py`).
+- **Output.** `E9_surface.pdf`. **Status:** done 11 Oct 2026 (`E09_surface.py`). On 17 Oct 2026 the figure and γ_SR were commented out of `main.tex` at the user's request, to simplify Tier 3. The macros stay in `numbers.tex`.
 
 ### E10. Subsets and variance split (Table 5, §4.4)
 - **Setup.** The 355 runs that grok at 0.95 among those with ηλ ≤ 1e-3. The statistics are at t*.

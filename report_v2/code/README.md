@@ -45,10 +45,10 @@ Each test in the main text answers one column of Table 1 of the report (`tab:pre
 | `E02_thresholds.py` | §4.2, Fig. 2 | S, R and A at the grokking step | runs, E03 | 1 s |
 | `E04_map.py` | §4.3 (Tier 2), Fig. 3 | Time and outcome map at α = 1 | runs, checkpoints | 1 s |
 | `E06_aft.py` | §4.3, Table 4 | Censored log-normal AFT fits of a, b and γ with cell bootstrap | runs | 9 min |
-| `E05_scaling.py` | §4.3, Fig. 4 | T against ηλ by width, with the fitted plane | runs, E06 | 1 s |
-| `E07_mechanism.py` | §4.3, Fig. 5 | R and S at t* over N × ηλ; N9 variance shares | runs, kernel | 1 s |
-| `E08_ladder.py` | §4.4 (Tier 3'), Fig. 6 | Model ladder on a held-out α | runs, kernel | 1 min |
-| `E09_surface.py` | §4.4, Fig. 7 | Kernel ridge surface over S × R; product coefficient γ_SR | runs, kernel | 4 min |
+| `E05_scaling.py` | §4.3, commented out on 17 Oct 2026 (kept for the seminar) | T against ηλ by width, with the fitted plane | runs, E06 | 1 s |
+| `E07_mechanism.py` | §4.3, Fig. 4 | R and S at t* over N × ηλ; N9 variance shares | runs, kernel | 1 s |
+| `E08_ladder.py` | §4.4 (Tier 3), Fig. 5 | Model ladder on a held-out α; the figure shows five of its rungs | runs, kernel | 1 min |
+| `E09_surface.py` | §4.4, commented out on 17 Oct 2026 | Kernel ridge surface over S × R; product coefficient γ_SR | runs, kernel | 4 min |
 | `E10_subsets.py` | §4.4, Table 5 | Kernel ridge on subsets of the statistics; variance split | runs, kernel | 1 min |
 | `E12_kumar.py` | Appendix B | The baseline against Kumar et al. (2024), arXiv v3 | E01 | 1 s |
 | `E13_grid.py` | Appendix C | Outcomes over the whole grid | runs, checkpoints | 1 s |
@@ -65,7 +65,7 @@ Items that are not built:
 ## Shared code
 
 - `common.py` holds the paths, the loaders, the event definitions, the phase rule, the colours and the output writers.
-- `models.py` holds the prediction models of Tier 3' and their settings.
+- `models.py` holds the prediction models of Tier 3 and their settings.
 
 The events follow §3.4 of the report:
 

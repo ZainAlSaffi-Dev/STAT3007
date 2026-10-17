@@ -28,7 +28,7 @@ Every edit should serve this argument. If a change does not help a reader follow
 3. Table 1 of the report sets out what each account predicts. Each test answers one column of it.
    - Tier 1 asks whether grokking happens at a fixed value of a statistic.
    - Tier 2 asks how the grokking time scales with width and with weight decay.
-   - Tier 3' asks which early statistic predicts the grokking time.
+   - Tier 3 asks which early statistic predicts the grokking time.
 4. All three tests give the same answer. Rotation matters most but is not enough on its own, and the time is set by rotation and scale together. Width sets the rotation and weight decay sets the scale. This is the "mixed clock". Tier 4' is a stretch theory section. Its direction is not decided: §4.5 of the report lists options A to E, with the costs and risks of each. Do not write the section until the group chooses.
 
 ## Decisions that differ from the golden report
@@ -44,7 +44,7 @@ These were taken by Jasper Chong on 5 October 2026. They are recorded in the cha
 - The variation D appears only through the identity D² = S² − 2S(1 − R) + 1, to show that it mixes scale and rotation.
 - The main text uses grokking level 0.95 only. Levels 0.80 and 0.90 go in Appendix F.
 - The following are cut from the main text: the spectral measures, Kaplan-Meier with Greenwood's interval, the Aalen model, the time-varying Cox model, the broken line, optimal design and the phase taxonomy. The changelog says where to find each one if the group wants it back.
-- In Tier 3', the model given the settings (width and weight decay) is a reference that knows more than any network would report. It is not a competitor. The reason is that a general network does not report its laziness or its effective regularisation, while its tangent kernel can be measured.
+- In Tier 3, the model given the settings (width and weight decay) is a reference that knows more than any network would report. It is not a competitor. The reason is that a general network does not report its laziness or its effective regularisation, while its tangent kernel can be measured.
 - "Rotation" stays as the word for R until the group agrees to switch to "shape". A red TODO at the top of `main.tex` records this. Do not do the rename unless asked.
 
 These were taken by Jasper Chong on 11 October 2026.
@@ -56,6 +56,14 @@ This was taken by Jasper Chong on 12 October 2026.
 
 - A new Tier 4 (Section 4.5, label `sec:tier4mnist`) holds only a TODO placeholder for an extension experiment on MNIST digits. It is separate from the theory section Tier 4', which stays commented out. MNIST runs are new training outside `data/`, so they need the user's agreement before they start, and the rule that all results come from `data/` will need an exception for this section.
 
+These were taken by Jasper Chong on 17 October 2026.
+
+- Tier 3' is called Tier 3. The commented-out theory section keeps the name Tier 4'.
+- Each experiment section opens with "Finding." in place of "Claim.".
+- §4.1 states the reproduction briefly. The comparison with Kumar et al., including the faster memorisation, sits in Appendix B, and a TODO asks whether the report needs that appendix. If it goes, §4.1 must still say that our networks memorise sooner than theirs.
+- Figures E5 (scaling) and E9 (the surface), and the product coefficient γ_SR, are commented out of `main.tex`. With them went the claim that rotation and scale interact. Bring that claim back only together with E9.
+- Tier 3 runs two tests: held-out cells (Table 5) and an unseen α (Fig. E8). Fig. E8 shows each statistic alone, XGBoost on all three, the GRU on their history and the settings line.
+
 ## What the data allow the report to claim
 
 These limits come from checks on `data/`. A claim that goes past them is wrong, even if it reads better.
@@ -65,7 +73,7 @@ These limits come from checks on `data/`. A claim that goes past them is wrong, 
 - **Alignment.** The median of A barely changes between step 0 (0.398) and grokking (0.406) over the runs that grok. Its placebo ratio at N = 100 is 1.09 with p = 0.03, so write that its ratio is close to 1. Do not write that alignment is a threshold or a clock.
 - **Tier 2 intervals.** With cells resampled, γ has an interval that includes zero. Do not claim its sign.
 - **Tier 2.** The exponents depend on which weight-decay cells enter the fit. Always report the main range (ηλ from 1e-5 to 1e-4) together with the check rows. If the intervals resample seeds only, say that they hold the cells fixed.
-- **Tier 3'.** Rotation is the best single statistic, scale adds information that rotation lacks, and alignment adds little.
+- **Tier 3.** Rotation is the best single statistic, scale adds information that rotation lacks, and alignment adds little.
   - The statistics are almost fully set by the cell, and they carry no signal about which seed of a cell groks first.
   - The settings reference predicts better than any kernel model.
   - Do not claim that the kernel gives an earlier warning than the settings do.

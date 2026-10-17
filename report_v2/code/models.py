@@ -1,4 +1,4 @@
-"""The prediction models of Tier 3' (E8, E9, E10), ported from model_fitting/3_kernel_only.ipynb and
+"""The prediction models of Tier 3 (E8, E9, E10), ported from model_fitting/3_kernel_only.ipynb and
 model_fitting/4_nonlinear_exploration.ipynb. Their settings are the ones listed in Appendix E.
 
 The data are the 630 runs with eta lambda at most 1e-3, with S_t, log R_t and A_t read at
