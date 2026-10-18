@@ -90,6 +90,7 @@ DECAYS = [0.0, 1e-6, 3e-6, 6e-6, 1e-5, 2e-5, 4e-5]
 SEEDS = [0, 1, 2, 3, 4]
 DATA_SEED_BASE = 42
 STEPS = 500_000
+FP32_PRECISION = "tf32"
 N_TRAIN, BATCH_SIZE, DEPTH = 1000, 200, 3
 LR_UPDATE_INTERVAL = 10_000
 LINEAR_INTERVAL = 2000
@@ -152,7 +153,7 @@ def run_spec(width, scale, eta_kappa, seed, steps):
                 momentum=0.0, batch_size=BATCH_SIZE, eta_kappa=eta_kappa, lr_schedule="curvature",
                 lr_update_interval=LR_UPDATE_INTERVAL, seed=seed, steps=steps, eval_interval=LINEAR_INTERVAL,
                 kernel_save_interval=steps, probe="mixed", probe_size=256, kernel_method="closed_form",
-                checkpoint_steps=checkpoint_grid(steps))
+                checkpoint_steps=checkpoint_grid(steps), fp32_precision=FP32_PRECISION)
 
 
 def build_tasks(scales, widths, decays, seeds, steps, out_dir, grid=None):
@@ -1106,7 +1107,8 @@ def cmd_assemble(args, log):
                    parameterisation="deep_standard", depth=DEPTH, biases=False, centred=False, loss="mse",
                    optimizer="sgd", momentum=0.0, batch_size=BATCH_SIZE, eta_0="1 / lam_0",
                    lr_schedule="curvature", lr_update_interval=LR_UPDATE_INTERVAL, probe="mixed", probe_size=256,
-                   kernel_method="closed_form", linear_interval=LINEAR_INTERVAL, n_log=N_LOG),
+                   kernel_method="closed_form", linear_interval=LINEAR_INTERVAL, n_log=N_LOG,
+                   fp32_precision=FP32_PRECISION),
         feature_version=F.FEATURE_VERSION, krr_ridge=F.KRR_RIDGE, sharpness_iters=F.SHARPNESS_ITERS,
         report_kernel=dict(test_images=F.REPORT_SIZE, seed=F.REPORT_SEED),
         events=dict(memorisation=MEM_LEVEL, primary_test_level=PRIMARY_LEVEL, acc_levels=ACC_LEVELS,
@@ -1151,8 +1153,38 @@ def exploration_runs():
     return found
 
 
+def cmd_certify(args, log):
+    """Compare the assembled runs of --out with those of --baseline, paired by run id.
+
+    The two sweeps differ only in their numerical environment. Each event is
+    compared as Section 5 of arXiv:2607.05104 compares grokking under two
+    floating-point environments: the runs whose outcome flips between the
+    sweeps, and the exact McNemar test of the paired outcomes.
+    """
+    from statsmodels.stats.contingency_tables import mcnemar
+    import pandas as pd
+
+    tag = acc_tag(PRIMARY_LEVEL)
+    events = {"memorised": lambda r: r["memorised"].astype(bool),
+              f"acc{tag}": lambda r: r["memorised"].astype(bool) & ~r[f"censored_acc{tag}"].astype(bool)}
+    runs = {}
+    for side, root in (("new", OUT), ("baseline", args.baseline.resolve())):
+        r = pd.read_parquet(root / "runs.parquet")
+        runs[side] = r[r["status"] != "failed"].set_index("run_id")
+    common = runs["new"].index.intersection(runs["baseline"].index)
+    log.info(f"certify: {len(common)} runs in both sweeps, {len(runs['new'])} in --out, "
+             f"{len(runs['baseline'])} in --baseline")
+    for name, event in events.items():
+        a, b = event(runs["new"].loc[common]), event(runs["baseline"].loc[common])
+        table = pd.crosstab(b, a).reindex(index=[False, True], columns=[False, True], fill_value=0)
+        result = mcnemar(table.to_numpy(), exact=True)
+        log.info(f"certify: {name}: baseline rate {int(b.sum())}/{len(common)}, new rate {int(a.sum())}/{len(common)}, "
+                 f"{int((a != b).sum())} flips, exact McNemar p={result.pvalue:.3g}")
+    return 0
+
+
 def cmd_validate(args, log):
-    metas = [json.loads(p.read_text()) for p in sorted(RUNS.glob("*_meta.json"))]
+    metas =[json.loads(p.read_text()) for p in sorted(RUNS.glob("*_meta.json"))]
     good = [m for m in metas if m["status"] != "failed"]
     out = {}
 
@@ -1212,7 +1244,7 @@ def cmd_validate(args, log):
 # =====================================================================
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("command", choices=["check", "pilot", "run", "status", "assemble", "validate"])
+    parser.add_argument("command", choices=["check", "pilot", "run", "status", "assemble", "validate", "certify"])
     parser.add_argument("--scales", type=float, nargs="+", default=SCALES)
     parser.add_argument("--widths", type=int, nargs="+", default=WIDTHS)
     parser.add_argument("--decays", type=float, nargs="+", default=DECAYS)
@@ -1223,7 +1255,12 @@ def main(argv=None):
     parser.add_argument("--out", type=Path, default=None, help="output directory instead of mnist/sweep, for tests")
     parser.add_argument("--fused", action="store_true",
                         help="run and pilot train each width as one fused model with ntk_lib.train_fused")
+    parser.add_argument("--fp32-precision", choices=["ieee", "tf32"], default=FP32_PRECISION,
+                        help="torch.backends.cuda.matmul.fp32_precision of the training runs")
+    parser.add_argument("--baseline", type=Path, help="certify: the assembled sweep to compare --out with")
     args = parser.parse_args(argv)
+    global FP32_PRECISION
+    FP32_PRECISION = args.fp32_precision
     if args.out is not None:
         global OUT, RUNS, LOGS
         OUT = args.out.resolve()
@@ -1234,7 +1271,7 @@ def main(argv=None):
     root.setLevel(logging.INFO)
     log = logging.getLogger("sweep")
     commands = dict(check=cmd_check, pilot=cmd_pilot, run=cmd_run, status=cmd_status, assemble=cmd_assemble,
-                    validate=cmd_validate)
+                    validate=cmd_validate, certify=cmd_certify)
     return commands[args.command](args, log)
 
 

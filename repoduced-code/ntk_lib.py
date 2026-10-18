@@ -535,7 +535,7 @@ DEFAULTS = dict(parameterisation="mean_field", p=23, hidden_dim=100, alpha=1.0,
                 dataset="modular_addition", n_train=None, centred=True, optimizer="sgd",
                 batch_size=None, momentum=0.0,
                 depth=None, lr_schedule=None, lr_update_interval=10000, lr_norm_power=4.0, lr_cap=1000.0,
-                dtype="float32")
+                dtype="float32", fp32_precision="ieee")
 
 # Configuration keys added after some runs were saved, with the value those
 # runs were trained with. A saved run that lacks one of them is compared as if
@@ -544,7 +544,7 @@ LEGACY_VALUES = dict(probe="train", checkpoint_steps=None, kernel_method="autogr
                      dataset="modular_addition", n_train=None, centred=True, optimizer="sgd",
                      batch_size=None, momentum=0.0,
                      depth=None, lr_schedule=None, lr_update_interval=10000, lr_norm_power=4.0, lr_cap=1000.0,
-                     dtype="float32")
+                     dtype="float32", fp32_precision="ieee")
 
 # The centred terms and the two alignments on the training part and on the
 # test part of the probe. A part with fewer than two pairs gives NaN.
@@ -717,6 +717,7 @@ def train_run(name, verbose=True, on_checkpoint=None, results_dir=None, **overri
     out_dir = Path(results_dir) if results_dir is not None else RESULTS
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    torch.backends.cuda.matmul.fp32_precision = cfg["fp32_precision"]
     (X_train, y_train), (X_test, y_test) = make_dataset(cfg)
     data = [t.to(DEVICE, getattr(torch, cfg["dtype"])) for t in (X_train, y_train, X_test, y_test)]
 
@@ -961,7 +962,7 @@ class Run:
 FUSED_SHARED = ("parameterisation", "p", "hidden_dim", "train_fraction", "activation", "steps", "eval_interval",
                 "probe_size", "kernel_save_interval", "probe", "checkpoint_steps", "kernel_method", "dataset",
                 "n_train", "centred", "optimizer", "batch_size", "momentum", "depth", "lr_schedule",
-                "lr_update_interval", "lr_cap", "dtype")
+                "lr_update_interval", "lr_cap", "dtype", "fp32_precision")
 
 
 def train_fused(names, configs, on_checkpoints=None, results_dir=None, verbose=True, device=None,
@@ -1029,6 +1030,9 @@ def train_fused(names, configs, on_checkpoints=None, results_dir=None, verbose=T
         device = torch.accelerator.current_accelerator(check_available=True) or torch.device("cpu")
     device = torch.device(device)
     dtype = getattr(torch, shared["dtype"])
+    # fp32_precision is the setting of torch.backends.cuda.matmul.fp32_precision: "ieee", or "tf32" for the
+    # TensorFloat32 tensor cores the PyTorch numerical accuracy notes describe.
+    torch.backends.cuda.matmul.fp32_precision = shared["fp32_precision"]
     out_dir = Path(results_dir) if results_dir is not None else RESULTS
     out_dir.mkdir(parents=True, exist_ok=True)
 
