@@ -67,27 +67,26 @@ The times include 5 seconds for each act slide. The render log prints these tota
 | 23 | Results | What the two clocks would look like | clip TwoClocks | optional | 0:25 |
 | 24 | Results | A wider network groks later and stops grokking at a smaller weight decay | slide figure E4 | optional | 0:30 |
 | 25 | Results | Width sets the rotation, and at a fixed width weight decay shrinks the scale | slide figure E7 | optional | 0:30 |
-| 26 | Results | Tier 3′: rotation is the best single predictor, and scale adds what rotation lacks | live bar chart from E10 | core | 0:40 |
-| 27 | Results | Growth shortens the grokking time more when the kernel has also rotated | slide figure E9 | optional | 0:25 |
-| 28 | Results | Trees on the same three statistics rank runs better than a linear model | slide figure E8 | optional | 0:30 |
-| 29 | Results | Tier 4: does the split hold beyond modular addition? | figure MnistResult, to make | core | 0:30 |
-| 30 | What we found | Limitations | text | core | 0:25 |
-| 31 | What we found | Rotation matters most, and the clock is mixed | three cards | core | 0:30 |
-| 32 | What we found | Thank you, with the AI-use statement | text | core | 0:05 |
+| 26 | Results | Tier 3: rotation is the best single predictor, and scale adds what rotation lacks | live bar chart from E10 | core | 0:40 |
+| 27 | Results | On an unseen $\alpha$, the statistics work best together, and so do width and weight decay | slide figure E8 | optional | 0:30 |
+| 28 | Results | Tier 4: does the split hold beyond modular addition? | figure MnistResult, to make | core | 0:30 |
+| 29 | What we found | Limitations | text | core | 0:25 |
+| 30 | What we found | Rotation matters most, and the clock is mixed | three cards | core | 0:30 |
+| 31 | What we found | Thank you, with the AI-use statement | text | core | 0:05 |
 
-The backup slides come after the closing slide and do not count toward the time or the slide numbers. They hold the identity behind the split, the placebo test in numbers, the Tier 2 fit with its checks, Tier 3′ in numbers, how the prediction models were scored, the baseline beside Kumar et al., and the references.
+The backup slides come after the closing slide and do not count toward the time or the slide numbers. They hold the identity behind the split, the placebo test in numbers, the Tier 2 fit with its checks, Tier 3 on held-out cells and on an unseen $\alpha$ in numbers, how the prediction models were scored, the baseline beside Kumar et al., and the references.
 
 ## 5. Getting to ten minutes
 
-The core slides come to 10:20, and all slides together to 14:35. Five speakers hand over four times, which costs about 20 seconds. A safe target for the core is therefore about 9:30. These cuts get there, in this order.
+The core slides come to 10:20, and all slides together to 14:10. Five speakers hand over four times, which costs about 20 seconds. A safe target for the core is therefore about 9:30. These cuts get there, in this order.
 
 1. Drop the first step of the identity (slide 11) and start on the second. This saves 0:10, and the equation appears at once in its split form.
 2. Shorten the task slide (slide 3) to the table animation and one sentence. This saves 0:05.
-3. If the MNIST sweep has no results by the talk, reduce slide 29 to two sentences on the setup. This saves 0:10.
+3. If the MNIST sweep has no results by the talk, reduce slide 28 to two sentences on the setup. This saves 0:10.
 4. Merge slide 21 into slide 19, with its two main sentences as a fragment under the tightening ratios. This saves 0:10.
 5. Speak the act slides in passing, with no pause. This saves about 0:10 in all.
 
-If the slot turns out to be longer, add optional slides back in this order: 25 (width sets rotation), 28 (the settings reference), 23 (the two clocks), 7 (the distance), 10 (the arrows), 13 (the torus), 24 (the decay edge), 27 (the interaction) and 20 (the statistics at grokking). To hide a slide without deleting it, add `visibility="hidden"` to its heading.
+If the slot turns out to be longer, add optional slides back in this order: 25 (width sets rotation), 27 (the unseen $\alpha$ and the settings), 23 (the two clocks), 7 (the distance), 10 (the arrows), 13 (the torus), 24 (the decay edge) and 20 (the statistics at grokking). To hide a slide without deleting it, add `visibility="hidden"` to its heading.
 
 A possible split for five speakers follows the acts. It keeps each turn near two minutes, and each act slide goes to the speaker who opens that act. The group may prefer fewer speakers, which saves handover time.
 
@@ -97,7 +96,7 @@ A possible split for five speakers follows the acts. It keeps each turn near two
 | 2 | 5 to 9: the kernel, lazy and rich, growth and shape, the three numbers | 2:10 |
 | 3 | 11 to 16: the identity, the theory, the predictions and the grid | 1:55 |
 | 4 | 18 to 22: the baseline, Tier 1 and Tier 2 | 2:20 |
-| 5 | 26 to 32: Tier 3′, MNIST, the limitations and the conclusion | 2:15 |
+| 5 | 26 to 31: Tier 3, MNIST, the limitations and the conclusion | 2:15 |
 
 ## 6. How the deck explains the kernel
 
@@ -147,20 +146,20 @@ These points were settled while building the clips.
 
 ## 8. Figures
 
-The report figures were drawn for an A4 page, so their text is small on a projector. The results slides now show slide versions of them, drawn by `make_figures.py` into `assets/figures/` on 16 October 2026. Each one is 16 by 9, its type matches the clips (Helvetica Neue, the deck's fallback font, with formulas in the TeX fonts), and it keeps to the message of its slide. The script reads the committed data and the saved numbers of `report_v2/code`, so the numbers on the figures are those of the report.
+The report figures were drawn for an A4 page, so their text is small on a projector. The results slides now show slide versions of them, drawn by `make_figures.py` into `assets/figures/` on 16 October 2026. Each one is 16 by 9, its type matches the clips (Helvetica Neue, the deck's fallback font, or Nimbus Sans where it is not installed, with formulas in the TeX fonts), and it keeps to the message of its slide. The script reads the committed data and the saved numbers of `report_v2/code`, so the numbers on the figures are those of the report.
 
 | Figure | Slide | Source | State |
 |---|---|---|---|
 | E1 baseline | 18 | `report_v2/code/E01_baseline.py` | replaced by the clip `BaselineKernel` |
 | E2 statistics at grokking | 20 | `E02_thresholds.py` | done: one hue per statistic in place of the shading by weight decay, and the tightening ratio on each panel |
 | E4 time and outcome map | 24 | `E04_map.py` | done: no counts or phase letters, since every cell at $\alpha = 1$ has 0 or 5 seeds that grok |
-| E5 scaling | 22 | `E05_scaling.py` | done |
+| E5 scaling | 22 | `E05_scaling.py` | done. The report dropped this figure on 17 October 2026 and suggested it for the seminar, so the speaker notes say how to read it |
 | E7 mechanism | 25 | `E07_mechanism.py` | done: the two maps stacked, without the number in each cell; the slide now has the figure and the text in two columns |
-| E8 prediction ladder | 28 | `E08_ladder.py` | done: the mean bars only, the models in plain words, and the labels above the plot |
-| E9 surface | 27 | `E09_surface.py` | done |
-| Tier 3′ subsets | 26 | `E10.json` through `_variables.yml` | done: the filter draws the bars |
+| E8 prediction ladder | 27 | `E08_ladder.py` | done: the mean bars only, the models in plain words, and the labels above the plot. Redrawn on 18 October 2026 with the rungs of the report figure of 17 October: each statistic alone, the trees and the recurrent network |
+| E9 surface | none | `E09_surface.py` | dropped on 18 October 2026, since the report cut the figure and the claim that rotation and scale interact on 17 October |
+| Tier 3 subsets | 26 | `E10.json` through `_variables.yml` | done: the filter draws the bars |
 | GridDiagram | 16 | none | replaced by the clip `GridOfRuns` |
-| MnistResult | 29 | `mnist/sweep/`, once it has run | waits on the sweep, which had not run on 16 October 2026 |
+| MnistResult | 28 | `mnist/sweep/`, once it has run | waits on the sweep, which had not run on 16 October 2026 |
 
 This plan first suggested a slide style inside the report scripts, so that both versions come from one place. The slide versions went into a separate script in `presentation/` instead, so that no file in `report_v2` changed. The cost is that the drawing code exists twice, and a change to a report figure has to be made in `make_figures.py` as well.
 
