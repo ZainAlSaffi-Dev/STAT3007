@@ -1243,6 +1243,7 @@ def cmd_validate(args, log):
 # Entry point
 # =====================================================================
 def main(argv=None):
+    global FP32_PRECISION
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("command", choices=["check", "pilot", "run", "status", "assemble", "validate", "certify"])
     parser.add_argument("--scales", type=float, nargs="+", default=SCALES)
@@ -1259,7 +1260,6 @@ def main(argv=None):
                         help="torch.backends.cuda.matmul.fp32_precision of the training runs")
     parser.add_argument("--baseline", type=Path, help="certify: the assembled sweep to compare --out with")
     args = parser.parse_args(argv)
-    global FP32_PRECISION
     FP32_PRECISION = args.fp32_precision
     if args.out is not None:
         global OUT, RUNS, LOGS
