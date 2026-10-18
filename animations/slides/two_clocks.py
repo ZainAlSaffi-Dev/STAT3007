@@ -33,10 +33,10 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from manim import DOWN, LEFT, RIGHT, UP, Create, DashedLine, FadeIn, Line, MathTex, Rectangle, Scene, Text, VGroup
+from manim import DOWN, LEFT, RIGHT, UP, Create, DashedLine, FadeIn, Line, MathTex, Rectangle, Text, VGroup
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from common import data, palette
+from common import data, layout, palette
 
 SIZE = palette.LABEL_WIDE + 4
 MATH = SIZE + 8
@@ -46,7 +46,7 @@ Y_RANGE = (8.4, 12.2)
 PANEL_WIDTH, PANEL_HEIGHT = 3.8, 4.4
 
 
-class TwoClocks(Scene):
+class TwoClocks(layout.QuickScene):
     def construct(self):
         # Measured: the fit of E06.json, row "main", and its centre.
         e06 = data.report_numbers("E06")

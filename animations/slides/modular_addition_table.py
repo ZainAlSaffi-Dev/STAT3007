@@ -17,11 +17,11 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from manim import (DOWN, LEFT, RIGHT, UP, Create, FadeIn, FadeOut, LaggedStart, MathTex, Scene, Square,
+from manim import (DOWN, LEFT, RIGHT, UP, Create, FadeIn, FadeOut, LaggedStart, MathTex, Square,
                    ManimColor, SurroundingRectangle, Text, VGroup, interpolate_color)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from common import data, palette
+from common import data, layout, palette
 
 P = 23
 SIZE = palette.LABEL_COLUMN
@@ -31,7 +31,7 @@ LIGHT, FADED = "#d9d8d4", "#f3f2ef"
 EXAMPLE = (3, 21)
 
 
-class ModularAdditionTable(Scene):
+class ModularAdditionTable(layout.QuickScene):
     def construct(self):
         split = data.load_split()
         a, b, is_test = split["a"], split["b"], split["is_test"]

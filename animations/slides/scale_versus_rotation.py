@@ -21,7 +21,7 @@ from pathlib import Path
 
 import numpy as np
 from manim import (DOWN, LEFT, RIGHT, UP, Create, DashedVMobject, DecimalNumber, FadeIn, FadeOut, Indicate, MathTex,
-                   Scene, Text, ValueTracker, VGroup, always_redraw)
+                   Text, ValueTracker, VGroup, always_redraw)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from common import kernels, layout, palette
@@ -42,7 +42,7 @@ def turned(K, angle):
     return Q @ K @ Q.T
 
 
-class ScaleVersusRotation(Scene):
+class ScaleVersusRotation(layout.QuickScene):
     def construct(self):
         K0 = turned(np.diag(EIGENVALUES), np.deg2rad(20))
 

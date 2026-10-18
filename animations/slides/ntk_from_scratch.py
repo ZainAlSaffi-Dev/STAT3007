@@ -26,7 +26,7 @@ import sys
 from pathlib import Path
 
 from manim import (DOWN, LEFT, RIGHT, UP, Arrow, Brace, Create, DashedLine, FadeIn, FadeOut, GrowFromEdge, Line,
-                   MathTex, Rectangle, Scene, Square, Text, VGroup)
+                   MathTex, Rectangle, Square, Text, VGroup)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from common import data, kernels, layout, palette
@@ -42,7 +42,7 @@ VMAX = 0.03
 ZOOM_ROWS = 5 * P
 
 
-class NTKFromScratch(Scene):
+class NTKFromScratch(layout.QuickScene):
     def construct(self):
         self.one_step()
         self.every_pair()
