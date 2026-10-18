@@ -95,7 +95,7 @@ on data it has not seen?
 
 :::: {.columns}
 ::: {.column width="62%"}
-::: {.anim scene="GrokkingTimeline" status="planned" source="measured: baseline, seed 0" length="20 s"}
+::: {.anim scene="GrokkingTimeline" status="planned" source="measured: baseline, seed 0" length="7 s"}
 1. The step axis runs from 1 to 200,000 on a log scale.
 2. Training accuracy, in grey, reaches 0.99 near step
    {{< var NfiveAOneMemMedian >}}. A hollow marker shows memorisation.
@@ -161,7 +161,7 @@ turning addition into rotation about a circle
 :::
 :::
 ::: {.column width="50%"}
-::: {.anim scene="ModularAdditionTable" status="planned" source="the split of seed 0" length="15 s"}
+::: {.anim scene="ModularAdditionTable" status="planned" source="the split of seed 0" length="5 s"}
 1. In a 23 by 23 grid, row $a$ and column $b$ hold $(a + b) \bmod 23$, coloured
    by value, so equal sums form diagonal stripes.
 2. The 476 training cells fade to grey. The 53 test cells stay bright.
@@ -255,7 +255,7 @@ The tangent kernel is from @jacotNeuralTangentKernel2020.
 :::
 :::
 ::: {.column width="54%"}
-::: {.anim scene="NTKFromScratch" status="planned" source="schematic" length="30 s"}
+::: {.anim scene="NTKFromScratch" status="planned" source="schematic" length="10 s"}
 1. A small network appears with two inputs, $x$ and $x'$, and their outputs as
    two bars.
 2. One gradient step pulls the output at $x$ towards its target.
@@ -299,7 +299,7 @@ $$
   [@kumarGrokkingTransitionLazy2024].
 :::
 ::: {.column width="50%"}
-::: {.anim scene="LazyVersusRich" status="planned" source="schematic, then measured" length="25 s"}
+::: {.anim scene="LazyVersusRich" status="planned" source="schematic, then measured" length="8 s"}
 1. The same network is shown at $\alpha = 0.5$, $1$ and $2$.
 2. At large $\alpha$ the weights barely move, so the kernel barely changes.
 3. At small $\alpha$ the kernel changes during training.
@@ -322,34 +322,9 @@ learns new features, which is the rich regime. Kumar and coauthors propose that
 grokking is the switch from lazy to rich.
 :::
 
-## The usual evidence is a distance, and a distance hides how the kernel moved {.optional time="0:20"}
-
-$$
-D_t = \frac{\Fnorm{K_t - K_0}}{\Fnorm{K_0}}
-$$
-
-- The kernel stays close to its start until the training data are fitted, and
-  moves far from it afterwards [@mohamadiWhyYouGrok2024].
-- A distance measures how far the kernel moved. It does not say how.
-
-::: {.g2-source}
-The relative variation $D_t$ is from @geigerDisentanglingFeatureLazy2020.
-:::
-
-::: {.notes}
-Speaker: TBD.
-
-Message: the evidence for lazy to rich is a single distance.
-
-Say: The usual evidence that the kernel changes is this distance between the
-kernel now and the kernel at the start. It stays small and then grows once the
-training data are fitted. But a distance alone cannot tell us what kind of
-change happened.
-:::
-
 ## A kernel can grow, or it can change shape {time="0:25"}
 
-::: {.anim .tall scene="ScaleVersusRotation" status="planned" source="schematic" length="25 s"}
+::: {.anim .tall scene="ScaleVersusRotation" status="planned" source="schematic" length="8 s"}
 1. Draw the kernel as an ellipse. Its axes are the eigenvectors, and their
    lengths are the eigenvalues.
 2. Growth: the ellipse gets larger and keeps its axes. Every similarity is
@@ -429,46 +404,7 @@ in green, is how well the kernel lines up with the labels. These three colours
 stay the same in every figure for the rest of the talk.
 :::
 
-## Seen as arrows, the three numbers are a length and two angles {.optional time="0:25"}
-
-::: {.anim .tall scene="KernelAsArrows" status="planned" source="schematic" length="20 s"}
-1. Treat each kernel matrix as one arrow, with the Frobenius inner product.
-2. The arrow of $K_0$ appears, then the arrow of $K_t$. The ratio of their
-   lengths is the scale $S_t$.
-3. The angle between them gives the rotation: $R_t$ is one minus its cosine.
-4. After centring, the angle between the kernel and the label kernel $YY^\top$
-   gives the alignment $A_t$.
-5. Stretching an arrow changes $S_t$ and leaves both angles alone.
-:::
-
-::: {.notes}
-Speaker: TBD.
-
-Message: the three numbers are one length and two angles, which is why scale
-cannot change the other two.
-
-Say: Think of each kernel matrix as a single arrow. Scale is how much longer
-the arrow got. Rotation is how far it turned away from where it started.
-Alignment is how close it points to the labels. Stretching the arrow changes
-the first number and not the other two.
-:::
-
-## The distance mixes growth and rotation {auto-animate="true" time="0:10"}
-
-::: {data-id="identity" .g2-lead style="text-align:center; margin-top:2.2em;"}
-$$
-D_t^2 = {\color{gscale}S_t^2} - 2\,\Sc\,(1 - \Rc) + 1
-$$
-:::
-
-::: {.notes}
-Speaker: TBD.
-
-Say: Because all three are measured on one matrix, the distance is a function
-of scale and rotation.
-:::
-
-## The distance mixes growth and rotation {auto-animate="true" time="0:20"}
+## The distance mixes growth and rotation {time="0:20"}
 
 :::: {.columns}
 ::: {.column width="48%"}
@@ -482,7 +418,7 @@ $$
 - A large $D_t$ therefore does not show that the kernel rotated.
 :::
 ::: {.column width="52%"}
-::: {.anim scene="IdentityLevelSets" status="exists as ScaleRotationLockstep, needs the report's definitions" source="identity, then measured" length="20 s"}
+::: {.anim scene="IdentityLevelSets" status="exists as ScaleRotationLockstep, needs the report's definitions" source="identity, then measured" length="7 s"}
 1. The plane has $S_t$ across and $R_t$ up, with grey lines of equal $D_t$.
 2. A path along $R_t = 0$ shows pure growth.
 3. A second path rotates at a fixed size.
@@ -498,38 +434,11 @@ Speaker: TBD.
 
 Message: a big distance can come from growth alone.
 
-Say: Rewritten, the squared distance is a scale part plus a rotation part. If
+Say: Because all three numbers come from one matrix, the squared distance
+splits into a scale part and a rotation part. If
 the kernel only grows, the rotation part is zero and the distance is just the
 change in size. So a large distance does not prove that the network learned new
 features. That is why we track scale and rotation separately.
-:::
-
-## On this task, the change of shape has a visible pattern {.optional time="0:30"}
-
-::: {.anim .tall scene="KernelOnTheTorus" status="renders" source="measured: baseline, seed 0, all 529 pairs" length="30 s"}
-1. The report's kernel on all 529 pairs, averaged over pairs with the same
-   offsets $(a - a', b - b')$. At step 0 it is a cross, which is plain input
-   overlap.
-2. The target is the line $a + b \equiv a' + b'$.
-3. The change of the normalised kernel from step 0 to step 31,000 falls on the
-   cross and rises most along an X. One arm is the target line, and the other
-   is the line $a - b \equiv a' - b'$.
-4. The kernel is rebuilt from the saved weights of the baseline run with seed 0.
-   The report measures it on the 53 test pairs, which are too few for this
-   picture.
-:::
-
-::: {.notes}
-Speaker: TBD.
-
-Message: rotation is a concrete change in which pairs the network treats as
-similar.
-
-Say: This is the measured kernel change on our task. At the start the kernel
-only knows which pairs share an input. Over training those pairs become less
-alike, and the kernel changes most along two diagonals. One is where the sums
-agree, which is the structure of the answer. The other is where the
-differences agree, which the answer does not contain.
 :::
 
 ## In theory, weight decay only rescales the kernel {time="0:25"}
@@ -556,7 +465,7 @@ network it is a guide.
 :::
 :::
 ::: {.column width="45%"}
-::: {.anim scene="KernelFlow" status="planned" source="schematic" length="20 s"}
+::: {.anim scene="KernelFlow" status="planned" source="schematic" length="7 s"}
 1. The ellipse of the kernel appears.
 2. The weight-decay term shrinks it evenly and keeps its axes.
 3. The $T_t$ term turns it.
@@ -632,7 +541,7 @@ recorded as more than 200,000, which is a censored time.
 :::
 :::
 ::: {.column width="42%"}
-::: {.anim scene="GridOfRuns" status="renders" source="design, report_runs.csv" length="15 s"}
+::: {.anim scene="GridOfRuns" status="renders" source="design, report_runs.csv" length="5 s"}
 1. Three panels show 6 by 8 cells, one panel per value of $\alpha$, with the
    width $N$ down and the weight decay $\eta\lambda$ across.
 2. Then the counts appear. There are $3 \times 6 \times 8 = 144$ cells with 5
@@ -653,37 +562,6 @@ the weight-decay clock. Every combination has five seeds. Runs that never grok
 are kept as censored data, so the slow cells are not thrown away.
 :::
 
-## Three tests, one for each column of the table {.optional time="0:15"}
-
-::: {.g2-cards}
-::: {.g2-card .is-ink}
-[Tier 1]{.g2-card-title}
-
-Does grokking happen at a fixed value of a statistic? A placebo test reads each
-run at another run's grokking step.
-:::
-
-::: {.g2-card .is-ink}
-[Tier 2]{.g2-card-title}
-
-How does $T$ scale with width and weight decay? We fit a censored log-normal
-model of $\log T$.
-:::
-
-::: {.g2-card .is-ink}
-[Tier 3]{.g2-card-title}
-
-Which statistic, read before any run groks, predicts $T$? Models are scored on
-cells and on values of $\alpha$ they have not seen.
-:::
-:::
-
-::: {.notes}
-Speaker: TBD.
-
-Say: We start with the baseline and then take the three tests in order.
-:::
-
 # Results {.act time="0:05"}
 
 Which clock does the grokking time follow?
@@ -692,7 +570,7 @@ Which clock does the grokking time follow?
 
 :::: {.columns}
 ::: {.column width="60%"}
-::: {.anim scene="BaselineKernel" status="renders" source="measured: baseline, 5 seeds" length="25 s"}
+::: {.anim scene="BaselineKernel" status="renders" source="measured: baseline, 5 seeds" length="8 s"}
 1. The clip plots $S_t$ on top and $R_t$ below against step, for the five seeds
    at $\alpha = 1$, $N = 100$ and $\eta\lambda = 0$. The line is the median and
    the band the range.
@@ -736,7 +614,7 @@ within 200,000 steps.
 
 :::: {.columns}
 ::: {.column width="58%"}
-::: {.anim scene="PlaceboTest" status="new" source="measured: E03" length="25 s"}
+::: {.anim scene="PlaceboTest" status="new" source="measured: E03" length="8 s"}
 1. Each dot is one run of width 100 that groks. Its height is $R_t$ at its own
    grokking step.
 2. The dots sit in a narrow band. Their spread is the standard deviation (SD).
@@ -775,19 +653,6 @@ statistic that barely moves would pass that check too. So we also read each run
 at somebody else's grokking step. A real threshold gets much looser when we do
 that. Rotation tightens the most, by a factor of
 {{< var EthreeNhundredRRatio >}}. Alignment barely tightens at all.
-:::
-
-## The statistics at the grokking step of every run {.optional time="0:25"}
-
-![](assets/figures/E2_thresholds.png){.g2-fig}
-
-::: {.g2-small}
-Each dot is a run at its grokking step, and each bar is a median. The ratio on
-each panel is the tightening ratio of the placebo test.
-:::
-
-::: {.notes}
-Speaker: TBD. Use only if there is time, or keep it for questions.
 :::
 
 ## Reaching that rotation is not enough to grok {time="0:20"}
@@ -868,75 +733,6 @@ Adding the next decay level, three times ten to the minus four, moves b towards
 zero, so this holds for the range where every seed groks.
 :::
 
-## What the two clocks would look like {.optional time="0:25"}
-
-::: {.anim .tall scene="TwoClocks" status="renders" source="measured: E06 fit" length="20 s"}
-1. Two slices pass through the centre of the fit. They show $\log T$ against
-   $\log N$ and $\log T$ against $\log(\eta\lambda)$.
-2. The rotation clock rises with width with slope $a = 1$ and is flat in decay.
-   This slope is our reading.
-3. The weight-decay clock is flat in width and falls with slope $b = -1$ in
-   decay.
-4. Our fitted lines lie between the two in both slices.
-:::
-
-::: {.notes}
-Speaker: TBD. Use this clip if the audience needs a picture of the exponents.
-:::
-
-## A wider network groks later and stops grokking at a smaller weight decay {.optional time="0:30"}
-
-:::: {.columns}
-::: {.column width="55%"}
-![](assets/figures/E4_map.png){.g2-fig}
-:::
-::: {.column width="45%"}
-- Without weight decay, only $N = 50$ and $N = 100$ grok within the budget.
-- Every seed groks up to $\eta\lambda$ = {{< var EfourEdgeWFifty >}} for
-  $N \le 400$, and only up to {{< var EfourEdgeWEighthundred >}} for
-  $N = 800$ and $1600$.
-- The weight decay that speeds grokking depends on the width.
-:::
-::::
-
-::: {.notes}
-Speaker: TBD. This is a practical point for anyone who tunes weight decay.
-:::
-
-## Width sets the rotation, and at a fixed width weight decay shrinks the scale {.optional time="0:30"}
-
-:::: {.columns}
-::: {.column width="55%"}
-![](assets/figures/E7_mechanism.png){.g2-fig}
-:::
-::: {.column width="45%" .g2-compact}
-Both maps are read at $t^* = 2{,}430$, before any run groks.
-
-- Up to $\eta\lambda = 3\times10^{-4}$, the rotation changes with the width and
-  hardly with the weight decay.
-- The scale falls with the weight decay at every width.
-
-::: {.g2-small}
-Among runs that grok, width explains {{< var NnineLogRWidth >}} of the spread
-of $\log R_t$, and weight decay {{< var NnineLogRDecay >}}. The spread of
-$S_t$ is shared: $\alpha$ explains {{< var NnineSAlpha >}}, width
-{{< var NnineSWidth >}} and weight decay {{< var NnineSDecay >}}.
-:::
-:::
-::::
-
-::: {.notes}
-Speaker: TBD.
-
-Message: this links Tier 2 back to Tier 1.
-
-Say: Read early, before any run groks, rotation depends on the width and hardly
-on the weight decay. At a fixed width, the scale shrinks as the weight decay
-grows. So width goes with rotation, and weight decay goes with a smaller scale.
-The grokking time depends on both. These are associations, and we have not
-tested a causal link.
-:::
-
 ## Tier 3: rotation is the best single predictor, and scale adds what rotation lacks {time="0:40"}
 
 :::: {.columns}
@@ -982,68 +778,15 @@ squared from {{< var EtenRRsq >}} to {{< var EtenSRRsq >}}. Adding alignment
 on top only takes it to {{< var EtenSRARsq >}}.
 :::
 
-## On an unseen $\alpha$, the statistics work best together, and so do width and weight decay {.optional time="0:30"}
-
-:::: {.columns}
-::: {.column width="55%"}
-![](assets/figures/E8_ladder.png){.g2-fig}
-:::
-::: {.column width="45%" .g2-compact}
-- Each statistic alone ranks runs little better than chance: at most
-  {{< var EeightRonly >}}, where 0.5 is chance.
-- Boosted trees on all three reach {{< var EeightXgb >}}. A recurrent network
-  that reads their history up to $t^*$ reaches {{< var EeightGru >}}.
-- As a reference, trees given width and weight decay reach
-  {{< var EeightRef >}}, above every kernel model. Given width alone they reach
-  {{< var EeightWidthref >}}, and given weight decay alone
-  {{< var EeightDecayref >}}.
-
-::: {.g2-result}
-Each setting alone ranks runs worse than the two together. This supports the
-mixed clock of Tier 2.
-:::
-
-::: {.g2-small}
-The score is the concordance, the share of pairs of runs put in the right
-order. Bars are means over the three held-out values of $\alpha$.
-:::
-:::
-::::
-
-::: {.notes}
-Speaker: TBD.
-
-Message: on a value of alpha it has never seen, the kernel ranks runs best when
-all three statistics are used, and the settings rank them best when width and
-weight decay are used together.
-
-Say: Here each model ranks the runs of a value of alpha it has never seen. A
-score of 0.5 is chance. Each statistic on its own scores at most
-{{< var EeightRonly >}}. Boosted trees on all three reach {{< var EeightXgb >}},
-and a recurrent network that reads their history reaches {{< var EeightGru >}}.
-The dashed line is the same trees given the width and the weight decay, at
-{{< var EeightRef >}}. Width alone gives {{< var EeightWidthref >}} and weight
-decay alone gives {{< var EeightDecayref >}}, so neither setting is enough on
-its own. That is the mixed clock again. Weight decay alone does rank runs
-better than any statistic alone and about as well as the trees, so we do not
-claim that the kernel beats the weight decay. The kernel's advantage is that it
-can be measured in any network. A share of {{< var EtenBetweenLogR >}} of the spread
-of log R lies between cells, so the statistics cannot tell which seed of a cell
-groks first.
-:::
-
-## Tier 4: does the split hold beyond modular addition? {time="0:30"}
+## Tier 4: does the split hold beyond modular addition? {time="0:20"}
 
 :::: {.columns}
 ::: {.column width="50%"}
 - We repeat the measurements on MNIST digits, after the setup of Omnigrok
   [@liuOmnigrokGrokkingAlgorithmic2023].
-- We use 1,000 training images and all 10,000 test images. The network is a
-  three-layer ReLU network without biases, trained on the squared error.
 - MNIST does not reach test accuracy 0.95 reliably, so the grokking event is
   test accuracy 0.80.
-- The planned grid has 4 initial scales, 4 widths, 7 weight decays and 5 seeds.
-  That is 560 runs of 500,000 steps.
+- The planned grid has 560 runs. Its results are pending.
 :::
 ::: {.column width="50%"}
 ::: {.figure-todo name="MnistResult"}
@@ -1068,30 +811,32 @@ Message: a second task tests whether the picture is specific to modular
 addition.
 
 Say: We write this once the sweep has run. Until then, describe the setup and
-say plainly that the results are pending.
+say plainly that the results are pending. For questions: 1,000 training images
+and all 10,000 test images, a three-layer ReLU network without biases on the
+squared error, and a grid of 4 initial scales, 4 widths, 7 weight decays and 5
+seeds, each run 500,000 steps.
 :::
 
 # What we found {.act time="0:05"}
 
 So what sets the grokking time?
 
-## Limitations {time="0:25"}
+## Limitations {time="0:15"}
 
 - The main grid uses one task, one architecture and the NTK parameterisation.
-- Each cell has 5 seeds, and each event is known only to the nearest checkpoint.
 - The Tier 2 exponents depend on which weight-decay cells enter the fit.
 - The kernel statistics do not separate the seeds of a cell, and the settings
   predict better than any kernel model.
-- The kernel-flow result assumes gradient flow and a homogeneous network. Our
-  centred network is not homogeneous, so the result is only a guide here.
 
 ::: {.notes}
 Speaker: TBD.
 
 Say: We used one task and one network family, so we cannot claim that the
-picture holds in general. The width effect belongs to the NTK
-parameterisation. The exponents depend on the range of weight decays. And the kernel statistics are not a
-better forecast than the settings themselves.
+picture holds in general. The exponents depend on the range of weight decays.
+And the kernel statistics are not a better forecast than the settings
+themselves. If asked: each cell has 5 seeds, each event is known only to the
+nearest checkpoint, and the kernel-flow result assumes a homogeneous network,
+which ours is not.
 :::
 
 ## Rotation matters most, and the clock is mixed {time="0:30"}
@@ -1156,6 +901,246 @@ The code and the data extract behind every number are in the repository, in
 # Backup {.backup}
 
 These slides are for questions.
+
+## The usual evidence is a distance, and a distance hides how the kernel moved
+
+$$
+D_t = \frac{\Fnorm{K_t - K_0}}{\Fnorm{K_0}}
+$$
+
+- The kernel stays close to its start until the training data are fitted, and
+  moves far from it afterwards [@mohamadiWhyYouGrok2024].
+- A distance measures how far the kernel moved. It does not say how.
+
+::: {.g2-source}
+The relative variation $D_t$ is from @geigerDisentanglingFeatureLazy2020.
+:::
+
+::: {.notes}
+Speaker: TBD.
+
+Message: the evidence for lazy to rich is a single distance.
+
+Say: The usual evidence that the kernel changes is this distance between the
+kernel now and the kernel at the start. It stays small and then grows once the
+training data are fitted. But a distance alone cannot tell us what kind of
+change happened.
+:::
+
+## Seen as arrows, the three numbers are a length and two angles
+
+::: {.anim .tall scene="KernelAsArrows" status="planned" source="schematic" length="7 s"}
+1. Treat each kernel matrix as one arrow, with the Frobenius inner product.
+2. The arrow of $K_0$ appears, then the arrow of $K_t$. The ratio of their
+   lengths is the scale $S_t$.
+3. The angle between them gives the rotation: $R_t$ is one minus its cosine.
+4. After centring, the angle between the kernel and the label kernel $YY^\top$
+   gives the alignment $A_t$.
+5. Stretching an arrow changes $S_t$ and leaves both angles alone.
+:::
+
+::: {.notes}
+Speaker: TBD.
+
+Message: the three numbers are one length and two angles, which is why scale
+cannot change the other two.
+
+Say: Think of each kernel matrix as a single arrow. Scale is how much longer
+the arrow got. Rotation is how far it turned away from where it started.
+Alignment is how close it points to the labels. Stretching the arrow changes
+the first number and not the other two.
+:::
+
+## On this task, the change of shape has a visible pattern
+
+::: {.anim .tall scene="KernelOnTheTorus" status="renders" source="measured: baseline, seed 0, all 529 pairs" length="10 s"}
+1. The report's kernel on all 529 pairs, averaged over pairs with the same
+   offsets $(a - a', b - b')$. At step 0 it is a cross, which is plain input
+   overlap.
+2. The target is the line $a + b \equiv a' + b'$.
+3. The change of the normalised kernel from step 0 to step 31,000 falls on the
+   cross and rises most along an X. One arm is the target line, and the other
+   is the line $a - b \equiv a' - b'$.
+4. The kernel is rebuilt from the saved weights of the baseline run with seed 0.
+   The report measures it on the 53 test pairs, which are too few for this
+   picture.
+:::
+
+::: {.notes}
+Speaker: TBD.
+
+Message: rotation is a concrete change in which pairs the network treats as
+similar.
+
+Say: This is the measured kernel change on our task. At the start the kernel
+only knows which pairs share an input. Over training those pairs become less
+alike, and the kernel changes most along two diagonals. One is where the sums
+agree, which is the structure of the answer. The other is where the
+differences agree, which the answer does not contain.
+:::
+
+## Three tests, one for each column of the table
+
+::: {.g2-cards}
+::: {.g2-card .is-ink}
+[Tier 1]{.g2-card-title}
+
+Does grokking happen at a fixed value of a statistic? A placebo test reads each
+run at another run's grokking step.
+:::
+
+::: {.g2-card .is-ink}
+[Tier 2]{.g2-card-title}
+
+How does $T$ scale with width and weight decay? We fit a censored log-normal
+model of $\log T$.
+:::
+
+::: {.g2-card .is-ink}
+[Tier 3]{.g2-card-title}
+
+Which statistic, read before any run groks, predicts $T$? Models are scored on
+cells and on values of $\alpha$ they have not seen.
+:::
+:::
+
+::: {.notes}
+Speaker: TBD.
+
+Say: We start with the baseline and then take the three tests in order.
+:::
+
+## The statistics at the grokking step of every run
+
+![](assets/figures/E2_thresholds.png){.g2-fig}
+
+::: {.g2-small}
+Each dot is a run at its grokking step, and each bar is a median. The ratio on
+each panel is the tightening ratio of the placebo test.
+:::
+
+::: {.notes}
+Speaker: TBD. Use only if there is time, or keep it for questions.
+:::
+
+## What the two clocks would look like
+
+::: {.anim .tall scene="TwoClocks" status="renders" source="measured: E06 fit" length="7 s"}
+1. Two slices pass through the centre of the fit. They show $\log T$ against
+   $\log N$ and $\log T$ against $\log(\eta\lambda)$.
+2. The rotation clock rises with width with slope $a = 1$ and is flat in decay.
+   This slope is our reading.
+3. The weight-decay clock is flat in width and falls with slope $b = -1$ in
+   decay.
+4. Our fitted lines lie between the two in both slices.
+:::
+
+::: {.notes}
+Speaker: TBD. Use this clip if the audience needs a picture of the exponents.
+:::
+
+## A wider network groks later and stops grokking at a smaller weight decay
+
+:::: {.columns}
+::: {.column width="55%"}
+![](assets/figures/E4_map.png){.g2-fig}
+:::
+::: {.column width="45%"}
+- Without weight decay, only $N = 50$ and $N = 100$ grok within the budget.
+- Every seed groks up to $\eta\lambda$ = {{< var EfourEdgeWFifty >}} for
+  $N \le 400$, and only up to {{< var EfourEdgeWEighthundred >}} for
+  $N = 800$ and $1600$.
+- The weight decay that speeds grokking depends on the width.
+:::
+::::
+
+::: {.notes}
+Speaker: TBD. This is a practical point for anyone who tunes weight decay.
+:::
+
+## Width sets the rotation, and at a fixed width weight decay shrinks the scale
+
+:::: {.columns}
+::: {.column width="55%"}
+![](assets/figures/E7_mechanism.png){.g2-fig}
+:::
+::: {.column width="45%" .g2-compact}
+Both maps are read at $t^* = 2{,}430$, before any run groks.
+
+- Up to $\eta\lambda = 3\times10^{-4}$, the rotation changes with the width and
+  hardly with the weight decay.
+- The scale falls with the weight decay at every width.
+
+::: {.g2-small}
+Among runs that grok, width explains {{< var NnineLogRWidth >}} of the spread
+of $\log R_t$, and weight decay {{< var NnineLogRDecay >}}. The spread of
+$S_t$ is shared: $\alpha$ explains {{< var NnineSAlpha >}}, width
+{{< var NnineSWidth >}} and weight decay {{< var NnineSDecay >}}.
+:::
+:::
+::::
+
+::: {.notes}
+Speaker: TBD.
+
+Message: this links Tier 2 back to Tier 1.
+
+Say: Read early, before any run groks, rotation depends on the width and hardly
+on the weight decay. At a fixed width, the scale shrinks as the weight decay
+grows. So width goes with rotation, and weight decay goes with a smaller scale.
+The grokking time depends on both. These are associations, and we have not
+tested a causal link.
+:::
+
+## On an unseen $\alpha$, the statistics work best together, and so do width and weight decay
+
+:::: {.columns}
+::: {.column width="55%"}
+![](assets/figures/E8_ladder.png){.g2-fig}
+:::
+::: {.column width="45%" .g2-compact}
+- Each statistic alone ranks runs little better than chance: at most
+  {{< var EeightRonly >}}, where 0.5 is chance.
+- Boosted trees on all three reach {{< var EeightXgb >}}. A recurrent network
+  that reads their history up to $t^*$ reaches {{< var EeightGru >}}.
+- As a reference, trees given width and weight decay reach
+  {{< var EeightRef >}}, above every kernel model. Given width alone they reach
+  {{< var EeightWidthref >}}, and given weight decay alone
+  {{< var EeightDecayref >}}.
+
+::: {.g2-result}
+Each setting alone ranks runs worse than the two together. This supports the
+mixed clock of Tier 2.
+:::
+
+::: {.g2-small}
+The score is the concordance, the share of pairs of runs put in the right
+order. Bars are means over the three held-out values of $\alpha$.
+:::
+:::
+::::
+
+::: {.notes}
+Speaker: TBD.
+
+Message: on a value of alpha it has never seen, the kernel ranks runs best when
+all three statistics are used, and the settings rank them best when width and
+weight decay are used together.
+
+Say: Here each model ranks the runs of a value of alpha it has never seen. A
+score of 0.5 is chance. Each statistic on its own scores at most
+{{< var EeightRonly >}}. Boosted trees on all three reach {{< var EeightXgb >}},
+and a recurrent network that reads their history reaches {{< var EeightGru >}}.
+The dashed line is the same trees given the width and the weight decay, at
+{{< var EeightRef >}}. Width alone gives {{< var EeightWidthref >}} and weight
+decay alone gives {{< var EeightDecayref >}}, so neither setting is enough on
+its own. That is the mixed clock again. Weight decay alone does rank runs
+better than any statistic alone and about as well as the trees, so we do not
+claim that the kernel beats the weight decay. The kernel's advantage is that it
+can be measured in any network. A share of {{< var EtenBetweenLogR >}} of the spread
+of log R lies between cells, so the statistics cannot tell which seed of a cell
+groks first.
+:::
 
 ## The identity behind the split
 
