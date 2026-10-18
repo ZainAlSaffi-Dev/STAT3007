@@ -428,8 +428,10 @@ def run_group(tasks, device=None):
         loggers = [F.FeatureLogger(L.normalise_checkpoints({**L.DEFAULTS, **c}), t["run_id"],
                                    save_steps=t["save_steps"], linear_interval=LINEAR_INTERVAL,
                                    log_steps=t["log_steps"], device=device) for t, c in zip(todo, configs)]
-        runs = L.train_fused([t["run_id"] for t in todo], configs, on_checkpoints=loggers,
-                             results_dir=todo[0]["out_dir"], verbose=False, device=device)
+        fused_logger = F.FusedFeatureLogger(loggers)
+        runs = L.train_fused([t["run_id"] for t in todo], configs, results_dir=todo[0]["out_dir"], verbose=False,
+                             device=device, on_fused_checkpoint=fused_logger)
+        fused_logger.finish()
     except Exception:
         error = traceback.format_exc()
     seconds = time.time() - t0
@@ -643,6 +645,42 @@ def cmd_check(args, log):
     ok &= fused_ok
     log.info(f"check: fused against train_run, largest difference {worst_fused:.1e} over {len(specs)} runs "
              f"({'pass' if fused_ok else 'FAIL'}, torch.testing.assert_close float64 defaults)")
+
+    # The fused feature logger must give each run the rows FeatureLogger gives it, also in float64.
+    def logger_for(i, c, prefix):
+        return F.FeatureLogger(L.normalise_checkpoints({**L.DEFAULTS, **c}), f"{prefix}{i}", save_steps=[0, steps],
+                               log_steps=log_steps(steps), dtype=torch.float64)
+
+    serial_loggers = [logger_for(i, c, "serial") for i, c in enumerate(specs)]
+    for i, (c, lg) in enumerate(zip(specs, serial_loggers)):
+        L.train_run(f"serial{i}", verbose=False, on_checkpoint=lg, results_dir=scratch, **c)
+    fused_loggers = [logger_for(i, c, "fused") for i, c in enumerate(specs)]
+    group = F.FusedFeatureLogger(fused_loggers)
+    L.train_fused([f"fused{i}" for i in range(len(specs))], specs, results_dir=scratch, verbose=False, device="cpu",
+                  on_fused_checkpoint=group)
+    group.finish()
+    rows_ok, worst_rows = True, 0.0
+    skip = {"run_id", "wall_seconds"}
+    for a, b in zip(fused_loggers, serial_loggers):
+        if len(a.rows) != len(b.rows):
+            rows_ok = False
+            log.info(f"check: fused logger has {len(a.rows)} rows, FeatureLogger {len(b.rows)}")
+            continue
+        for k in F.COLUMN_NAMES:
+            if k in skip:
+                continue
+            x = torch.tensor([float(r[k]) for r in a.rows], dtype=torch.float64)
+            y = torch.tensor([float(r[k]) for r in b.rows], dtype=torch.float64)
+            worst_rows = max(worst_rows, float(torch.nan_to_num((x - y).abs()).max()))
+            try:
+                torch.testing.assert_close(x, y, equal_nan=True)
+            except AssertionError as error:
+                rows_ok = False
+                log.info(f"check: fused logger column {k}: {str(error).splitlines()[0]}")
+    ok &= rows_ok
+    log.info(f"check: fused logger against FeatureLogger, largest difference {worst_rows:.1e} over "
+             f"{len(F.COLUMN_NAMES) - len(skip)} columns ({'pass' if rows_ok else 'FAIL'}, "
+             "torch.testing.assert_close float64 defaults)")
     log.info("check: all passed" if ok else "check: SOME CHECKS FAILED")
     return 0 if ok else 1
 

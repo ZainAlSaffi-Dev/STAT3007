@@ -46,6 +46,7 @@ import time
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.func import grad, vmap
 
 import ntk_lib as L
 
@@ -379,7 +380,7 @@ class FeatureLogger:
     .grad, and the power iteration uses its own random generator.
     """
 
-    def __init__(self, cfg, run_id, save_steps=(), linear_interval=2000, log_steps=(), device=None):
+    def __init__(self, cfg, run_id, save_steps=(), linear_interval=2000, log_steps=(), device=None, dtype=None):
         if (cfg["parameterisation"] != "deep_standard" or cfg["depth"] != DEPTH or cfg["centred"]
                 or cfg["alpha"] != 1.0 or cfg["dataset"] != "mnist"):
             raise ValueError("the MNIST feature logger needs the uncentred bias-free network of depth 3 on MNIST")
@@ -411,12 +412,13 @@ class FeatureLogger:
         self.G = G
         self.G_unit = G / np.linalg.norm(G)
         self.label_basis = orthonormal_basis(self.HY)
-        # The logger evaluates the model on the model's device, which device names when it is not the CPU.
-        if device is not None:
-            self.X = {s: t.to(device) for s, t in self.X.items()}
-            self.y = {s: t.to(device) for s, t in self.y.items()}
+        # The logger evaluates the model on the model's device and in the model's floating point type, which
+        # device and dtype name when they differ from the CPU and float32.
+        if device is not None or dtype is not None:
+            self.X = {s: t.to(device, dtype) for s, t in self.X.items()}
+            self.y = {s: t.to(device, dtype) for s, t in self.y.items()}
             self.labels = {s: t.to(device) for s, t in self.labels.items()}
-            self.X_report, self.x_probe = self.X_report.to(device), self.x_probe.to(device)
+            self.X_report, self.x_probe = self.X_report.to(device, dtype), self.x_probe.to(device, dtype)
 
         self.refs = {}
         self.weights_0 = None
@@ -688,6 +690,360 @@ class FeatureLogger:
         a = {k: np.asarray(v, dtype=float) for k, v in self.check_values.items()}
         a["A_0"] = np.array(self.A_0)
         return a
+
+
+def _where(mask, value):
+    """value where mask holds and NaN elsewhere."""
+    return torch.where(mask, value, torch.full_like(value, torch.nan))
+
+
+def _effective_rank(values):
+    """effective_rank along the last dimension of a tensor."""
+    v = values.clamp(min=0.0)
+    total = v.sum(-1, keepdim=True)
+    q = v / total
+    entropy = -torch.where(v > 0, q * torch.log(q), torch.zeros_like(q)).sum(-1)
+    return _where(total[..., 0] > 0, torch.exp(entropy))
+
+
+def _centre(K):
+    """centre for a stack of float64 matrices."""
+    return K - K.mean(-2, keepdim=True) - K.mean(-1, keepdim=True) + K.mean((-2, -1), keepdim=True)
+
+
+def _fro(K):
+    return torch.linalg.matrix_norm(K)
+
+
+def _inner(A, B):
+    return (A * B).sum((-2, -1))
+
+
+class FusedFeatureLogger:
+    """The columns of FeatureLogger for all runs of an ntk_lib.train_fused group, one checkpoint at a time.
+
+    It holds one FeatureLogger for each run and computes every column for
+    all runs at once, as float64 tensors with a leading run dimension on the
+    runs' device, with one copy to the host per checkpoint. The rows, saved
+    weights and identity terms go to each run's own FeatureLogger, so the
+    files that mnist_sweep writes are unchanged. Every column follows the
+    formula of the FeatureLogger method that computes it. The probe kernel
+    terms are the layer terms train_fused has already computed, which
+    kernel_terms with U the identity equals. The weights reach the host only
+    at the steps that save them and at each run's last checkpoint, which
+    finish copies.
+    """
+
+    def __init__(self, loggers):
+        self.loggers, self.fnet, self.factors = loggers, None, None
+        first = loggers[0]
+        self.device = first.X["train"].device
+        dev = dict(device=self.device, dtype=torch.float64)
+        self.X_train = torch.stack([lg.X["train"] for lg in loggers])
+        self.y_train = torch.stack([lg.y["train"] for lg in loggers])
+        self.labels_train = torch.stack([lg.labels["train"] for lg in loggers])
+        self.X_test, self.labels_test = first.X["test"], first.labels["test"]
+        self.x_probe = torch.stack([lg.x_probe for lg in loggers])
+        self.X_report = first.X_report
+        self.Y_report = torch.as_tensor(first.Y_report, **dev)
+        self.Gc_report = _centre(self.Y_report @ self.Y_report.T)
+        self.Y_probe = torch.as_tensor(np.stack([lg.Y_probe for lg in loggers]), **dev)
+        self.HY = torch.as_tensor(np.stack([lg.HY for lg in loggers]), **dev)
+        self.G = torch.as_tensor(np.stack([lg.G for lg in loggers]), **dev)
+        self.G_unit = torch.as_tensor(np.stack([lg.G_unit for lg in loggers]), **dev)
+        rank = max(lg.label_basis.shape[1] for lg in loggers)
+        # Zero columns leave trace(Q^T K Q) unchanged, so the label bases are padded to one width.
+        self.Q = torch.as_tensor(np.stack([np.pad(lg.label_basis, ((0, 0), (0, rank - lg.label_basis.shape[1])))
+                                           for lg in loggers]), **dev)
+        self.probe_train = torch.as_tensor(first.probe_train, device=self.device)
+        self.probe_test = torch.as_tensor(first.probe_test, device=self.device)
+        self.U = {k: torch.as_tensor(v, **dev) for k, v in first.U.items()}
+        self.eta_0 = torch.tensor([lg.eta_0 for lg in loggers], **dev)
+        self.eta_kappa = torch.tensor([lg.eta_kappa for lg in loggers], **dev)
+        self.refs, self.sharp_vec, self.last_params, self.ref0 = {}, None, None, None
+
+    def finish(self):
+        """Give each run's FeatureLogger the weights of its last recorded checkpoint."""
+        for m, lg in enumerate(self.loggers):
+            if lg.last_step is not None:
+                lg.last_weights = [self.last_params[k][m].cpu().numpy().astype(np.float32).copy()
+                                   for k in self.last_params]
+
+    def __call__(self, step, live, params, K_t, layer_terms, rows, fnet, factors):
+        """Record checkpoint step of the runs in live, from their stacked parameters and train_fused's kernels."""
+        t_call = time.time()
+        if self.fnet is None:
+            self.fnet, self.factors = fnet, factors
+            self.terms_of = {name: vmap(lambda Ws, x, U=U: kernel_terms(Ws, factors, x, U))
+                             for name, U in self.loggers[0].U.items()}
+        idx = torch.tensor(live, device=self.device)
+        Ws = [params[k] for k in params]
+        Wd = [W.detach().double() for W in Ws]
+        if self.ref0 is None:
+            if step != 0:
+                raise ValueError(f"the first checkpoint must be step 0, not {step}")
+            self.ref0 = [W.clone() for W in Wd]
+            self.last_params = {k: v.detach().clone() for k, v in params.items()}
+        for k, v in params.items():
+            self.last_params[k][idx] = v.detach()[idx]
+        lr = torch.tensor([rows[m].get("eta", self.loggers[m].eta_0) if rows[m] is not None else self.loggers[m].eta_0
+                           for m in range(len(rows))], device=self.device, dtype=torch.float64)
+        out = {}
+        self.performance(params, out)
+        grads = self.optimisation(params, lr, out)
+        self.weight_features(Wd, out)
+        self.kernel_features(step, K_t, layer_terms, Ws, lr, grads, out)
+        names = list(out)
+        host = torch.stack([out[k].to(torch.float64) for k in names]).cpu().numpy()
+        save = [m for m in live if step in self.loggers[m].save_steps]
+        saved = {m: [params[k][m].detach().cpu().numpy().astype(np.float32).copy() for k in params] for m in save}
+        seconds = time.time() - t_call
+        for m in live:
+            lg, row = self.loggers[m], rows[m]
+            values = {k: host[i][m] for i, k in enumerate(names)}
+            features = dict(lg.ids)
+            features.update(step=int(step), log10_step1=math.log10(step + 1),
+                            dt_prev=np.nan if lg.last_step is None else float(step - lg.last_step),
+                            on_linear_grid=bool(step % lg.linear_interval == 0), on_log_grid=bool(step in lg.log_steps),
+                            wall_seconds=t_call - lg.t_start)
+            features.update({k: row[k] for k in HISTORY_COPIED})
+            eta = row.get("eta", lg.eta_0)
+            features.update(lr=eta, lr_factor=eta / lg.eta_0, lam=row.get("lam", np.nan))
+            for k, v in values.items():
+                if k in ("stationary", "kernel_degenerate"):
+                    features[k] = bool(v)
+                elif k == "eig_n90":
+                    features[k] = int(v) if np.isfinite(v) else np.nan
+                elif not k.startswith("_"):
+                    features[k] = float(v)
+            missing, extra = set(COLUMN_NAMES) - set(features), set(features) - set(COLUMN_NAMES)
+            if missing or extra:
+                raise KeyError(f"feature row does not match COLUMNS: missing {sorted(missing)}, extra {sorted(extra)}")
+            lg.rows.append({name: features[name] for name in COLUMN_NAMES})
+            lg.check_values["step"].append(int(step))
+            for k in ("S", "R", "A", "D", "exp2S_term", "cross_term", "gamma", "share_k0", "share_gperp",
+                      "share_residual"):
+                lg.check_values[k].append(float(values[f"_{k}"]))
+            for k in ("S_c", "R_c", "A_t"):
+                lg.check_values[k].append(float(row[k]))
+            if step == 0:
+                lg.A_0 = float(values["_A_0"])
+            if m in saved:
+                lg.weights[int(step)] = saved[m]
+            lg.last_step = int(step)
+            lg.callback_seconds += seconds / len(live)
+
+    def performance(self, params, out):
+        with torch.no_grad():
+            for s, X, lab in (("train", self.X_train, self.labels_train), ("test", self.X_test, self.labels_test)):
+                f = (vmap(self.fnet)(params, X) if s == "train" else
+                     vmap(self.fnet, in_dims=(0, None))(params, X)).double()
+                lab = lab.expand(f.shape[0], -1)[..., None]
+                correct = f.gather(-1, lab)[..., 0]
+                margin = correct - f.scatter(-1, lab, -torch.inf).max(-1).values
+                wrong = f.scatter(-1, lab, 0.0)
+                n, C = f.shape[-2], f.shape[-1]
+                out[f"{s}_margin_mean"] = margin.mean(-1)
+                out[f"{s}_margin_min"] = margin.min(-1).values
+                out[f"{s}_correct_out_mean"] = correct.mean(-1)
+                out[f"{s}_wrong_out_rms"] = torch.sqrt((wrong ** 2).sum((-2, -1)) / (n * (C - 1)))
+                out[f"{s}_out_rms"] = torch.sqrt((f ** 2).mean((-2, -1)))
+                out[f"{s}_out_max_mean"] = f.max(-1).values.mean(-1)
+
+    def optimisation(self, params, lr, out):
+        """The gradient columns, and the sharpness by the warm-started power iteration of FeatureLogger.
+
+        The Hessian-vector products are the reverse-over-reverse composition
+        vjp(grad(loss)) of the PyTorch tutorial on Jacobians, Hessians, hvp
+        and vhp, which composes with vmap.
+        """
+        def loss(p, x, y):
+            return nn.functional.mse_loss(self.fnet(p, x), y)
+
+        grads = vmap(grad(loss))(params, self.X_train, self.y_train)
+        g = torch.cat([v.flatten(1) for v in grads.values()], 1).double()
+        theta = torch.cat([v.detach().flatten(1) for v in params.values()], 1).double()
+        gn, tn = torch.linalg.vector_norm(g, dim=1), torch.linalg.vector_norm(theta, dim=1)
+        wd = self.eta_kappa / lr
+        pull = wd * tn
+        out["grad_norm"] = gn
+        for layer, v in zip(LAYERS, grads.values()):
+            out[f"grad_norm_{layer}"] = torch.linalg.vector_norm(v.flatten(1).double(), dim=1)
+        step = torch.linalg.vector_norm(g + wd[:, None] * theta, dim=1)
+        out["update_norm"] = lr * step
+        out["grad_weight_cos"] = _where((gn > 0) & (tn > 0), (g * theta).sum(1) / (gn * tn))
+        out["grad_decay_ratio"] = _where(pull > 0, gn / pull)
+        out["decay_residual"] = _where(gn + pull > 0, step / (gn + pull))
+        out["stationary"] = ((wd > 0) & (out["decay_residual"] < STATIONARY)).double()
+
+        def hvp(p, x, y, v):
+            return torch.func.vjp(lambda q: grad(loss)(q, x, y), p)[1](v)[0]
+
+        hvp_all = vmap(hvp)
+        if self.sharp_vec is None:
+            self.sharp_vec = {k: torch.stack([torch.randn(t.shape[1:], generator=lg.rng).to(t.dtype) for lg in self.loggers])
+                              .to(t.device) for k, t in params.items()}
+        v = self.sharp_vec
+        lam = torch.full((len(self.loggers),), torch.nan, device=self.device, dtype=torch.float64)
+        active = torch.ones(len(self.loggers), dtype=torch.bool, device=self.device)
+        for _ in range(SHARPNESS_ITERS):
+            vn = torch.sqrt(sum((t.double() ** 2).flatten(1).sum(1) for t in v.values()))
+            active = active & (vn > 0) & torch.isfinite(vn)
+            u = {k: t / vn.to(t.dtype).view((-1,) + (1,) * (t.dim() - 1)) for k, t in v.items()}
+            Hv = hvp_all(params, self.X_train, self.y_train, u)
+            lam = torch.where(active, sum((u[k].double() * Hv[k].double()).flatten(1).sum(1) for k in u), lam)
+            mask = {k: active.view((-1,) + (1,) * (t.dim() - 1)) for k, t in v.items()}
+            v = {k: torch.where(mask[k], Hv[k], v[k]) for k in v}
+        vn = torch.sqrt(sum((t.double() ** 2).flatten(1).sum(1) for t in v.values()))
+        ok = (vn > 0) & torch.isfinite(vn)
+        self.sharp_vec = {k: torch.where(ok.view((-1,) + (1,) * (t.dim() - 1)), t / vn.to(t.dtype).view(
+            (-1,) + (1,) * (t.dim() - 1)), t) for k, t in v.items()}
+        out["sharpness"] = lam
+        out["lr_sharpness"] = lr * lam
+        return grads
+
+    def weight_features(self, Wd, out):
+        norms = [torch.linalg.matrix_norm(W) for W in Wd]
+        total2 = sum(n ** 2 for n in norms)
+        n0 = torch.sqrt(sum(torch.linalg.matrix_norm(W) ** 2 for W in self.ref0))
+        out["log_weight_norm_ratio"] = _where(total2 > 0, torch.log(torch.sqrt(total2) / n0))
+        for layer, W, W0, n in zip(LAYERS, Wd, self.ref0, norms):
+            sv = torch.linalg.svdvals(W)
+            out[f"{layer}_norm"] = n
+            out[f"{layer}_dist"] = torch.linalg.matrix_norm(W - W0) / torch.linalg.matrix_norm(W0)
+            out[f"{layer}_stable_rank"] = _where(sv[:, 0] > 0, n ** 2 / sv[:, 0] ** 2)
+            out[f"{layer}_eff_rank"] = _effective_rank(sv)
+        for i in range(DEPTH - 1):
+            out[f"layer_imbalance_{i + 1}{i + 2}"] = _where(total2 > 0, (norms[i] ** 2 - norms[i + 1] ** 2) / total2)
+        with torch.no_grad():
+            a = self.X_train.double()
+            for h_name, W, c in zip(HIDDEN, Wd, self.factors):
+                h = c * (a @ W.mT)
+                active = h > 0
+                out[f"dead_frac_{h_name}"] = (~active.any(1)).double().mean(-1)
+                out[f"active_frac_{h_name}"] = active.double().mean((-2, -1))
+                a = torch.relu(h)
+
+    def terms(self, name, Kc):
+        """FeatureLogger.terms for stacks of centred kernels."""
+        norm = _fro(Kc)
+        if name not in self.refs:
+            self.refs[name] = (Kc / norm[:, None, None], norm)
+        k0, norm0 = self.refs[name]
+        k = Kc / norm[:, None, None]
+        valid = norm >= DEGENERATE
+        return (_where(valid, torch.log(norm / norm0)), _where(valid, 1.0 - _inner(k, k0)),
+                _where(valid, _inner(k, self.G_unit)))
+
+    def kernel_features(self, step, K_t, layer_terms, Ws, lr, grads, out):
+        K64 = K_t.detach().double()
+        Kc = _centre(K64)
+        norm = _fro(Kc)
+        degenerate = norm < DEGENERATE
+        out["kernel_degenerate"] = degenerate.double()
+        if step == 0:
+            if bool(degenerate.any()):
+                raise ValueError("the centred probe kernel is zero at step 0")
+            self.Kc0, self.norm_0 = Kc, norm
+            self.k_0 = Kc / norm[:, None, None]
+            g_perp = self.G_unit - _inner(self.G_unit, self.k_0)[:, None, None] * self.k_0
+            self.g_perp = g_perp / _fro(g_perp)[:, None, None]
+            out["_A_0"] = _inner(self.k_0, self.G_unit)
+        ok = ~degenerate
+        k_t = Kc / norm[:, None, None]
+        c = _inner(k_t, self.k_0)
+        S, R, A = torch.log(norm / self.norm_0), 1.0 - c, _inner(k_t, self.G_unit)
+        centred = dict(K_norm_centred=norm, inner_K0=_inner(Kc, self.Kc0), inner_G=_inner(Kc, self.G),
+                       D=_fro(Kc - self.Kc0) / self.norm_0, exp2S_term=torch.exp(2 * S),
+                       cross_term=2 * torch.exp(S) * c)
+        v = k_t - c[:, None, None] * self.k_0
+        vn = _fro(v)
+        centred["gamma"] = _where((vn > 0) & torch.tensor(step > 0, device=self.device), _inner(v, self.g_perp) / vn)
+        d = k_t - self.k_0
+        dn2 = _inner(d, d)
+        moved = (dn2 > 0) & torch.tensor(step > 0, device=self.device)
+        centred["share_k0"] = _where(moved, _inner(d, self.k_0) ** 2 / dn2)
+        centred["share_gperp"] = _where(moved, _inner(d, self.g_perp) ** 2 / dn2)
+        centred["share_residual"] = 1.0 - centred["share_k0"] - centred["share_gperp"]
+        for k, value in centred.items():
+            out[k] = _where(ok, value)
+        for k, value in (("S", S), ("R", R), ("A", A), *((k, out[k]) for k in ("D", "exp2S_term", "cross_term", "gamma",
+                                                                                "share_k0", "share_gperp",
+                                                                                "share_residual"))):
+            out[f"_{k}"] = _where(ok, value)
+
+        eig, V = torch.linalg.eigh(Kc)
+        eig, V = eig.flip(-1)[:, :-1], V.flip(-1)[:, :, :-1]
+        pos = eig.clamp(min=0.0)
+        tr = pos.sum(-1)
+        has = ok & (tr > 0)
+        out["eig_trace"] = _where(ok, tr)
+        out["eig_top1"] = _where(ok, eig[:, 0])
+        out["eig_top1_share"] = _where(has, eig[:, 0] / tr)
+        out["eig_eff_rank"] = _where(ok, _effective_rank(pos))
+        out["eig_participation"] = _where(has, tr ** 2 / (pos ** 2).sum(-1))
+        cum = pos.cumsum(-1) / tr[:, None]
+        out["eig_n90"] = _where(has, (torch.searchsorted(cum.contiguous(), torch.full_like(tr[:, None], 0.9))[:, 0]
+                                      + 1).double())
+        out["eig_gap_label"] = _where(ok & (eig[:, LABEL_DIM] > 0), eig[:, LABEL_DIM - 1] / eig[:, LABEL_DIM])
+        out[f"eig_gap_top{TOP_K}"] = _where(ok & (eig[:, TOP_K] > 0), eig[:, TOP_K - 1] / eig[:, TOP_K])
+        hy2 = (self.HY ** 2).sum((-2, -1))
+        for m in CAPTURE:
+            out[f"label_capture_{m}"] = _where(ok, ((V[:, :, :m].mT @ self.HY) ** 2).sum((-2, -1)) / hy2)
+        Vk = V[:, :, :TOP_K]
+        if step == 0:
+            self.V_0 = Vk
+        overlap = Vk.mT @ self.V_0
+        cosines = torch.linalg.svdvals(overlap).clamp(0.0, 1.0)
+        out["topk_drift"] = _where(ok, (1.0 - cosines ** 2).mean(-1))
+        out["overlap_zero_median"] = _where(ok, torch.quantile(overlap.abs().max(-1).values, 0.5, dim=-1))
+        trace_Kc = Kc.diagonal(dim1=-2, dim2=-1).sum(-1)
+        out["probe_energy_label"] = _where(ok & (trace_Kc > 0),
+                                           (self.Q.mT @ Kc @ self.Q).diagonal(dim1=-2, dim2=-1).sum(-1) / trace_Kc)
+
+        centred_terms = [_centre(T.double()) for T in layer_terms]
+        traces = [T.diagonal(dim1=-2, dim2=-1).sum(-1) for T in centred_terms]
+        total = sum(traces)
+        for layer, T, t in zip(LAYERS, centred_terms, traces):
+            out[f"S_{layer}"], out[f"R_{layer}"], out[f"A_{layer}"] = self.terms(layer, T)
+            out[f"{layer}_kernel_share"] = _where(total > 0, t / total)
+        first = sum(self.terms_of["first"](Ws, self.x_probe))
+        out["S_first_logit"], out["R_first_logit"], out["A_first_logit"] = self.terms("first_logit", _centre(first))
+
+        K_sum = sum(vmap(lambda W, U=self.U["sum"]: kernel_terms(W, self.factors, self.X_report, U))(Ws))
+        if not hasattr(self, "K_sum_0"):
+            self.K_sum_0 = K_sum
+        n_t, n_0 = _fro(K_sum), _fro(self.K_sum_0)
+        Kc_sum = _centre(K_sum)
+        out["S_sum"] = n_t / n_0
+        out["R_sum"] = 1 - _inner(K_sum, self.K_sum_0) / (n_t * n_0)
+        out["D_sum"] = _fro(K_sum - self.K_sum_0) / n_0
+        out["A_sum"] = _inner(Kc_sum, self.Gc_report) / (_fro(Kc_sum) * _fro(self.Gc_report))
+
+        train, test = self.probe_train, self.probe_test
+        Ktr = K64[:, train][:, :, train]
+        r = KRR_RIDGE * Ktr.diagonal(dim1=-2, dim2=-1).sum(-1) / len(train)
+        valid = torch.isfinite(r) & (r > 0)
+        eye = torch.eye(len(train), dtype=torch.float64, device=self.device)
+        coef = torch.linalg.solve(Ktr + torch.where(valid, r, torch.ones_like(r))[:, None, None] * eye,
+                                  self.Y_probe[:, train])
+        pred = K64[:, test][:, :, train] @ coef
+        Yt = self.Y_probe[:, test]
+        out["krr_probe_test_acc"] = _where(valid, (pred.argmax(-1) == Yt.argmax(-1)).double().mean(-1))
+        out["krr_probe_test_mse"] = _where(valid, ((pred - Yt) ** 2).mean((-2, -1)))
+
+        wd = self.eta_kappa / lr
+        with torch.no_grad():
+            nxt = [W.detach() - lr.to(W.dtype)[:, None, None] * (g + wd.to(W.dtype)[:, None, None] * W.detach())
+                   for W, g in zip(Ws, grads.values())]
+        Kc_now = sum(centred_terms)
+        Kc_next = _centre(sum(self.terms_of["trace"](nxt, self.x_probe)))
+        n_now, n_next = _fro(Kc_now), _fro(Kc_next)
+        valid = (n_now >= DEGENERATE) & (n_next >= DEGENERATE)
+        k_now, k_next = Kc_now / n_now[:, None, None], Kc_next / n_next[:, None, None]
+        out["dS_step"] = _where(valid, torch.log(n_next / n_now))
+        out["dA_step"] = _where(valid, _inner(k_next, self.G_unit) - _inner(k_now, self.G_unit))
+        out["R_step"] = _where(valid, 1.0 - _inner(k_next, k_now))
 
 
 def identity_checks(a):

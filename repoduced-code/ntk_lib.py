@@ -441,6 +441,38 @@ def centre_kernel(K):
     return H @ K @ H
 
 
+def batched_centre(K):
+    """centre_kernel for a stack of kernels with any leading dimensions."""
+    n = K.shape[-1]
+    H = torch.eye(n, device=K.device, dtype=K.dtype) - torch.ones((n, n), device=K.device, dtype=K.dtype) / n
+    return H @ K @ H
+
+
+def batched_scale_and_rotation(K_0, K_t):
+    """compute_scale_and_rotation for stacks of kernels, returning tensors with the leading dimensions."""
+    norm_0, norm_t = torch.linalg.matrix_norm(K_0), torch.linalg.matrix_norm(K_t)
+    overlap = ((K_t / norm_t[..., None, None]) * (K_0 / norm_0[..., None, None])).sum((-2, -1))
+    return torch.log(norm_t / norm_0), 1.0 - overlap
+
+
+def batched_task_alignment(K_t, y_probe):
+    """compute_task_alignment for stacks of kernels and labels, zero where a centred matrix vanishes."""
+    n = K_t.shape[-1]
+    H = (torch.eye(n, device=K_t.device, dtype=K_t.dtype)
+         - (1.0 / n) * torch.ones((n, n), device=K_t.device, dtype=K_t.dtype))
+    HKH = H @ K_t @ H
+    HYH = H @ (y_probe @ y_probe.mT) @ H
+    norm_HKH, norm_HYH = torch.linalg.matrix_norm(HKH), torch.linalg.matrix_norm(HYH)
+    alignment = (HKH * HYH).sum((-2, -1)) / (norm_HKH * norm_HYH)
+    return torch.where((norm_HKH == 0) | (norm_HYH == 0), torch.zeros_like(alignment), alignment)
+
+
+def batched_uncentred_alignment(K, y):
+    """uncentred_alignment for stacks of kernels and labels."""
+    YY = y @ y.mT
+    return (K * YY).sum((-2, -1)) / (torch.linalg.matrix_norm(K) * torch.linalg.matrix_norm(YY))
+
+
 def uncentred_alignment(K, y):
     """The alignment without centring, sum(y^T K y) / (||K||_F ||y y^T||_F), summed over the label columns.
 
@@ -932,7 +964,8 @@ FUSED_SHARED = ("parameterisation", "p", "hidden_dim", "train_fraction", "activa
                 "lr_update_interval", "lr_cap", "dtype")
 
 
-def train_fused(names, configs, on_checkpoints=None, results_dir=None, verbose=True, device=None):
+def train_fused(names, configs, on_checkpoints=None, results_dir=None, verbose=True, device=None,
+                on_fused_checkpoint=None):
     """Train several runs at once as one horizontally fused model, and return the dictionary of each run.
 
     names and configs give the runs that train_run would train one at a time,
@@ -1083,10 +1116,99 @@ def train_fused(names, configs, on_checkpoints=None, results_dir=None, verbose=T
             graph.replay()
 
     live, diverged = [True] * M, [None] * M
+    # The closed-form deep kernel lets every run's checkpoint be computed at once, as tensors with a leading
+    # run dimension, with one copy to the host per checkpoint. Other models are recorded run by run.
+    batched = all(r.layer_terms for r in runs) and all(
+        all(torch.equal(a, b) for a, b in zip(r.parts, runs[0].parts)) for r in runs)
+    if batched:
+        x_probe, y_probe = torch.stack([r.x_probe for r in runs]), torch.stack([r.y_probe for r in runs])
+        K_0 = torch.stack([r.K_0 for r in runs])
+        layer_0 = [torch.stack(T) for T in zip(*[r.layer_0 for r in runs])]
+        theta_0 = torch.stack([r.params_0 for r in runs])
+        norm_0 = torch.tensor([r.norm_0 for r in runs], dtype=X.dtype, device=device)
+        F0_test = torch.stack([r.f0_test for r in runs]) if centred else None
+        X_test, y_test = runs[0].X_test, runs[0].y_test
+        factors = runs[0].model.factors
+        layer_terms = vmap(lambda Ws, x: closed_form_terms_deep(Ws, factors, x))
+
+    def record(step):
+        if not batched:
+            for m, run in enumerate(runs):
+                if live[m] and not run.evaluate(step):
+                    live[m], diverged[m] = False, step
+            return
+        with torch.no_grad():
+            out_train = vmap(fnet)(params, X)
+            out_test = vmap(fnet, in_dims=(0, None))(params, X_test)
+            if centred:
+                out_train, out_test = out_train - F0, out_test - F0_test
+            tr, te = alpha[:, None, None] * out_train, alpha[:, None, None] * out_test
+            values = dict(train_loss=((tr - Y) ** 2).mean((1, 2)), test_loss=((te - y_test) ** 2).mean((1, 2)),
+                          train_acc=(tr.argmax(-1) == Y.argmax(-1)).to(X.dtype).mean(1),
+                          test_acc=(te.argmax(-1) == y_test.argmax(-1)).to(X.dtype).mean(1))
+            theta = torch.cat([p.flatten(1) for p in params.values()], 1)
+            values["weight_norm"] = torch.linalg.vector_norm(theta, dim=1)
+            values["param_dist"] = torch.linalg.vector_norm(theta - theta_0, dim=1) / norm_0
+        terms = layer_terms(list(base_weights(params)), x_probe)
+        K_t = sum(terms).to(X.dtype)
+        values["S_t"], values["R_t"] = batched_scale_and_rotation(K_0, K_t)
+        values["S_c"], values["R_c"] = batched_scale_and_rotation(batched_centre(K_0), batched_centre(K_t))
+        values["A_t"] = batched_task_alignment(K_t, y_probe)
+        values["A_u"] = batched_uncentred_alignment(K_t, y_probe)
+        values["K_norm"] = torch.linalg.matrix_norm(K_t)
+        values["yKy"] = torch.where(values["K_norm"] > 0, (y_probe * (torch.linalg.pinv(K_t, rtol=1e-6) @ y_probe))
+                                    .sum((1, 2)), torch.nan)
+        for part, mask in zip(("train", "test"), runs[0].parts):
+            names = [f"{term}_{part}" for term in ("S_c", "R_c", "A_t", "A_u")]
+            if int(mask.sum()) < 2:
+                values.update({k: torch.full_like(values["K_norm"], torch.nan) for k in names})
+                continue
+            K_p, K_p0, y_p = K_t[:, mask][:, :, mask], K_0[:, mask][:, :, mask], y_probe[:, mask]
+            S_p, R_p = batched_scale_and_rotation(batched_centre(K_p0), batched_centre(K_p))
+            values.update(zip(names, (S_p, R_p, batched_task_alignment(K_p, y_p),
+                                      batched_uncentred_alignment(K_p, y_p))))
+        traces = [T.diagonal(dim1=-2, dim2=-1).sum(-1) for T in terms]
+        trace_K = sum(traces)
+        for l, (T, T0, tr_l) in enumerate(zip(terms, layer_0, traces), start=1):
+            values[f"A_W{l}"] = batched_task_alignment(T.to(y_probe.dtype), y_probe)
+            n_t, n_0 = torch.linalg.matrix_norm(T), torch.linalg.matrix_norm(T0)
+            values[f"S_W{l}"] = torch.where((n_t > 0) & (n_0 > 0), torch.log(n_t / n_0), torch.nan)
+            values[f"share_W{l}"] = torch.where(trace_K > 0, tr_l / trace_K, torch.nan)
+        names = list(values)
+        host = torch.stack([values[k].to(torch.float64) for k in names]).cpu().tolist()
+        saving = step % shared["kernel_save_interval"] == 0
+        K_host = K_t.cpu().numpy().astype(np.float32) if saving else None
+        rows = [None] * M
+        for m, run in enumerate(runs):
+            if not live[m]:
+                continue
+            row = {k: host[i][m] for i, k in enumerate(names)}
+            if not math.isfinite(row["train_loss"]):
+                live[m], diverged[m] = False, step
+                continue
+            row["step"] = step
+            if schedule is not None:
+                row["eta"] = run.lr_state["lr"]
+                if schedule == "curvature":
+                    row["lam"] = run.lr_state["lam"]
+            for k in HISTORY_KEYS:
+                run.history[k].append(row[k])
+            for k in [k for k in row if k not in HISTORY_KEYS]:
+                run.history.setdefault(k, []).append(row[k])
+            if saving:
+                run.saved_steps.append(step)
+                run.saved_kernels.append(K_host[m])
+            rows[m] = {k: v[-1] for k, v in run.history.items()}
+            if on_fused_checkpoint is None and run.on_checkpoint is not None:
+                run.on_checkpoint(step, run.model, K_t[m], rows[m])
+        if on_fused_checkpoint is not None:
+            on_fused_checkpoint(step, [m for m in range(M) if live[m]], params, K_t, terms, rows, fnet, factors)
+
+    def base_weights(p):
+        return (p[k] for k in params)
+
     t0 = time.time()
-    for m, run in enumerate(runs):
-        if not run.evaluate(0):
-            live[m], diverged[m] = False, 0
+    record(0)
     for step in range(1, shared["steps"] + 1):
         if not any(live):
             break
@@ -1102,9 +1224,7 @@ def train_fused(names, configs, on_checkpoints=None, results_dir=None, verbose=T
             lr_v.copy_(torch.tensor([r.lr_state["lr"] for r in runs], dtype=X.dtype))
             wd_v.copy_(eta_kappa / lr_v)
         if runs[0].is_checkpoint(step):
-            for m, run in enumerate(runs):
-                if live[m] and not run.evaluate(step):
-                    live[m], diverged[m] = False, step
+            record(step)
     seconds = time.time() - t0
     return [run.finish(seconds, d, out_dir, verbose) for run, d in zip(runs, diverged)]
 
