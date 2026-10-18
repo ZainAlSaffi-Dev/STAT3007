@@ -1135,6 +1135,8 @@ def train_fused(names, configs, on_checkpoints=None, results_dir=None, verbose=T
         factors = runs[0].model.factors
         layer_terms = vmap(lambda Ws, x: closed_form_terms_deep(Ws, factors, x))
 
+    test_chunk = [None]
+
     def record(step):
         if not batched:
             for m, run in enumerate(runs):
@@ -1143,7 +1145,18 @@ def train_fused(names, configs, on_checkpoints=None, results_dir=None, verbose=T
             return
         with torch.no_grad():
             out_train = vmap(fnet)(params, X)
-            out_test = vmap(fnet, in_dims=(0, None))(params, X_test)
+            # The test forward of every member at once can exceed the device memory, 40 GB on an A100
+            # at width 800. vmap's chunk_size bounds it; the chunk is the free memory over the peak
+            # that one member's forward measures.
+            if test_chunk[0] is None:
+                test_chunk[0] = len(runs)
+                if device.type == "cuda":
+                    torch.cuda.reset_peak_memory_stats(device)
+                    base = torch.cuda.memory_allocated(device)
+                    vmap(fnet, in_dims=(0, None))({k: v[:1] for k, v in params.items()}, X_test)
+                    peak = torch.cuda.max_memory_allocated(device) - base
+                    test_chunk[0] = max(1, min(len(runs), torch.cuda.mem_get_info(device)[0] // max(peak, 1)))
+            out_test = vmap(fnet, in_dims=(0, None), chunk_size=test_chunk[0])(params, X_test)
             if centred:
                 out_train, out_test = out_train - F0, out_test - F0_test
             tr, te = alpha[:, None, None] * out_train, alpha[:, None, None] * out_test
