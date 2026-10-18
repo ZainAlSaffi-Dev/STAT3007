@@ -288,7 +288,7 @@ def closed_form_check(logger, weights, width, n_points=16):
     from torch.func import functional_call, jacrev
     import ntk_lib as L
     import mnist_features as F
-    x = logger.x_probe[:n_points].double()
+    x = logger.x_probe[:n_points].cpu().double()
     out = {}
     for step, Ws in weights.items():
         model = L.DeepBiasFreeMLP(x.shape[1], width, Ws[-1].shape[0], depth=DEPTH, scaling="standard").double()
@@ -322,28 +322,39 @@ def run_events(run):
     return dict(t_mem=t_mem, t_gen=t_gen, censored=t_gen is None, best_test=float(max(h["test_acc"])))
 
 
+def finished(task):
+    """True if the task's meta file records a finished run of the same spec and feature version."""
+    import mnist_features as F
+    meta_path = Path(task["out_dir"]) / f"{task['run_id']}_meta.json"
+    if not meta_path.exists():
+        return False
+    try:
+        old = json.loads(meta_path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return False
+    return (old.get("status") in ("ok", "diverged") and old.get("spec") == clean(task["spec"])
+            and old.get("feature_version") == F.FEATURE_VERSION)
+
+
+def log_start(log, task):
+    s = task["spec"]
+    log.info(f"{task['run_id']}: start, width {s['hidden_dim']}, scale {s['init_scale']:g}, eta_kappa "
+             f"{s['eta_kappa']:g}, seed {s['seed']}, {s['steps']} steps", extra=event("start", run_id=task["run_id"]))
+
+
 def run_one(task):
     """Train one run with the feature logger and write its files. Never raises."""
-    import pandas as pd
     import ntk_lib as L
     import mnist_features as F
 
     log = logging.getLogger("sweep")
     rid, out_dir = task["run_id"], Path(task["out_dir"])
     out_dir.mkdir(parents=True, exist_ok=True)
-    meta_path = out_dir / f"{rid}_meta.json"
-    if meta_path.exists():
-        try:
-            old = json.loads(meta_path.read_text())
-            if (old.get("status") in ("ok", "diverged") and old.get("spec") == clean(task["spec"])
-                    and old.get("feature_version") == F.FEATURE_VERSION):
-                return dict(run_id=rid, status="skipped", width=task["width"], seconds=0.0)
-        except (json.JSONDecodeError, OSError):
-            pass
+    if finished(task):
+        return dict(run_id=rid, status="skipped", width=task["width"], seconds=0.0)
 
     s = task["spec"]
-    log.info(f"{rid}: start, width {s['hidden_dim']}, scale {s['init_scale']:g}, eta_kappa {s['eta_kappa']:g}, "
-             f"seed {s['seed']}, {s['steps']} steps", extra=event("start", run_id=rid))
+    log_start(log, task)
     t0 = time.time()
     error, run, logger, lam_0, config = None, None, None, None, None
     try:
@@ -353,11 +364,91 @@ def run_one(task):
         logger = F.FeatureLogger(cfg, rid, save_steps=task["save_steps"], linear_interval=LINEAR_INTERVAL,
                                  log_steps=task["log_steps"])
         run = L.train_run(rid, verbose=False, on_checkpoint=logger, results_dir=out_dir, **config)
-        status = "diverged" if run["diverged"] else "ok"
     except Exception:
-        error, status = traceback.format_exc(), "failed"
-    seconds = time.time() - t0
+        error = traceback.format_exc()
+    return write_run(task, run, logger, lam_0, config, time.time() - t0, error)
 
+
+def initial_curvatures(specs, device):
+    """lam_0 of initial_curvature for several runs, from one vmapped power iteration on device.
+
+    Each run's weights are drawn as initial_curvature draws them, and each
+    run starts the power iteration from seed 0, as initial_curvature does.
+    """
+    import copy
+    import torch
+    from torch.func import stack_module_state
+    import ntk_lib as L
+    models, Xs, alphas = [], [], []
+    for spec in specs:
+        cfg = {**L.DEFAULTS, **spec}
+        (X, y), _ = L.make_dataset(cfg)
+        torch.manual_seed(cfg["seed"])
+        models.append(L.build_model(cfg["parameterisation"], X.shape[1], cfg["hidden_dim"], y.shape[1],
+                                    cfg["activation"], cfg["init_scale"], depth=cfg["depth"]))
+        Xs.append(X)
+        alphas.append(cfg["alpha"])
+    params = {k: v.detach().to(device) for k, v in stack_module_state(models)[0].items()}
+    X = torch.stack(Xs).to(device)
+    alpha = torch.tensor(alphas, dtype=X.dtype, device=device)
+    base = copy.deepcopy(models[0]).to("meta")
+    return L.fused_gauss_newton_top_eigenvalue(base, params, X, alpha, seeds=[0] * len(specs))
+
+
+def run_group(tasks, device=None):
+    """Train tasks of one width as one fused model with ntk_lib.train_fused, and write each run's files.
+
+    Each task gets the files and log lines run_one writes. Finished runs are
+    skipped. An exception fails every run of the group. Never raises.
+    """
+    import torch
+    import ntk_lib as L
+    import mnist_features as F
+
+    log = logging.getLogger("sweep")
+    for t in tasks:
+        Path(t["out_dir"]).mkdir(parents=True, exist_ok=True)
+    results = [dict(run_id=t["run_id"], status="skipped", width=t["width"], seconds=0.0) for t in tasks
+               if finished(t)]
+    todo = [t for t in tasks if not finished(t)]
+    if not todo:
+        return results
+    if len({t["out_dir"] for t in todo}) > 1:
+        raise ValueError("the tasks of a fused group must share one output directory")
+    for t in todo:
+        log_start(log, t)
+    device = torch.device(device) if device is not None else (
+        torch.accelerator.current_accelerator(check_available=True) or torch.device("cpu"))
+    t0 = time.time()
+    error, runs, loggers = None, None, None
+    lams, configs = [None] * len(todo), [None] * len(todo)
+    try:
+        lams = initial_curvatures([t["spec"] for t in todo], device)
+        configs = [dict(t["spec"], eta_0=1.0 / lam) for t, lam in zip(todo, lams)]
+        loggers = [F.FeatureLogger(L.normalise_checkpoints({**L.DEFAULTS, **c}), t["run_id"],
+                                   save_steps=t["save_steps"], linear_interval=LINEAR_INTERVAL,
+                                   log_steps=t["log_steps"], device=device) for t, c in zip(todo, configs)]
+        runs = L.train_fused([t["run_id"] for t in todo], configs, on_checkpoints=loggers,
+                             results_dir=todo[0]["out_dir"], verbose=False, device=device)
+    except Exception:
+        error = traceback.format_exc()
+    seconds = time.time() - t0
+    for i, t in enumerate(todo):
+        results.append(write_run(t, runs[i] if runs else None, loggers[i] if loggers else None, lams[i],
+                                 configs[i], seconds, error))
+    return results
+
+
+def write_run(task, run, logger, lam_0, config, seconds, error):
+    """Write a trained run's meta file, feature table and weights, log its end, and return its summary."""
+    import pandas as pd
+    import mnist_features as F
+
+    log = logging.getLogger("sweep")
+    rid, out_dir = task["run_id"], Path(task["out_dir"])
+    meta_path = out_dir / f"{rid}_meta.json"
+    s = task["spec"]
+    status = "failed" if run is None else ("diverged" if run["diverged"] else "ok")
     meta = dict(run_id=rid, status=status, error=error, spec=task["spec"], config=config, lam_0=lam_0,
                 feature_version=F.FEATURE_VERSION, seconds=seconds, git=git_state(), versions=versions(),
                 finished=time.strftime("%Y-%m-%dT%H:%M:%S"))
@@ -522,12 +613,105 @@ def cmd_check(args, log):
     ident_ok = all(v < 1e-4 for v in ident.values() if math.isfinite(v))
     ok &= ident_ok
     log.info(f"check: identities {'pass' if ident_ok else 'FAIL'} (limit 1e-4, float32 rounding of the history)")
+    # The fused trainer must give each run the history train_run gives it. In float32 the two drift apart once
+    # the curvature rule raises the learning rate, because SGD amplifies their different rounding. In float64
+    # the same amplification stays below the float64 tolerances of torch.testing.assert_close, while an error
+    # in the fused step would not.
+    specs = []
+    for seed in (1, 2):
+        spec = run_spec(100, 7.0, 1e-5, seed, steps)
+        spec.update(lr_update_interval=1000, checkpoint_steps=checkpoint_grid(steps), dtype="float64")
+        specs.append(dict(spec, eta_0=1.0 / initial_curvature(spec)))
+    serial = [L.train_run(f"serial{i}", verbose=False, results_dir=scratch, **c) for i, c in enumerate(specs)]
+    fused = L.train_fused([f"fused{i}" for i in range(len(specs))], specs, results_dir=scratch, verbose=False,
+                          device="cpu")
+    fused_ok, worst_fused = True, 0.0
+    for a, b in zip(fused, serial):
+        for k in b["history"]:
+            x = torch.tensor(np.asarray(a["history"][k], float), dtype=torch.float64)
+            y = torch.tensor(np.asarray(b["history"][k], float), dtype=torch.float64)
+            if x.shape != y.shape:
+                fused_ok = False
+                log.info(f"check: fused history {k} has {len(x)} checkpoints, train_run {len(y)}")
+                continue
+            worst_fused = max(worst_fused, float(torch.nan_to_num((x - y).abs()).max()))
+            try:
+                torch.testing.assert_close(x, y, equal_nan=True)
+            except AssertionError as error:
+                fused_ok = False
+                log.info(f"check: fused history {k}: {str(error).splitlines()[0]}")
+    ok &= fused_ok
+    log.info(f"check: fused against train_run, largest difference {worst_fused:.1e} over {len(specs)} runs "
+             f"({'pass' if fused_ok else 'FAIL'}, torch.testing.assert_close float64 defaults)")
     log.info("check: all passed" if ok else "check: SOME CHECKS FAILED")
     return 0 if ok else 1
 
 
+def run_fused(tasks, log):
+    """Run the tasks as one fused group for each width, widest first, and log each group's end."""
+    results, t_start = [], time.time()
+    for width in sorted({t["width"] for t in tasks}, reverse=True):
+        group = [t for t in tasks if t["width"] == width]
+        t0 = time.time()
+        done = run_group(group)
+        results += done
+        counts = {s: sum(r["status"] == s for r in done) for s in ("ok", "diverged", "failed", "skipped")}
+        log.info(f"fused: width {width} finished in {(time.time() - t0) / 3600:.2f} h, {counts}, elapsed "
+                 f"{(time.time() - t_start) / 3600:.2f} h", extra=event("fused_group", width=width, **counts))
+    return results
+
+
+def pilot_fused(args, log):
+    """Short fused runs of the whole grid at every width, and the projected wall time of the fused sweep.
+
+    Each width trains all its runs of the chosen grid as one fused model for
+    3000 steps, with the checkpoints of cmd_pilot. The wall times of the
+    first run of the group give the seconds of one fused step and of one
+    checkpoint of all the runs, by the same two equations as cmd_pilot.
+    """
+    import pandas as pd
+    out_dir = OUT / "pilot_fused"
+    steps = 3000
+    grid = list(range(0, 1001, 50)) + [steps]
+    per_width = {}
+    for width in args.widths:
+        tasks = build_tasks(args.scales, [width], args.decays, args.seeds, steps, out_dir, grid)
+        for t in tasks:
+            t.update(run_id=f"pilot_{t['run_id']}", save_steps=[steps], log_steps=[])
+            meta = out_dir / f"{t['run_id']}_meta.json"
+            if meta.exists():
+                meta.unlink()
+        t0 = time.time()
+        results = run_group(tasks)
+        failed = [r["run_id"] for r in results if r["status"] == "failed"]
+        if failed:
+            log.error(f"pilot fused: width {width} failed for {len(failed)} runs, see sweep.log")
+            return 1
+        frame = pd.read_parquet(out_dir / f"{tasks[0]['run_id']}.parquet")
+        wall = dict(zip(frame["step"], frame["wall_seconds"]))
+        # From step 0 to 1000 there are 1000 steps and 20 checkpoints; from 1000 to 3000, 2000 steps and 1.
+        A = np.array([[1000.0, 20.0], [2000.0, 1.0]])
+        b = np.array([wall[1000] - wall[0], wall[steps] - wall[1000]])
+        per_width[width] = (np.linalg.solve(A, b), len(tasks), time.time() - t0)
+    n_ckpt = len(checkpoint_grid(args.steps))
+    total = 0.0
+    for width in sorted(per_width):
+        (step_s, ckpt_s), n_runs, wall_s = per_width[width]
+        per_group = args.steps * step_s + n_ckpt * ckpt_s
+        total += per_group
+        log.info(f"pilot fused: width {width:4d}: {n_runs} runs as one model, {step_s * 1000:.3f} ms per fused "
+                 f"step, {ckpt_s * 1000:.0f} ms per checkpoint of all runs, {per_group / 3600:.2f} h for the width, "
+                 f"pilot wall {wall_s:.0f} s")
+    log.info(f"pilot fused: projected wall time {total / 3600:.2f} h with the widths one after another on one "
+             f"device, {n_ckpt} checkpoints of {args.steps} steps. Learning rate updates are counted only if they "
+             "fall in the pilot, so the projection is a little low.")
+    return 0
+
+
 def cmd_pilot(args, log):
     """Short runs at every width under the real concurrency, and the projected wall time of the sweep."""
+    if args.fused:
+        return pilot_fused(args, log)
     out_dir = OUT / "pilot"
     steps = 3000
     grid = list(range(0, 1001, 50)) + [steps]
@@ -592,7 +776,10 @@ def cmd_run(args, log):
     log.info(f"run: {len(tasks)} runs, {args.wide_workers} wide and {args.narrow_workers} narrow workers, "
              f"{len(checkpoint_grid(args.steps))} checkpoints per run, output in {RUNS}",
              extra=event("sweep_start", n_runs=len(tasks)))
-    results = run_pools(tasks, args.wide_workers, args.narrow_workers, log)
+    if args.fused:
+        results = run_fused(tasks, log)
+    else:
+        results = run_pools(tasks, args.wide_workers, args.narrow_workers, log)
     counts = {s: sum(r["status"] == s for r in results) for s in ("ok", "diverged", "failed", "skipped")}
     log.info(f"run: finished, {counts}", extra=event("sweep_finish", **counts))
     return 0 if counts["failed"] == 0 else 1
@@ -994,6 +1181,8 @@ def main(argv=None):
     parser.add_argument("--wide-workers", type=int, default=WIDE_WORKERS)
     parser.add_argument("--narrow-workers", type=int, default=NARROW_WORKERS)
     parser.add_argument("--out", type=Path, default=None, help="output directory instead of mnist/sweep, for tests")
+    parser.add_argument("--fused", action="store_true",
+                        help="run and pilot train each width as one fused model with ntk_lib.train_fused")
     args = parser.parse_args(argv)
     if args.out is not None:
         global OUT, RUNS, LOGS

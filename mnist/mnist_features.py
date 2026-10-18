@@ -307,7 +307,7 @@ def kernel_terms(weights, factors, x, U):
     """
     X = x.detach().double()
     Ws = [W.detach().double() for W in weights]
-    U = torch.as_tensor(U, dtype=torch.float64)
+    U = torch.as_tensor(U, dtype=torch.float64, device=X.device)
     n_layers = len(Ws)
     acts, masks = [X], []
     for l in range(n_layers - 1):
@@ -379,7 +379,7 @@ class FeatureLogger:
     .grad, and the power iteration uses its own random generator.
     """
 
-    def __init__(self, cfg, run_id, save_steps=(), linear_interval=2000, log_steps=()):
+    def __init__(self, cfg, run_id, save_steps=(), linear_interval=2000, log_steps=(), device=None):
         if (cfg["parameterisation"] != "deep_standard" or cfg["depth"] != DEPTH or cfg["centred"]
                 or cfg["alpha"] != 1.0 or cfg["dataset"] != "mnist"):
             raise ValueError("the MNIST feature logger needs the uncentred bias-free network of depth 3 on MNIST")
@@ -411,6 +411,12 @@ class FeatureLogger:
         self.G = G
         self.G_unit = G / np.linalg.norm(G)
         self.label_basis = orthonormal_basis(self.HY)
+        # The logger evaluates the model on the model's device, which device names when it is not the CPU.
+        if device is not None:
+            self.X = {s: t.to(device) for s, t in self.X.items()}
+            self.y = {s: t.to(device) for s, t in self.y.items()}
+            self.labels = {s: t.to(device) for s, t in self.labels.items()}
+            self.X_report, self.x_probe = self.X_report.to(device), self.x_probe.to(device)
 
         self.refs = {}
         self.weights_0 = None
@@ -475,7 +481,7 @@ class FeatureLogger:
             for s in SPLITS:
                 f = model(self.X[s]).double()
                 lab = self.labels[s]
-                idx = torch.arange(len(lab))
+                idx = torch.arange(len(lab), device=lab.device)
                 correct = f[idx, lab]
                 others = f.clone()
                 others[idx, lab] = -torch.inf
@@ -512,7 +518,7 @@ class FeatureLogger:
         out["stationary"] = bool(wd > 0 and out["decay_residual"] < STATIONARY)
 
         # Power iteration on the Hessian of the loss, warm started.
-        v = [torch.randn(q.shape, generator=self.rng) for q in params] if self.sharp_vec is None else self.sharp_vec
+        v = [torch.randn(q.shape, generator=self.rng).to(q.device) for q in params] if self.sharp_vec is None else self.sharp_vec
         lam = np.nan
         for _ in range(SHARPNESS_ITERS):
             vn = math.sqrt(sum((x ** 2).sum().item() for x in v))
@@ -536,7 +542,7 @@ class FeatureLogger:
         n0 = math.sqrt(sum(torch.linalg.norm(W).item() ** 2 for W in self.weights_0))
         out["log_weight_norm_ratio"] = math.log(math.sqrt(total2) / n0) if total2 > 0 else np.nan
         for layer, W, W0, n in zip(LAYERS, Ws, self.weights_0, norms):
-            sv = torch.linalg.svdvals(W).numpy()
+            sv = torch.linalg.svdvals(W).cpu().numpy()
             out[f"{layer}_norm"] = n
             out[f"{layer}_dist"] = torch.linalg.norm(W - W0).item() / torch.linalg.norm(W0).item()
             out[f"{layer}_stable_rank"] = float(n ** 2 / sv[0] ** 2) if sv[0] > 0 else np.nan
@@ -640,18 +646,18 @@ class FeatureLogger:
 
         # The three layer terms and the first-logit kernel, in float64.
         Ws, factors = model.weights(), model.factors
-        terms = [T.numpy() for T in kernel_terms(Ws, factors, self.x_probe, self.U["trace"])]
+        terms = [T.cpu().numpy() for T in kernel_terms(Ws, factors, self.x_probe, self.U["trace"])]
         centred = [centre(T) for T in terms]
         traces = [np.trace(T) for T in centred]
         for layer, T, t in zip(LAYERS, centred, traces):
             out[f"S_{layer}"], out[f"R_{layer}"], out[f"A_{layer}"] = self.terms(layer, T, self.G_unit)
             out[f"{layer}_kernel_share"] = float(t / sum(traces)) if sum(traces) > 0 else np.nan
-        first = sum(kernel_terms(Ws, factors, self.x_probe, self.U["first"])).numpy()
+        first = sum(kernel_terms(Ws, factors, self.x_probe, self.U["first"])).cpu().numpy()
         out["S_first_logit"], out["R_first_logit"], out["A_first_logit"] = self.terms(
             "first_logit", centre(first), self.G_unit)
 
         # The kernel of the golden report, Equations 5 and 6, on the report images.
-        K_sum = sum(kernel_terms(Ws, factors, self.X_report, self.U["sum"])).numpy()
+        K_sum = sum(kernel_terms(Ws, factors, self.X_report, self.U["sum"])).cpu().numpy()
         if self.K_sum_0 is None:
             self.K_sum_0 = K_sum
         for k, v in report_statistics(K_sum, self.K_sum_0, self.Y_report).items():
@@ -665,7 +671,7 @@ class FeatureLogger:
         with torch.no_grad():
             nxt = [W.detach() - lr * (g + wd * W.detach()) for W, g in zip(Ws, grads)]
         Kc_now = sum(centred)
-        Kc_next = centre(sum(kernel_terms(nxt, factors, self.x_probe, self.U["trace"])).numpy())
+        Kc_next = centre(sum(kernel_terms(nxt, factors, self.x_probe, self.U["trace"])).cpu().numpy())
         n_now, n_next = np.linalg.norm(Kc_now), np.linalg.norm(Kc_next)
         if n_now < DEGENERATE or n_next < DEGENERATE:
             out["dS_step"] = out["dA_step"] = out["R_step"] = np.nan
