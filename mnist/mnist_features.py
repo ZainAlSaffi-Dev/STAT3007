@@ -909,8 +909,13 @@ class FusedFeatureLogger:
         out["log_weight_norm_ratio"] = _where(total2 > 0, torch.log(torch.sqrt(total2) / n0))
         for layer, W, W0, n in zip(LAYERS, Wd, self.ref0, norms):
             # gesvda, the torch.linalg.svd driver for tall or wide matrices, took 235 ms against 9.52 s for the
-            # default on a stack of 140 800x784 float64 matrices on an H100 (pyperf timeit).
-            sv = torch.linalg.svdvals(W, driver="gesvda" if W.is_cuda else None)
+            # default on a stack of 140 800x784 float64 matrices on an H100 (pyperf timeit). The docs limit
+            # gesvda to well-conditioned matrices, so a stack it cannot converge on takes the default
+            # driver, which itself falls back from gesvdj to gesvd.
+            try:
+                sv = torch.linalg.svdvals(W, driver="gesvda" if W.is_cuda else None)
+            except torch.linalg.LinAlgError:
+                sv = torch.linalg.svdvals(W)
             out[f"{layer}_norm"] = n
             out[f"{layer}_dist"] = torch.linalg.matrix_norm(W - W0) / torch.linalg.matrix_norm(W0)
             out[f"{layer}_stable_rank"] = _where(sv[:, 0] > 0, n ** 2 / sv[:, 0] ** 2)
