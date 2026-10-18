@@ -7,6 +7,14 @@ the AFT objective (5 seeds); and a GRU that reads the statistics at the 25 saved
 (3 seeds). The reference is XGBoost given the settings N and eta lambda, which knows more than a
 general network would report. models.py holds the settings.
 
+Since 17 October 2026 the ladder also splits the settings reference into its two parts: XGBoost on
+log N alone ('width reference') and on log10 eta lambda alone ('decay reference'), 5 seeds each. They
+are not drawn. Section 4.4 compares them with the full reference in the text.
+
+Since 17 October 2026 the figure shows only the rungs in SHOWN: each statistic alone, XGBoost on all
+three statistics at t*, and the GRU on their history up to t*, with the settings reference as a line.
+E08.json still keeps the scores of every rung of LADDER.
+
 The method is that of model_fitting/3_kernel_only.ipynb, Parts 3 and 5.
 """
 import numpy as np
@@ -17,7 +25,10 @@ import models as M
 
 SEEDS = {'xgboost': M.XGB_SEEDS, 'gru': M.GRU_SEEDS, 'validation_split': 'numpy default_rng(seed)'}
 LADDER = ['A only', 'S only', 'log R only', 'linear AFT', 'AFT with interactions', 'kernel ridge', 'XGBoost', 'GRU on history',
-          'settings reference']
+          'settings reference', 'width reference', 'decay reference']
+PARTS = {'settings reference': [0, 1], 'width reference': [0], 'decay reference': [1]}
+SHOWN = {'A only': '$A_t$ alone', 'S only': '$S_t$ alone', 'log R only': '$\\log R_t$ alone',
+         'XGBoost': 'all three at $t^\\ast$ (trees)', 'GRU on history': 'all three up to $t^\\ast$ (recurrent)'}
 
 
 def main():
@@ -27,7 +38,8 @@ def main():
     log_T = np.log(data['T'].to_numpy())
     folds = {a: ((data.alpha != a).to_numpy(), (data.alpha == a).to_numpy()) for a in alphas}
     scores = {name: {} for name in LADDER}
-    seed_scores = {'XGBoost': {}, 'GRU on history': {}, 'settings reference': {}}
+    seed_scores = {'XGBoost': {}, 'GRU on history': {}, 'settings reference': {}, 'width reference': {},
+                   'decay reference': {}}
     chosen = {}
 
     det = {n: np.zeros(len(data)) for n in LADDER[:6]}
@@ -50,10 +62,10 @@ def main():
 
     Xs = M.settings_matrix(data)
     for seed in M.XGB_SEEDS:
-        for name in ('XGBoost', 'settings reference'):
+        for name in ('XGBoost', *PARTS):
             p = np.zeros(len(data))
             for a, (train, test) in folds.items():
-                X = M.design(data, False, ref=data[train]).to_numpy() if name == 'XGBoost' else Xs
+                X = M.design(data, False, ref=data[train]).to_numpy() if name == 'XGBoost' else Xs[:, PARTS[name]]
                 booster, best = M.tuned_xgb(data, X, train, seed)
                 import xgboost as xgb
                 p[test] = booster.predict(xgb.DMatrix(X[test]))
@@ -93,9 +105,9 @@ def main():
 
 def plot(summary):
     plt = C.setup_matplotlib()
-    fig, ax = plt.subplots(figsize=(4.6, 2.5), constrained_layout=True)
+    fig, ax = plt.subplots(figsize=(4.6, 2.1), constrained_layout=True)
     colour = {'A only': C.STAT_COLOUR['A'], 'S only': C.STAT_COLOUR['S'], 'log R only': C.STAT_COLOUR['R']}
-    names = [n for n in LADDER if n != 'settings reference']
+    names = list(SHOWN)
     for i, name in enumerate(names):
         s = summary[name]
         ax.barh(i, s['mean'] - 0.5, left=0.5, height=0.62, color=colour.get(name, '#8a8986'), zorder=2)
@@ -106,14 +118,13 @@ def plot(summary):
         ax.text(0.905, i, f"{s['mean']:.2f}", va='center', ha='right', fontsize=6.5, color=C.TEXT)
     ref = summary['settings reference']['mean']
     ax.axvline(ref, color=C.TEXT, ls='--', lw=0.9, zorder=1)
-    ax.text(ref, len(names) - 0.35, f'given the settings\n{ref:.2f}', ha='center', va='bottom', fontsize=6.5,
+    ax.text(ref - 0.006, -0.85, f'given the settings, {ref:.2f}', ha='right', va='center', fontsize=6.5,
             color=C.TEXT)
     ax.axvline(0.5, color=C.MUTED, lw=0.6, ls=':')
-    ax.set_yticks(range(len(names)), names)
-    ax.invert_yaxis()
+    ax.set_yticks(range(len(names)), [SHOWN[n] for n in names])
     ax.set_xlim(0.4, 0.91)
-    ax.set_ylim(len(names) + 0.1, -0.6)
-    ax.set_xlabel('concordance on the held-out $\\alpha$ (bar: mean; dots: each $\\alpha$; line: seed range)')
+    ax.set_ylim(len(names) - 0.4, -1.2)
+    ax.set_xlabel('concordance on the held-out $\\alpha$')
     ax.grid(axis='y', visible=False)
     C.save_figure(fig, 'E8_ladder')
 

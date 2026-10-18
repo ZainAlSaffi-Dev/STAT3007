@@ -260,3 +260,4 @@ mnist/sweep/pilot/
 mnist/sweep/checkpoints.parquet
 # The probe kernels the exploration runs saved are large and can be regenerated.
 mnist/exploration/results/**/*_kernels.npz
+Screenshot 2026-10-17 at 9.05.01 am.png
