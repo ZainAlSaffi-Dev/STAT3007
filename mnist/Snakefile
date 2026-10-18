@@ -33,8 +33,11 @@ rule width:
         OUT / "logs" / "width" / "{width}.log",
     benchmark:
         OUT / "benchmarks" / "width" / "{width}.tsv"
+    # The numerical environment stays the one certify compared (arXiv:2607.05104, Section 5), and
+    # TF32 needs an Ampere or later GPU (PyTorch numerical accuracy notes).
     resources:
         gpu=1,
+        gpu_model=config.get("gpu_model", "a100"),
     params:
         sweep=SWEEP,
         out=OUT,
