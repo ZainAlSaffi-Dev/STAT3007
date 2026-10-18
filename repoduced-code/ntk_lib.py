@@ -403,6 +403,12 @@ def gauss_newton_top_eigenvalue(model, X, alpha=1.0, f0=None, iters=50, seed=0):
     MSELoss averages over. This is top_gauss_newton_eigenvalue of mnist/exploration/mnist_pilot.py
     applied to a given model. The start vector comes from a generator seeded
     with seed, so the global random state is not touched.
+
+    The weights stay fixed while the iteration runs, so the Jacobian-vector
+    product comes from torch.func.linearize, which its documentation gives
+    for a jvp computed many times at the same primals, and the
+    vector-Jacobian product from one torch.func.vjp, whose function is
+    called with each new cotangent.
     """
     params = {k: v.detach() for k, v in model.named_parameters()}
 
@@ -411,13 +417,14 @@ def gauss_newton_top_eigenvalue(model, X, alpha=1.0, f0=None, iters=50, seed=0):
         return alpha * (out - f0) if f0 is not None else alpha * out
 
     gen = torch.Generator().manual_seed(seed)
-    v = {k: torch.randn(t.shape, generator=gen, dtype=t.dtype) for k, t in params.items()}
+    v = {k: torch.randn(t.shape, generator=gen, dtype=t.dtype).to(t.device) for k, t in params.items()}
+    _, jvp_fn = torch.func.linearize(predict, params)
+    _, pullback = torch.func.vjp(predict, params)
     lam = 0.0
     for _ in range(iters):
         norm = torch.sqrt(sum((t ** 2).sum() for t in v.values()))
         v = {k: t / norm for k, t in v.items()}
-        _, Jv = torch.func.jvp(predict, (params,), (v,))
-        _, pullback = torch.func.vjp(predict, params)
+        Jv = jvp_fn(v)
         (Gv,) = pullback(2.0 * Jv / Jv.numel())
         lam = sum((Gv[k] * v[k]).sum() for k in v).item()
         v = Gv
@@ -761,7 +768,7 @@ class Run:
     parameters of all the runs.
     """
 
-    def __init__(self, name, cfg, model, data, on_checkpoint=None):
+    def __init__(self, name, cfg, model, data, on_checkpoint=None, curvature=True):
         self.name, self.cfg, self.model, self.on_checkpoint = name, cfg, model, on_checkpoint
         self.X_train, self.y_train, self.X_test, self.y_test = data
         self.alpha = cfg["alpha"]
@@ -795,7 +802,7 @@ class Run:
                 raise ValueError("lr_schedule is implemented for sgd only")
             if schedule not in ("curvature", "norm"):
                 raise ValueError(f"unknown lr_schedule {schedule!r}")
-        if schedule == "curvature":
+        if schedule == "curvature" and curvature:
             self.lr_state["lam_0"] = self.lr_state["lam"] = self.curvature_now(0)
 
         self.history = {k: [] for k in HISTORY_KEYS}
@@ -1001,7 +1008,7 @@ def train_fused(names, configs, on_checkpoints=None, results_dir=None, verbose=T
         data = [X_train.to(device, dtype), y_train.to(device, dtype), test_set[2], test_set[3]]
         torch.manual_seed(cfg["seed"])
         model = new_model(cfg, data[0].shape[1], data[1].shape[1]).to(device, dtype)
-        runs.append(Run(name, cfg, model, data, hook))
+        runs.append(Run(name, cfg, model, data, hook, curvature=False))
     M = len(runs)
 
     params = {k: v.detach().clone() for k, v in stack_module_state([r.model for r in runs])[0].items()}
@@ -1020,6 +1027,11 @@ def train_fused(names, configs, on_checkpoints=None, results_dir=None, verbose=T
     lr_v = torch.tensor([r.lr_state["lr"] for r in runs], dtype=X.dtype, device=device)
     wd_v = eta_kappa / lr_v
     base = copy.deepcopy(runs[0].model).to("meta")
+    if schedule == "curvature":
+        # The eigenvalue at step 0 that Run.curvature_now(0) would give each run, for all runs at once.
+        lams = fused_gauss_newton_top_eigenvalue(base, params, X, alpha, f0=F0, seeds=[c["seed"] for c in cfgs])
+        for run, lam in zip(runs, lams):
+            run.lr_state["lam_0"] = run.lr_state["lam"] = lam
 
     def fnet(p, x):
         return functional_call(base, (p,), (x,))
@@ -1105,8 +1117,11 @@ def fused_gauss_newton_top_eigenvalue(base, params, X, alpha, f0=None, seeds=Non
     if given, holds their stacked initial outputs on X. Run m starts from
     the vector that gauss_newton_top_eigenvalue draws from a generator
     seeded with seeds[m], so each run takes the iteration it would take
-    alone. torch.func.jvp and torch.func.vjp compose with vmap. Returns a
-    list with one float for each run.
+    alone. The whole iteration of one run is vmapped over the runs, with its
+    vjp built once per run. torch.func.linearize has no batching rule under
+    vmap in PyTorch 2.14 (aten::_make_dual), so the Jacobian-vector product
+    is a torch.func.jvp at each iteration. Returns a list with one float for
+    each run.
     """
     M = next(iter(params.values())).shape[0]
     seeds = [0] * M if seeds is None else seeds
@@ -1117,25 +1132,24 @@ def fused_gauss_newton_top_eigenvalue(base, params, X, alpha, f0=None, seeds=Non
         starts.append({k: torch.randn(t.shape[1:], generator=gen, dtype=t.dtype) for k, t in params.items()})
     v = {k: torch.stack([st[k] for st in starts]).to(device) for k in params}
 
-    def gauss_newton_product(p, x, a, f, u):
+    def power_iteration(p, x, a, f, u):
         def predict(q):
             out = functional_call(base, (q,), (x,))
             return a * (out - f) if f is not None else a * out
 
-        _, Jv = torch.func.jvp(predict, (p,), (u,))
         _, pullback = torch.func.vjp(predict, p)
-        (Gv,) = pullback(2.0 * Jv / Jv.numel())
-        return Gv
+        lam = torch.zeros((), dtype=x.dtype, device=x.device)
+        for _ in range(iters):
+            norm = torch.sqrt(sum((t ** 2).sum() for t in u.values()))
+            u = {k: t / norm for k, t in u.items()}
+            _, Jv = torch.func.jvp(predict, (p,), (u,))
+            (Gv,) = pullback(2.0 * Jv / Jv.numel())
+            lam = sum((Gv[k] * u[k]).sum() for k in u)
+            u = Gv
+        return lam
 
-    product = vmap(gauss_newton_product, in_dims=(0, 0, 0, 0 if f0 is not None else None, 0))
-    lam = torch.zeros(M, device=device)
-    for _ in range(iters):
-        norm = torch.sqrt(sum((t ** 2).flatten(1).sum(1) for t in v.values()))
-        v = {k: t / norm.view((-1,) + (1,) * (t.dim() - 1)) for k, t in v.items()}
-        Gv = product(params, X, alpha, f0, v)
-        lam = sum((Gv[k] * v[k]).flatten(1).sum(1) for k in v)
-        v = Gv
-    return lam.tolist()
+    return vmap(power_iteration, in_dims=(0, 0, 0, 0 if f0 is not None else None, 0))(
+        params, X, alpha, f0, v).tolist()
 
 
 def run_or_load(name, rerun=False, verbose=True, on_checkpoint=None, results_dir=None, **overrides):
