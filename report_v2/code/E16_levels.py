@@ -1,4 +1,4 @@
-"""E16. Sensitivity to the grokking level (Appendix F).
+"""E16. Sensitivity to the grokking level (Appendix E).
 
 Repeats the placebo test of E3 at levels 0.80 and 0.90 (2,000 permutations, seed 0, standard
 deviation as the spread) and collects the E6 fits at those levels. Writes two LaTeX tables.

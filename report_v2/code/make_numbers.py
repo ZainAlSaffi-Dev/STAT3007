@@ -129,7 +129,8 @@ def main():
     e8 = C.read_json('E08')['ladder']
     for model, mn in (('A only', 'Aonly'), ('S only', 'Sonly'), ('log R only', 'Ronly'), ('linear AFT', 'Linear'),
                       ('AFT with interactions', 'Inter'), ('kernel ridge', 'Krr'), ('XGBoost', 'Xgb'),
-                      ('GRU on history', 'Gru'), ('settings reference', 'Ref')):
+                      ('GRU on history', 'Gru'), ('settings reference', 'Ref'), ('width reference', 'Widthref'),
+                      ('decay reference', 'Decayref')):
         v = e8[model]
         M.add(name('Eeight', mn), f'{v["mean"]:.2f}', f'E08.json ladder.{model}.mean')
         if 'seed_range' in v:

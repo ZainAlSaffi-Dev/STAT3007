@@ -16,10 +16,10 @@ Render from animations/:
 import sys
 from pathlib import Path
 
-from manim import DOWN, LEFT, RIGHT, UP, Arrow, FadeIn, LaggedStart, MathTex, Scene, Square, Text, VGroup
+from manim import DOWN, LEFT, RIGHT, UP, Arrow, FadeIn, LaggedStart, MathTex, Square, Text, VGroup
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from common import data, palette
+from common import data, layout, palette
 
 SIZE = palette.LABEL_COLUMN + 16
 MATH = SIZE + 8
@@ -28,7 +28,7 @@ GAP = 0.6
 FILL = "#e4e3df"
 
 
-class GridOfRuns(Scene):
+class GridOfRuns(layout.QuickScene):
     def construct(self):
         runs = data.load_report_runs()
         alphas = sorted(set(runs["alpha"]))

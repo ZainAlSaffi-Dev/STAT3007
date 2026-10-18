@@ -32,7 +32,7 @@ from pathlib import Path
 
 import numpy as np
 from manim import (DOWN, LEFT, RIGHT, UP, DashedLine, DecimalNumber, FadeIn, FadeOut, Create, Integer, MathTex,
-                   Rectangle, Scene, Square, Text, ValueTracker, VGroup, Group)
+                   Rectangle, Square, Text, ValueTracker, VGroup, Group)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from common import data, kernels, layout, notation, palette
@@ -49,7 +49,7 @@ def flipped(image_values):
     return image_values[::-1]
 
 
-class KernelOnTheTorus(Scene):
+class KernelOnTheTorus(layout.QuickScene):
     def construct(self):
         # Measured: the weights of ntk_N100_a1_wd0_s0 at its saved steps up to step 31,000.
         steps, W1, W2 = data.load_weights(RUN)

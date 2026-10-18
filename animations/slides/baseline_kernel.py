@@ -23,7 +23,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from manim import (DOWN, LEFT, RIGHT, UP, FadeIn, GrowFromEdge, MathTex, Polygon, Rectangle, Scene, Text,
+from manim import (DOWN, LEFT, RIGHT, UP, FadeIn, GrowFromEdge, MathTex, Polygon, Rectangle, Text,
                    ValueTracker, VGroup, always_redraw, linear)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -45,7 +45,7 @@ def band_until(axes, x, low, high, x_end, colour):
     return Polygon(*points, stroke_width=0, fill_color=colour, fill_opacity=0.22)
 
 
-class BaselineKernel(Scene):
+class BaselineKernel(layout.QuickScene):
     def construct(self):
         # Measured: the five seeds of the baseline cell at every checkpoint after step 0.
         n100 = data.load_n100()

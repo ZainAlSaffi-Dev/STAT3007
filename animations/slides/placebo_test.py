@@ -27,10 +27,10 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from manim import (DOWN, LEFT, RIGHT, UP, Dot, FadeIn, MathTex, Rectangle, Scene, Square, Text, Transform, VGroup)
+from manim import (DOWN, LEFT, RIGHT, UP, Dot, FadeIn, MathTex, Rectangle, Square, Text, Transform, VGroup)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from common import data, palette
+from common import data, layout, palette
 
 SIZE = palette.LABEL_COLUMN
 MATH = SIZE + 12
@@ -80,7 +80,7 @@ class Panel:
                          fill_opacity=opacity).move_to([self.centre, (low + high) / 2, 0])
 
 
-class PlaceboTest(Scene):
+class PlaceboTest(layout.QuickScene):
     def construct(self):
         # Measured: the 120 runs at width 100, of which the 78 that grok at level 0.95.
         n100 = data.load_n100()

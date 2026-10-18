@@ -25,7 +25,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from manim import (DOWN, LEFT, RIGHT, UP, Arrow, DashedVMobject, FadeIn, FadeOut, Line, MathTex, Scene, Text,
+from manim import (DOWN, LEFT, RIGHT, UP, Arrow, DashedVMobject, FadeIn, FadeOut, Line, MathTex, Text,
                    ValueTracker, VGroup, always_redraw, linear)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -45,7 +45,7 @@ def turned(K, angle):
     return Q @ K @ Q.T
 
 
-class LazyVersusRich(Scene):
+class LazyVersusRich(layout.QuickScene):
     def construct(self):
         self.schematic()
         self.measured()

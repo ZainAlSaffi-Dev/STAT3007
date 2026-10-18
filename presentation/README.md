@@ -92,7 +92,7 @@ A div with the class `figure-todo` and a `name` stands for a static figure still
 
 ### Figures
 
-The results slides show slide versions of the report figures E2, E4, E5, E7, E8 and E9. `make_figures.py` draws them from the committed data and the saved numbers of `report_v2/code`, with the colours of `report_v2/code/common.py`. Each figure is 16 by 9 and its type matches the clips. Run it from the repository root with the root environment, which has the packages of `pyproject.toml`:
+The results slides show slide versions of the report figures E2, E4, E5, E7 and E8. `make_figures.py` draws them from the committed data and the saved numbers of `report_v2/code`, with the colours of `report_v2/code/common.py`. Each figure is 16 by 9 and its type matches the clips. Run it from the repository root with the root environment, which has the packages of `pyproject.toml`:
 
 ```bash
 .venv/bin/python presentation/make_figures.py

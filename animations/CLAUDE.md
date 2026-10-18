@@ -72,9 +72,10 @@ Fix the seed inside the scene body for anything random, so the clip renders the
 same way twice.
 
 Use `-ql` while iterating. Use `-qh` for the version that goes into the deck.
-Rendered video lands in `out/mp4/`, which is in `.gitignore` because the files
-are large. Still frames land in `out/stills/` and are committed, because the
-report uses them.
+Rendered video lands in `out/mp4/`. The 13 deck clips there are committed at
+1080p, so that anyone can play the deck, and `.gitignore` names each one. Add a
+new deck clip to that list. Still frames land in `out/stills/` and are
+committed, because the report uses them.
 
 Every scene exports at least one still. Render it with `-s`, which saves the
 last frame, so make the last frame the one worth keeping.
@@ -101,9 +102,11 @@ A clip in a column of a slide is shown at about half size. Its labels use
 `LABEL_COLUMN`, and a clip across the whole slide uses `LABEL_WIDE`. Check a
 clip by looking at its still scaled down to the width of its column.
 
-The clip lasts about as long as the `length` attribute of its placeholder. The
-clip stops on its last frame, which is also the still in the PDF, so the last
-frame shows the message of the slide.
+A deck scene subclasses `layout.QuickScene`, which plays it `layout.SPEED`
+times faster than its run times say, so a ten-minute talk can show it in a
+few seconds. The `length` attribute of its placeholder gives the length of
+the rendered clip. The clip stops on its last frame, which is also the still
+in the PDF, so the last frame shows the message of the slide.
 
 A number on screen is read with `data.deck_number`, so the clip prints the same
 string as the slide. Colours follow `palette.py`, where accuracy is grey for

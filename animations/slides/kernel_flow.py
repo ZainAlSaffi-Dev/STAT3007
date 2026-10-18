@@ -24,7 +24,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from manim import (DOWN, LEFT, RIGHT, UP, Arc, DashedVMobject, FadeIn, FadeOut, MathTex, Scene, Text,
+from manim import (DOWN, LEFT, RIGHT, UP, Arc, DashedVMobject, FadeIn, FadeOut, MathTex, Text,
                    ValueTracker, VGroup, always_redraw)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -55,7 +55,7 @@ def turn_arc(span, colour, dashed=False):
     return DashedVMobject(arc, num_dashes=24) if dashed else arc
 
 
-class KernelFlow(Scene):
+class KernelFlow(layout.QuickScene):
     def construct(self):
         K0 = turned(np.diag([2.0, 1.0]), np.deg2rad(15))
         scale = ValueTracker(1.0)

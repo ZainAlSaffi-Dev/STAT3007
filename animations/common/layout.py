@@ -6,13 +6,30 @@ instead of reaching the deck.
 """
 
 import numpy as np
-from manim import (DOWN, LEFT, RIGHT, UP, RESAMPLING_ALGORITHMS, Axes, Circle, Ellipse, ImageMobject, Line, Text,
-                   VGroup, VMobject, config)
+from manim import (DOWN, LEFT, RIGHT, UP, RESAMPLING_ALGORITHMS, Axes, Circle, Ellipse, ImageMobject, Line, Scene,
+                   Text, VGroup, VMobject, config)
 from manim.utils.images import change_to_rgba_array
 
 from . import palette
 
 MARGIN = 0.5
+
+# The deck clips play this many times faster than the run times written in
+# their scenes, so a ten-minute talk can show them in a few seconds each.
+SPEED = 3
+
+
+class QuickScene(Scene):
+    """A scene whose every animation and pause lasts 1 / SPEED of the time it asks for."""
+
+    def play(self, *args, **kwargs):
+        # Manim's wait calls play without run_time, so only an explicit run_time is scaled here.
+        if "run_time" in kwargs:
+            kwargs["run_time"] /= SPEED
+        super().play(*args, **kwargs)
+
+    def wait(self, duration=1, *args, **kwargs):
+        super().wait(duration / SPEED, *args, **kwargs)
 
 
 def tag(text, size=palette.TAG):

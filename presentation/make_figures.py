@@ -1,4 +1,4 @@
-"""Slide versions of the report figures E2, E4, E5, E7, E8 and E9.
+"""Slide versions of the report figures E2, E4, E5, E7 and E8.
 
 The report figures come from the scripts in report_v2/code. They are drawn for an A4 page, so their
 type is too small on a projector. This script draws each one again for its place in slides.qmd.
@@ -7,8 +7,7 @@ Each figure is 16 by 9, its type matches the deck clips, and it keeps to the mes
 It reads the committed extract and the saved numbers that the report scripts read, in
 report_v2/code/data and report_v2/code/out/numbers, and it takes its colours from
 report_v2/code/common.py. A change to the report numbers therefore reaches the slides when this
-script runs again. It trains nothing. The only fit is the kernel ridge surface of E9, and the script
-checks that the fit picks the same settings as the report.
+script runs again. It trains nothing and fits nothing.
 
 Run it from the repository root with the root environment:
 
@@ -36,7 +35,7 @@ COLUMN = (10.56, 5.94)
 WIDE = (14.58, 8.2)
 
 NEUTRAL = '#8a8986'   # a bar that stands for no single statistic, as in the report figure E8
-NO_GROK = '#f0efec'   # a cell or region with no data, as in the report figures E4 and E9
+NO_GROK = '#f0efec'   # a cell with no data, as in the report figure E4
 
 # Tick labels of a log axis in the TeX font, as the other formulas. Matplotlib's own labels set the
 # digits in the text font.
@@ -45,8 +44,9 @@ POW10 = FuncFormatter(lambda v, _: f'$10^{{{round(np.log10(v))}}}$')
 plt = C.setup_matplotlib()
 plt.rcParams.update({
     # The deck sets Source Sans 3 with Helvetica Neue as its fallback. Matplotlib finds only the
-    # fallback here, as Manim does for the clips. Formulas use the TeX fonts, as MathJax does.
-    'font.family': 'Helvetica Neue', 'mathtext.fontset': 'cm', 'axes.unicode_minus': False,
+    # fallback here, as Manim does for the clips. Nimbus Sans, a free copy of Helvetica, stands in
+    # where Helvetica Neue is not installed. Formulas use the TeX fonts, as MathJax does.
+    'font.family': ['Helvetica Neue', 'Nimbus Sans'], 'mathtext.fontset': 'cm', 'axes.unicode_minus': False,
     'font.size': 22, 'axes.titlesize': 24, 'axes.labelsize': 24, 'xtick.labelsize': 21, 'ytick.labelsize': 21,
     'legend.fontsize': 21, 'lines.linewidth': 2.4, 'lines.markersize': 9, 'axes.linewidth': 1.2,
     'grid.linewidth': 1.0, 'xtick.major.width': 1.2, 'ytick.major.width': 1.2, 'xtick.major.size': 6,
@@ -219,17 +219,16 @@ def e7():
 
 
 def e8():
-    """Slide 28: the prediction ladder on a held-out alpha, after E08_ladder.py.
+    """Slide 27: the prediction ladder on a held-out alpha, after E08_ladder.py.
 
     Bars are the mean concordance over the three held-out values of alpha, from E08.json. The
-    dashed line is the reference given the settings. The slide drops the dots of each held-out value
-    and the seed ranges, and names the models in plain words as the backup slide does.
+    dashed line is the reference given the settings. As in the report figure since 17 October 2026,
+    only each statistic alone, the trees on all three and the recurrent network on their history are
+    drawn. The slide drops the dots of each held-out value and the seed ranges.
     """
     ladder = C.read_json('E08')['ladder']
     models = [('A only', '$A_t$ alone', 'A'), ('S only', '$S_t$ alone', 'S'), ('log R only', r'$\log R_t$ alone', 'R'),
-              ('linear AFT', 'linear', None), ('AFT with interactions', 'linear with interactions', None),
-              ('kernel ridge', 'kernel ridge', None), ('XGBoost', 'boosted trees', None),
-              ('GRU on history', 'recurrent network', None)]
+              ('XGBoost', 'all three (trees)', None), ('GRU on history', 'history (recurrent)', None)]
     fig, ax = plt.subplots(figsize=COLUMN, layout='constrained')
     for i, (name, _, stat) in enumerate(models):
         mean = ladder[name]['mean']
@@ -252,47 +251,7 @@ def e8():
     save(fig, 'E8_ladder')
 
 
-def e9():
-    """Slide 27: the kernel ridge surface of the grokking step over S and R at t*, after E09_surface.py.
-
-    The fit is that of the report figure, on the runs that grok, with A at its median. Grid points
-    farther than 0.25 standard deviations from every run are shaded, since the surface there is an
-    extrapolation.
-    """
-    import models as M
-    from matplotlib.patches import Patch
-    data = M.load_data()
-    grok = data[data.grokked == 1].reset_index(drop=True)
-    krr = M.kernel_ridge().fit(grok[M.COVS], np.log(grok['T']), groups=grok['cell'])
-    assert krr.regressor_.best_params_ == C.read_json('E09')['krr_params'], 'the fit differs from the report'
-    S, LR = np.meshgrid(np.linspace(grok.S_t.min(), grok.S_t.max(), 120),
-                        np.linspace(grok.logR_t.min(), grok.logR_t.max(), 120))
-    probe = pd.DataFrame({'A_t': grok.A_t.median(), 'S_t': S.ravel(), 'logR_t': LR.ravel()})
-    surface = krr.predict(probe).reshape(S.shape) / np.log(10)
-    z = lambda v, col: (v - grok[col].mean()) / grok[col].std()
-    dist = np.sqrt((z(S.ravel(), 'S_t')[:, None] - z(grok.S_t, 'S_t').to_numpy()) ** 2
-                   + (z(LR.ravel(), 'logR_t')[:, None] - z(grok.logR_t, 'logR_t').to_numpy()) ** 2).min(axis=1)
-    empty = (dist > 0.25).reshape(S.shape)
-
-    fig, ax = plt.subplots(figsize=COLUMN, layout='constrained')
-    im = ax.contourf(S, np.exp(LR), surface, levels=12, cmap=C.VIOLET_CMAP)
-    ax.contourf(S, np.exp(LR), empty.astype(float), levels=[0.5, 1.5], colors=[NO_GROK], alpha=0.85)
-    dots = ax.scatter(grok.S_t, grok.R_t, s=20, color=C.TEXT, lw=0, alpha=0.8, label='runs that grok')
-    ax.set_yscale('log')
-    ax.yaxis.set_major_formatter(POW10)
-    ax.set_xlabel(r'scale $S_t$ at $t^{*}$')
-    ax.set_ylabel(r'rotation $R_t$ at $t^{*}$')
-    ax.grid(False)
-    cb = fig.colorbar(im, ax=ax, pad=0.02, aspect=16)
-    cb.set_ticks(np.log10([1e4, 3e4, 1e5, 3e5]), labels=['$10^4$', '$3{\\cdot}10^4$', '$10^5$', '$3{\\cdot}10^5$'])
-    cb.set_label('predicted grokking step $T$')
-    cb.outline.set_visible(False)
-    ax.legend(handles=[dots, Patch(color=NO_GROK, label='no runs nearby')], loc='lower right', frameon=True,
-              framealpha=0.9, edgecolor='none', markerscale=1.6)
-    save(fig, 'E9_surface')
-
-
 if __name__ == '__main__':
-    for draw in (e2, e4, e5, e7, e8, e9):
+    for draw in (e2, e4, e5, e7, e8):
         draw()
         print('drew', draw.__name__)

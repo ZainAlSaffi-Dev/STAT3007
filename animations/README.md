@@ -78,13 +78,22 @@ parallel from separate shells. They share the LaTeX folder `out/Tex`, and one
 render can delete the files another is still using.
 
 `manim.cfg` fixes the frame size, the frame rate, the white background and the
-output folders. Video goes to `out/mp4/`, which git ignores. Stills go to
-`out/stills/`, which git keeps.
+output folders. Video goes to `out/mp4/`. Stills go to `out/stills/`, which
+git keeps.
+
+The 13 deck clips in `out/mp4/` are committed at 1080p, so the deck plays on a
+machine that has not rendered them. Git ignores the other clips there and
+Manim's partial files.
 
 Every quality writes to the same file, `out/mp4/<Scene>.mp4`, and the deck
 plays that file. So a run at `-ql`, including `uv run python render_all.py`,
-replaces the deck's clips with low-quality ones. Before a talk, render the
-clips again with `uv run python render_all.py -q h`.
+replaces the deck's clips with low-quality ones. Render them again with
+`uv run python render_all.py -q h` before you commit a clip.
+
+The deck scenes subclass `layout.QuickScene`, which plays every animation and
+pause `layout.SPEED` times faster than the scene asks, so the run times in a
+scene read as a storyboard at normal speed. `SPEED` is 3, and the clips last
+5 to 10 seconds.
 
 ## How the folder is laid out
 
@@ -189,23 +198,23 @@ committed.
 | `NTKFromScratch` | slides | schematic, then the weights of `ntk_N100_a1_wd0_s0` at step 0 | deck, slide 5 | One step on x moves f(x) towards its target by an amount proportional to K(x, x) and f(x') by one proportional to K(x', x). Then the measured kernel on all 529 pairs, with a zoom on the pairs with a at most 4: pairs that share a number start out alike. |
 | `LazyVersusRich` | slides | schematic, then the seed 0 curves of `ntk_N100_a{0.5, 1, 2}_wd0_s0` | deck, slide 6 | A schematic kernel at alpha 0.5, 1 and 2 that changes by an amount shrinking as 1 / alpha, with a lazier arrow. Then the measured test accuracy at the three alphas: the lazier network groks later, and at alpha 2 it does not reach 0.95 within 200,000 steps. |
 | `GrokkingTimeline` | slides | seed 0 curve of `ntk_N100_a1_wd0_s0`, events from `report_runs.csv` | deck, slide 2 | Training and test accuracy on a log step axis from 1 to 200,000. A hollow marker at memorisation, a filled marker at the grokking step T, and a brace from the start to T. |
-| `ScaleVersusRotation` | slides | schematic | deck, slide 8 | The kernel as an ellipse, an exact 2 by 2 kernel. It grows 1.5 times on the left and turns 52 degrees at a fixed size on the right. Both reach D_t = 0.50, computed from the drawn matrices. |
-| `BaselineKernel` | slides | `data/n100_checkpoints.npz` and `report_runs.csv`, the five seeds of the baseline cell | deck, slide 18 | S_t and R_t against log step as the median with the seed range, with markers at the median memorisation and grokking steps. It ends on a bar that splits D_t^2 at grokking into the scale part, 90%, and the rotation part. The scene asserts that its medians equal the numbers on the slide. |
-| `GridOfRuns` | slides | `report_runs.csv` | deck, slide 16 | The grid of settings as three panels of 6 by 8 cells, one per alpha, with width down and weight decay across, then the counts: 144 cells with 5 seeds each, so 720 runs. The counts come from the runs table. |
-| `KernelAsArrows` | slides | schematic | deck, slide 10 | Each kernel as one arrow under the Frobenius inner product. S_t is the ratio of the lengths of K_t and K_0, R_t is one minus the cosine of the angle between them, and A_t is the cosine of the angle between the centred kernel and the centred label kernel. Stretching the kernel changes S_t and leaves R_t and A_t alone. The numbers come from the drawn arrows. |
-| `KernelFlow` | slides | schematic | deck, slide 14 | The two terms of the kernel flow, Equation S5 of Lewkowycz and Gur-Ari (2020), arXiv v2. The decay term shrinks the kernel evenly and keeps its axes, and T_t turns it. Then the turn from T_t shrinks as 1 / N from N = 100 to N = 1600, labelled as our reading. |
+| `ScaleVersusRotation` | slides | schematic | deck, slide 7 | The kernel as an ellipse, an exact 2 by 2 kernel. It grows 1.5 times on the left and turns 52 degrees at a fixed size on the right. Both reach D_t = 0.50, computed from the drawn matrices. |
+| `BaselineKernel` | slides | `data/n100_checkpoints.npz` and `report_runs.csv`, the five seeds of the baseline cell | deck, slide 13 | S_t and R_t against log step as the median with the seed range, with markers at the median memorisation and grokking steps. It ends on a bar that splits D_t^2 at grokking into the scale part, 90%, and the rotation part. The scene asserts that its medians equal the numbers on the slide. |
+| `GridOfRuns` | slides | `report_runs.csv` | deck, slide 12 | The grid of settings as three panels of 6 by 8 cells, one per alpha, with width down and weight decay across, then the counts: 144 cells with 5 seeds each, so 720 runs. The counts come from the runs table. |
+| `KernelAsArrows` | slides | schematic | deck, backup | Each kernel as one arrow under the Frobenius inner product. S_t is the ratio of the lengths of K_t and K_0, R_t is one minus the cosine of the angle between them, and A_t is the cosine of the angle between the centred kernel and the centred label kernel. Stretching the kernel changes S_t and leaves R_t and A_t alone. The numbers come from the drawn arrows. |
+| `KernelFlow` | slides | schematic | deck, slide 10 | The two terms of the kernel flow, Equation S5 of Lewkowycz and Gur-Ari (2020), arXiv v2. The decay term shrinks the kernel evenly and keeps its axes, and T_t turns it. Then the turn from T_t shrinks as 1 / N from N = 100 to N = 1600, labelled as our reading. |
 | `ModularAdditionTable` | slides | `data/split_seed42.npz` | deck, slide 3 | The 23 by 23 table of (a + b) mod 23, shaded so that equal sums form stripes. One worked cell. Then the 476 training pairs of the seed 0 runs fade, and the 53 test pairs stay, with the question whether the network can fill them in. |
-| `PlaceboTest` | slides | `data/n100_checkpoints.npz` and `report_runs.csv`, the 78 runs of width 100 that grok | deck, slide 19 | The Tier 1 placebo test of `E03_placebo.py`, with the same 2,000 shuffles. Each statistic at the runs' own grokking steps and then at another run's: the band of R_t widens 1.71 times, of S_t 1.29 times and of A_t 1.09 times. The scene asserts that its numbers equal `E03.json`. |
+| `PlaceboTest` | slides | `data/n100_checkpoints.npz` and `report_runs.csv`, the 78 runs of width 100 that grok | deck, slide 14 | The Tier 1 placebo test of `E03_placebo.py`, with the same 2,000 shuffles. Each statistic at the runs' own grokking steps and then at another run's: the band of R_t widens 1.71 times, of S_t 1.29 times and of A_t 1.09 times. The scene asserts that its numbers equal `E03.json`. |
 | `TheConfound` | slides | tier 1 grid runs | planned | Two cells with near equal movement and opposite mechanism. This is the figure the report calls the confound, demonstrated. |
 | `ThreeTermsOneAxis` | slides | tier 1 grid runs | planned | The scale, rotation and alignment terms with the two losses on one log step axis, with a moving time cursor. It asks whether the alignment crosses its threshold when the test loss falls. |
-| `TwoClocks` | slides | `E06.json` of the report | deck, slide 23 | Two slices through the centre of the Tier 2 fit, log T against log N and against log(eta lambda). The predicted clocks pass through the same centre: the rotation clock with a = 1 and b = 0, our reading, and the weight-decay clock with a = 0 and b = -1. The fitted lines, a = +0.24 and b = -0.63, lie between them. |
-| `KernelOnTheTorus` | slides | the weights of `ntk_N100_a1_wd0_s0` and its seed 0 curve | deck, slide 13 | The report's kernel on all 529 pairs, rebuilt from the saved weights and averaged over offsets (a - a', b - b'). At step 0 it is a cross, and the label kernel is the line a + b = a' + b'. Then the change of the normalised kernel up to step 31,000, with the step and the test accuracy: it falls on the cross and rises most along the sum line and the difference line a - b = a' - b'. The scene asserts that both lines stand more than two SD above the other blocks. |
+| `TwoClocks` | slides | `E06.json` of the report | deck, backup | Two slices through the centre of the Tier 2 fit, log T against log N and against log(eta lambda). The predicted clocks pass through the same centre: the rotation clock with a = 1 and b = 0, our reading, and the weight-decay clock with a = 0 and b = -1. The fitted lines, a = +0.24 and b = -0.63, lie between them. |
+| `KernelOnTheTorus` | slides | the weights of `ntk_N100_a1_wd0_s0` and its seed 0 curve | deck, backup | The report's kernel on all 529 pairs, rebuilt from the saved weights and averaged over offsets (a - a', b - b'). At step 0 it is a cross, and the label kernel is the line a + b = a' + b'. Then the change of the normalised kernel up to step 31,000, with the step and the test accuracy: it falls on the cross and rises most along the sum line and the difference line a - b = a' - b'. The scene asserts that both lines stand more than two SD above the other blocks. |
 | `TurnAndAim` | explainer | identity, then `dense_N100_a1_wd0.0003_s0` | renders | The identity A = A_0 (1 - R) + gamma sqrt(1 - A_0^2) sqrt(R (2 - R)), built term by term. Then the step 0 kernel, the target and the current kernel as unit arrows at their measured angles. Most of the turn goes into directions the target does not see. |
 | `AimOverTraining` | slides | the three dense runs | renders | Rotation, aim and alignment against step. The strongest decay turns early with an aim near zero. At step 30,000 the three cells have turned about as far and differ in aim. |
-| `IdentityLevelSets` | slides | identity, then the seed 0 curve of `ntk_N100_a1_wd0_s0` | deck, slide 12 | The scale part (S_t - 1)^2 against the rotation part 2 S_t R_t on one scale, where lines of equal D_t are diagonals. Growth and a change of shape reach D_t = 0.5 along the two axes. Then a zoom out to the baseline run, which ends near (12.5, 0.67), close to the growth axis. It replaced `ScaleRotationLockstep`, which used the centred terms of the September draft. |
+| `IdentityLevelSets` | slides | identity, then the seed 0 curve of `ntk_N100_a1_wd0_s0` | deck, slide 9 | The scale part (S_t - 1)^2 against the rotation part 2 S_t R_t on one scale, where lines of equal D_t are diagonals. Growth and a change of shape reach D_t = 0.5 along the two axes. Then a zoom out to the baseline run, which ends near (12.5, 0.67), close to the growth axis. It replaced `ScaleRotationLockstep`, which used the centred terms of the September draft. |
 
 "Deck, slide n" means the clip plays on that slide of `presentation/slides.qmd`
-and renders at `-qh`. "Renders" means the scene renders at `-ql` without an
+and renders at `-qh`. "Deck, backup" means it plays on a backup slide. "Renders" means the scene renders at `-ql` without an
 error. `TheConfound` and `ThreeTermsOneAxis` are still planned and are not in
 the deck.
 

@@ -20,7 +20,7 @@ from pathlib import Path
 
 import numpy as np
 from manim import (DOWN, LEFT, RIGHT, UP, BraceBetweenPoints, Create, DashedLine, FadeIn, GrowFromCenter, MathTex,
-                   Scene, Text, ValueTracker, VGroup, always_redraw, linear)
+                   Text, ValueTracker, VGroup, always_redraw, linear)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from common import data, layout, notation, palette
@@ -29,7 +29,7 @@ RUN = data.dataset_run_id(100, 1.0, 0.0)
 SIZE = palette.LABEL_COLUMN
 
 
-class GrokkingTimeline(Scene):
+class GrokkingTimeline(layout.QuickScene):
     def construct(self):
         # Measured: every checkpoint of ntk_N100_a1_wd0_s0 after step 0, which has no place on a log axis.
         run = data.load_curves(RUN)

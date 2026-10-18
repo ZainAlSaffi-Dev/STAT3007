@@ -225,6 +225,12 @@ EeightGruHi: "0.78"  # E08.json ladder.GRU on history.seed_range
 EeightRef: "0.79"  # E08.json ladder.settings reference.mean
 EeightRefLo: "0.77"  # E08.json ladder.settings reference.seed_range
 EeightRefHi: "0.80"  # E08.json ladder.settings reference.seed_range
+EeightWidthref: "0.67"  # E08.json ladder.width reference.mean
+EeightWidthrefLo: "0.67"  # E08.json ladder.width reference.seed_range
+EeightWidthrefHi: "0.67"  # E08.json ladder.width reference.seed_range
+EeightDecayref: "0.72"  # E08.json ladder.decay reference.mean
+EeightDecayrefLo: "0.71"  # E08.json ladder.decay reference.seed_range
+EeightDecayrefHi: "0.73"  # E08.json ladder.decay reference.seed_range
 EnineGamma: "$-0.62$"  # E09.json gamma_SR.estimate
 EnineGammalo: "$-1.39$"  # E09.json gamma_SR.ci
 EnineGammahi: "$-0.09$"  # E09.json gamma_SR.ci

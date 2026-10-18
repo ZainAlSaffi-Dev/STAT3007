@@ -25,7 +25,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from manim import (DOWN, LEFT, RIGHT, UP, DashedLine, Dot, FadeIn, FadeOut, Line, MathTex, Scene, Text,
+from manim import (DOWN, LEFT, RIGHT, UP, DashedLine, Dot, FadeIn, FadeOut, Line, MathTex, Text,
                    ValueTracker, VGroup, VMobject, always_redraw, linear)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -41,7 +41,7 @@ D_SCHEMATIC = 0.5
 LEVELS = (0.25, 0.5, 1, 2, 3)
 
 
-class IdentityLevelSets(Scene):
+class IdentityLevelSets(layout.QuickScene):
     def construct(self):
         # Measured: every checkpoint of ntk_N100_a1_wd0_s0.
         run = data.load_curves(RUN)

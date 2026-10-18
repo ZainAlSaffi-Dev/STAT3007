@@ -22,7 +22,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from manim import (DOWN, LEFT, RIGHT, UP, Angle, Arrow, DecimalNumber, FadeIn, GrowArrow, Line, MathTex, Scene,
+from manim import (DOWN, LEFT, RIGHT, UP, Angle, Arrow, DecimalNumber, FadeIn, GrowArrow, Line, MathTex, 
                    Text, ValueTracker, VGroup, always_redraw)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -47,7 +47,7 @@ def arrow(origin, length, angle, colour):
                  max_tip_length_to_length_ratio=0.12)
 
 
-class KernelAsArrows(Scene):
+class KernelAsArrows(layout.QuickScene):
     def construct(self):
         stretch = ValueTracker(1.0)
         k0 = arrow(LEFT_ORIGIN, K0_LENGTH, K0_ANGLE, palette.GRAY)
