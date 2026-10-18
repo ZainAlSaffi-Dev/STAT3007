@@ -647,16 +647,18 @@ def cmd_check(args, log):
              f"({'pass' if fused_ok else 'FAIL'}, torch.testing.assert_close float64 defaults)")
 
     # The fused feature logger must give each run the rows FeatureLogger gives it, also in float64.
-    def logger_for(i, c, prefix):
+    def logger_for(i, c, prefix, device=None):
         return F.FeatureLogger(L.normalise_checkpoints({**L.DEFAULTS, **c}), f"{prefix}{i}", save_steps=[0, steps],
-                               log_steps=log_steps(steps), dtype=torch.float64)
+                               log_steps=log_steps(steps), device=device, dtype=torch.float64)
 
     serial_loggers = [logger_for(i, c, "serial") for i, c in enumerate(specs)]
     for i, (c, lg) in enumerate(zip(specs, serial_loggers)):
         L.train_run(f"serial{i}", verbose=False, on_checkpoint=lg, results_dir=scratch, **c)
-    fused_loggers = [logger_for(i, c, "fused") for i, c in enumerate(specs)]
+    # The fused side runs on the accelerator when there is one, so its cuSOLVER drivers meet the CPU reference.
+    device = torch.accelerator.current_accelerator(check_available=True) or torch.device("cpu")
+    fused_loggers = [logger_for(i, c, "fused", device) for i, c in enumerate(specs)]
     group = F.FusedFeatureLogger(fused_loggers)
-    L.train_fused([f"fused{i}" for i in range(len(specs))], specs, results_dir=scratch, verbose=False, device="cpu",
+    L.train_fused([f"fused{i}" for i in range(len(specs))], specs, results_dir=scratch, verbose=False, device=device,
                   on_fused_checkpoint=group)
     group.finish()
     rows_ok, worst_rows = True, 0.0
