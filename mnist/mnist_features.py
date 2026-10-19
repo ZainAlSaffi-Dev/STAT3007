@@ -94,11 +94,11 @@ GOLDEN = "docs/report_golden.pdf, Equations 5 and 6"
 ZAIN = "repoduced-code/dataset_features.py, the same column for modular addition"
 
 col("run_id", "ids", "The name of the run, mnist_sweep.run_id.", source="mnist_sweep.run_id")
-col("init_scale", "ids", "The initial scale s. Every initial weight is multiplied by s. For this 3-homogeneous "
+col("init_scale", "ids", "The initial scale s. The initial weights are multiplied by s. For this 3-homogeneous "
     "network the initial output is s^3 and the initial kernel s^4 times its value at s = 1.",
     source="Liu, Michaud and Tegmark (2023), Omnigrok, arXiv:2210.01117, Section 4")
 col("width", "ids", "The width of both hidden layers.")
-col("eta_kappa", "ids", "The weight decay per step, eta lambda in the report. It stays fixed when the learning "
+col("eta_kappa", "ids", "The weight decay per step, eta lambda in the report. It is unchanged when the learning "
     "rate changes.", source="docs/report.tex, The laziness and weight-decay knobs")
 col("seed", "ids", "The model seed.")
 col("data_seed", "ids", "The seed of the draw of the training images, 42 + seed.")
@@ -169,7 +169,7 @@ for layer in LAYERS:
         formula=f"||{layer}_t - {layer}_0|| / ||{layer}_0||", source=ZAIN)
     col(f"{layer}_stable_rank", "weights", f"Stable rank of {layer}.", formula="||W||_F^2 / sigma_max^2",
         source=ZAIN)
-    col(f"{layer}_eff_rank", "weights", f"Effective rank of {layer}, the exponential of the entropy of its "
+    col(f"{layer}_eff_rank", "weights", f"Effective rank of {layer}, the exponential of the entropy of the "
         "singular values normalised to sum to one.", formula="exp(-sum q log q), q = sigma / sum sigma", source=ZAIN)
 for a, b in zip(LAYERS[:-1], LAYERS[1:]):
     col(f"layer_imbalance_{a[1:]}{b[1:]}", "weights", f"Difference of the squared norms of {a} and {b} over the "
@@ -188,19 +188,19 @@ col("R_t", "kernel_raw", "Rotation term on the raw probe kernel.", formula="1 - 
 col("K_norm", "kernel_raw", "Frobenius norm of the raw probe kernel, the sum-over-outputs kernel.", source=HIST)
 col("yKy", "kernel_raw", "y^T K^+ y on the probe set, summed over the label columns.", source=HIST)
 col("S_c", "kernel_centred", "Scale term on the centred probe kernel.", formula="log(||Kc_t||_F / ||Kc_0||_F)",
-    source=REPORT + "; " + HIST)
+    source=REPORT + ". " + HIST)
 col("R_c", "kernel_centred", "Rotation term on the centred probe kernel.", formula="1 - <k_t, k_0>",
-    source=REPORT + "; " + HIST)
+    source=REPORT + ". " + HIST)
 col("A_t", "kernel_centred", "Centred kernel-target alignment on the probe.",
     formula="<Kc_t, G> / (||Kc_t|| ||G||), G = H Y Y^T H",
-    source="Cortes, Mohri and Rostamizadeh (2012), Definition 4; " + REPORT + "; " + HIST)
+    source="Cortes, Mohri and Rostamizadeh (2012), Definition 4. " + REPORT + ". " + HIST)
 col("A_u", "kernel_centred", "Uncentred alignment on the probe.", formula="<K_t, Y Y^T> / (||K_t|| ||Y Y^T||)",
-    source="ntk_lib.uncentred_alignment; " + HIST)
+    source="ntk_lib.uncentred_alignment. " + HIST)
 for part in SPLITS:
     for term, word in (("S_c", "scale term"), ("R_c", "rotation term"), ("A_t", "centred alignment"),
                        ("A_u", "uncentred alignment")):
         col(f"{term}_{part}", "kernel_centred", f"The {word} on the {part} part of the probe, with the kernel "
-            "restricted to those images.", source=REPORT + "; " + HIST)
+            "restricted to those images.", source=REPORT + ". " + HIST)
 col("K_norm_centred", "kernel_centred", "Frobenius norm of the centred probe kernel.", formula="||Kc_t||_F",
     source=CMR)
 col("inner_K0", "kernel_centred", "Inner product of the centred kernel with the centred kernel at step 0.",
@@ -213,7 +213,7 @@ col("exp2S_term", "kernel_centred", "First piece of Equation eq:decomp. D^2 = ex
     formula="e^(2 S_c)", source="docs/report.tex, Equation eq:decomp, the group's own algebra")
 col("cross_term", "kernel_centred", "Last piece of Equation eq:decomp.", formula="2 e^S_c (1 - R_c)",
     source="docs/report.tex, Equation eq:decomp, the group's own algebra")
-col("gamma", "kernel_centred", "The aim: the cosine between the part of k_t orthogonal to k_0 and the part of "
+col("gamma", "kernel_centred", "The aim, the cosine between the part of k_t orthogonal to k_0 and the part of "
     "the unit target orthogonal to k_0. NaN at step 0.",
     formula="<v_t, g_perp> / ||v_t||, v_t = k_t - <k_t, k_0> k_0", source=ZAIN)
 col("share_k0", "kernel_centred", "Share of the squared change of the unit kernel along k_0. It equals R_c / 2.",
@@ -221,22 +221,22 @@ col("share_k0", "kernel_centred", "Share of the squared change of the unit kerne
 col("share_gperp", "kernel_centred", "Share of the squared change of the unit kernel along g_perp.",
     formula="<d_t, g_perp>^2 / ||d_t||^2", source=ZAIN)
 col("share_residual", "kernel_centred", "Share of the squared change of the unit kernel orthogonal to both k_0 "
-    "and g_perp. The three shares sum to one.", source=ZAIN)
+    "and g_perp. share_k0, share_gperp and share_residual sum to one.", source=ZAIN)
 col("kernel_degenerate", "kernel_centred", f"True if the centred probe kernel norm is below {DEGENERATE}. The "
     "unit-kernel columns are then NaN.", source=ZAIN)
 
 for layer in LAYERS:
     col(f"S_{layer}", "layer_kernels", f"Scale term of the centred kernel term from the gradient of {layer} alone.",
-        formula=f"log(||Kc_{layer},t|| / ||Kc_{layer},0||)", source="kernel_terms; " + OWN)
+        formula=f"log(||Kc_{layer},t|| / ||Kc_{layer},0||)", source="kernel_terms. " + OWN)
     col(f"R_{layer}", "layer_kernels", f"Rotation term of the centred kernel term from {layer} alone.",
-        source="kernel_terms; " + OWN)
+        source="kernel_terms. " + OWN)
     col(f"A_{layer}", "layer_kernels", f"Centred alignment of the kernel term from {layer} alone.",
-        source="kernel_terms; " + OWN)
+        source="kernel_terms. " + OWN)
     col(f"{layer}_kernel_share", "layer_kernels", f"Share of the trace of the centred probe kernel that comes from "
-        f"{layer}.", formula=f"tr(Kc_{layer}) / tr(Kc)", source="kernel_terms; " + OWN)
+        f"{layer}.", formula=f"tr(Kc_{layer}) / tr(Kc)", source="kernel_terms. " + OWN)
 for term, word in (("S", "scale term"), ("R", "rotation term"), ("A", "centred alignment")):
     col(f"{term}_first_logit", "first_logit", f"The {word} of the centred kernel of the first output alone. The "
-        "report names this kernel as a robustness check.", source=REPORT + "; kernel_terms")
+        "report uses this kernel as a robustness check.", source=REPORT + ". kernel_terms")
 
 for term, word in (("S", "Scale, the plain ratio of Frobenius norms to step 0"),
                    ("R", "Shape change, one minus the uncentred cosine to step 0"),
@@ -244,7 +244,7 @@ for term, word in (("S", "Scale, the plain ratio of Frobenius norms to step 0"),
                    ("A", "Centred alignment with Y Y^T")):
     col(f"{term}_sum", "report_kernel", f"{word}, of the kernel of the sum of the logits divided by sqrt(C), on a "
         f"fixed draw of {REPORT_SIZE} test images. These are the S_t, R_t, D_t and A_t of the golden report.",
-        source=GOLDEN + "; kernel_terms")
+        source=GOLDEN + ". kernel_terms")
 
 col("eig_trace", "spectrum", "Trace of the centred probe kernel.", source=ZAIN)
 col("eig_top1", "spectrum", "Largest eigenvalue of the centred probe kernel.", source=ZAIN)

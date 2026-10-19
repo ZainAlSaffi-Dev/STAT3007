@@ -906,7 +906,7 @@ rcol("memorised", f"True if the training accuracy reached {MEM_LEVEL} at some ch
      "memorises has no grokking time, which is different from a censored one.", "docs/report_golden.pdf, section 3.5")
 rcol("t_mem", f"First checkpoint at which the training accuracy is at least {MEM_LEVEL}.",
      "docs/report_golden.pdf, section 3.5")
-rcol("t_mem_prev", "The checkpoint before t_mem, so the event lies in (t_mem_prev, t_mem].")
+rcol("t_mem_prev", "The checkpoint before t_mem. The event lies in (t_mem_prev, t_mem].")
 rcol("t_mem100", "First checkpoint at which the training accuracy is 1, the memorisation of dataset_sweep.py.",
      "ntk_lib.accuracy_crossings")
 rcol("test_acc_at_mem", "Test accuracy at t_mem.")
@@ -924,7 +924,7 @@ for tau in LOSS_TAUS:
          "ntk_lib.grokking_time")
     rcol(f"t_test_loss{tag}", f"First checkpoint at which the test loss is below {tau:g}.", "ntk_lib.grokking_time")
     rcol(f"t_grok_loss{tag}", f"Grokking time under the loss definition with both thresholds {tau:g}.",
-         "ntk_lib.grokking_time; docs/report.tex, Defining t_grok")
+         "ntk_lib.grokking_time. docs/report.tex, Defining t_grok")
     rcol(f"censored_loss{tag}", f"True if the test loss never fell below {tau:g}, or the training loss never did.",
          "ntk_lib.grokking_time")
 for when, word in (("mem", "t_mem"), ("gen", f"t_gen_acc{acc_tag(PRIMARY_LEVEL)}")):
@@ -1032,7 +1032,8 @@ def write_dictionary(out):
              "This file is written by `mnist_sweep.py assemble` from `mnist_features.COLUMNS` and "
              "`mnist_sweep.RUN_COLUMNS`. Edit those, not this file.", "",
              "`checkpoints.parquet` has one row per run and checkpoint. `runs.parquet` and `runs.csv` have one row "
-             "per run. The two tables join on `run_id`. The weights are in `runs/<run_id>_weights.npz`, with arrays "
+             "per run. `runs.parquet` and `checkpoints.parquet` join on `run_id`. The weights are in "
+             "`runs/<run_id>_weights.npz`, with arrays "
              "`steps`, `W1` of shape (T, N, 784), `W2` of shape (T, N, N) and `W3` of shape (T, 10, N). Seed 0 saves "
              f"about {N_WEIGHT_LOG + 2} checkpoints and the other seeds the last one. "
              "`mnist_features.kernel_terms` rebuilds any kernel from them.", "",
