@@ -54,6 +54,17 @@ def _arrays():
     return arrays, arrays["X_train"].mean(), arrays["X_train"].std()
 
 
+@functools.cache
+def _test_set():
+    """The normalised test images and their one-hot labels, made once per process.
+
+    Every seed takes the same test set, so the runs and loggers of a fused
+    width share one copy instead of holding one each.
+    """
+    data, mean, std = _arrays()
+    return torch.from_numpy((data["X_test"] - mean) / std), _one_hot(data["y_test"])
+
+
 def load_mnist(n_train=1000, seed=42):
     """Return ((X_train, y_train), (X_test, y_test)) as float32 tensors.
 
@@ -65,5 +76,4 @@ def load_mnist(n_train=1000, seed=42):
     data, mean, std = _arrays()
     idx = np.random.default_rng(seed).choice(len(data["X_train"]), size=n_train, replace=False)
     X_train = torch.from_numpy((data["X_train"][idx] - mean) / std)
-    X_test = torch.from_numpy((data["X_test"] - mean) / std)
-    return (X_train, _one_hot(data["y_train"][idx])), (X_test, _one_hot(data["y_test"]))
+    return (X_train, _one_hot(data["y_train"][idx])), _test_set()

@@ -745,6 +745,10 @@ class FusedFeatureLogger:
         self.X_test, self.labels_test = first.X["test"], first.labels["test"]
         self.x_probe = torch.stack([lg.x_probe for lg in loggers])
         self.X_report = first.X_report
+        # Every run shares the test set and the report images, so the members drop their own device copies.
+        for lg in loggers[1:]:
+            lg.X["test"], lg.y["test"], lg.labels["test"] = first.X["test"], first.y["test"], first.labels["test"]
+            lg.X_report = first.X_report
         self.Y_report = torch.as_tensor(first.Y_report, **dev)
         self.Gc_report = _centre(self.Y_report @ self.Y_report.T)
         self.Y_probe = torch.as_tensor(np.stack([lg.Y_probe for lg in loggers]), **dev)
