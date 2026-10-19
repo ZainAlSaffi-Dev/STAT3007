@@ -35,9 +35,13 @@ rule width:
         OUT / "benchmarks" / "width" / "{width}.tsv"
     # The numerical environment stays the one certify compared (arXiv:2607.05104, Section 5), and
     # TF32 needs an Ampere or later GPU (PyTorch numerical accuracy notes).
+    # The first allocation of Tovar et al. (doi:10.1109/tpds.2017.2762310), Equation 2, over the
+    # measured peaks of this rule in the 50 MB bins of their Section 5: sacct with --acctg-freq=task=1
+    # gave 2323 MB at width 100 and 4546 MB at width 800 (jobs 1367562 and 1367563, commit 7326b54).
     resources:
         gpu=1,
         gpu_model=config.get("gpu_model", "a100"),
+        mem_mb=4550,
     params:
         sweep=SWEEP,
         out=OUT,
