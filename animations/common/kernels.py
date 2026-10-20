@@ -1,16 +1,64 @@
 """Numpy versions of the kernel quantities, for scenes that draw the kernel itself.
 
 The animations environment has no torch, so it cannot import ntk_lib. The
-functions here repeat the few definitions a scene needs, on the saved probe
-kernels. They match ntk_lib.centre_kernel and the centred terms S_c, R_c and
-A_t. The dense runs check this: the terms computed here agree with the
-recorded history to about 1e-5, the precision of the saved float32 kernels.
+functions here repeat the few definitions a scene needs.
 
-The aim is the extra number defined in repoduced-code/term_dependence.py. Read
-the docstring there for the identity it comes from.
+sum_kernel and statistics copy ntk_lib.sum_kernel and ntk_lib.report_statistics,
+the kernel and the statistics of the report. extract_deck_data.py checks that
+the copies agree with ntk_lib, and that they give the report's S_t, R_t and A_t
+from saved weights.
+
+centre matches ntk_lib.centre_kernel. The aim is the extra number defined in
+repoduced-code/term_dependence.py, for the explainer scenes. Read the docstring
+there for the identity it comes from.
 """
 
 import numpy as np
+
+
+def one_hot_pairs(p):
+    """Return the inputs of all p^2 pairs (a, b), and the arrays a and b.
+
+    Row a * p + b holds the one-hot code of a followed by the one-hot code of b,
+    so an input has length 2p. This is the order of make_modular_addition_dataset
+    in repoduced-code/RepoducedCode.py before it splits the pairs.
+    """
+    a, b = np.divmod(np.arange(p * p), p)
+    X = np.zeros((p * p, 2 * p))
+    X[np.arange(p * p), a] = 1.0
+    X[np.arange(p * p), p + b] = 1.0
+    return X, a, b
+
+
+def sum_kernel(W1, W2, X):
+    """The tangent kernel of the summed logits over sqrt(p), in closed form.
+
+    This copies ntk_lib.sum_kernel, the kernel of golden report Equation 5, for the
+    network f = W2 relu(W1 x / sqrt(D)) / sqrt(N) without biases. The kernel of the
+    scaled network alpha [f - f_0] is alpha^2 times this one, so the statistics do
+    not depend on alpha.
+    """
+    D, N = X.shape[1], W1.shape[0]
+    h = X @ W1.T / np.sqrt(D)
+    Z, M = np.maximum(h, 0), (h > 0).astype(float)
+    u = W2.sum(0) / np.sqrt(W2.shape[0])
+    return Z @ Z.T / N + (X @ X.T) * ((M * u ** 2) @ M.T) / (D * N)
+
+
+def statistics(K_t, K_0, Y=None):
+    """S_t, R_t and D_t of a kernel against the kernel at step 0, and A_t if Y is given.
+
+    This copies ntk_lib.report_statistics, golden report Equation 6 and report_v2
+    Equation eq:statistics. Y holds the one-hot targets of the pairs, one row each.
+    """
+    n_t, n_0 = np.linalg.norm(K_t), np.linalg.norm(K_0)
+    out = {"S_t": n_t / n_0,
+           "R_t": 1 - np.sum(K_t * K_0) / (n_t * n_0),
+           "D_t": np.linalg.norm(K_t - K_0) / n_0}
+    if Y is not None:
+        Kc, Gc = centre(K_t), centre(Y @ Y.T)
+        out["A_t"] = np.sum(Kc * Gc) / (np.linalg.norm(Kc) * np.linalg.norm(Gc))
+    return out
 
 
 def centre(K):

@@ -21,6 +21,8 @@ file before changing anything.
 - `animations/` holds the Manim scenes for the presentation and for explaining
   the maths. It has its own environment and its own `README.md`.
 - `docs/` holds the proposal and the report source, `report.tex`.
+- `presentation/` holds the seminar deck, built with Quarto. Its `README.md`
+  explains how to build and export it, and `PLAN.md` gives the plan for the talk.
 - `ref.bib` holds the bibliography.
 
 ## Setting up

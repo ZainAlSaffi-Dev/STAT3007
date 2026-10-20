@@ -124,6 +124,48 @@
     "min_child_weight": 1,
     "rounds": 194,
     "validation_concordance": 0.7757913247362251
+   },
+   "width reference, alpha 0.5 held out": {
+    "max_depth": 2,
+    "eta": 0.03,
+    "min_child_weight": 1,
+    "rounds": 172,
+    "validation_concordance": 0.5488450433108758
+   },
+   "width reference, alpha 1 held out": {
+    "max_depth": 1,
+    "eta": 0.03,
+    "min_child_weight": 1,
+    "rounds": 143,
+    "validation_concordance": 0.5538433647570703
+   },
+   "width reference, alpha 2 held out": {
+    "max_depth": 1,
+    "eta": 0.03,
+    "min_child_weight": 1,
+    "rounds": 185,
+    "validation_concordance": 0.6458089097303634
+   },
+   "decay reference, alpha 0.5 held out": {
+    "max_depth": 1,
+    "eta": 0.03,
+    "min_child_weight": 10,
+    "rounds": 203,
+    "validation_concordance": 0.7129451395572666
+   },
+   "decay reference, alpha 1 held out": {
+    "max_depth": 1,
+    "eta": 0.03,
+    "min_child_weight": 1,
+    "rounds": 119,
+    "validation_concordance": 0.5819434372733865
+   },
+   "decay reference, alpha 2 held out": {
+    "max_depth": 1,
+    "eta": 0.03,
+    "min_child_weight": 10,
+    "rounds": 96,
+    "validation_concordance": 0.641559202813599
    }
   },
   "gru_epochs": {

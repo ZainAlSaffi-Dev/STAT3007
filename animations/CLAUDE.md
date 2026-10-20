@@ -9,8 +9,9 @@ here. Read that file first.
 
 The group needs two kinds of animation. One kind explains the maths to the five
 of us, where being right matters more than looking good. The other kind is short
-clips for the presentation, which will be built in PowerPoint or LaTeX. The two
-live in `explainer/` and `slides/`. A still frame from either can go into the
+clips for the presentation, which is built with Quarto in `presentation/`. The
+deck finds a rendered clip in `out/mp4/` by its scene name. The two live in
+`explainer/` and `slides/`. A still frame from either can go into the
 report, so every scene exports one.
 
 ## Honesty
@@ -28,17 +29,19 @@ and the step in a comment next to the line that draws it. For a number from a
 paper, follow root Rule 1 and check it against the paper before it appears.
 Write the source in a comment as author, year and section.
 
-Notation comes from `common/notation.py`, which mirrors the macros in
-`docs/report.tex`. The report writes the normalised kernel as `\widehat{K}`, the
-centred kernel as `\widetilde{K}`, the grokking time as `t_{\mathrm{grok}}` and
-the alignment threshold as `A_{*}`. A scene that invents its own symbols gives
-the group a second vocabulary to learn. If a scene needs a symbol that
-`notation.py` does not have, add it there first.
+Notation comes from `common/notation.py`, which follows the restructured report,
+`report_v2/overleaf/main.tex`, as the deck does. The report writes the grokking
+step as `T` and the weight decay as `\eta\lambda`. A scene that invents its own
+symbols gives the group a second vocabulary to learn. If a scene needs a symbol
+that `notation.py` does not have, add it there first.
 
-The three timing variables are defined on the centred kernel. In a saved run
-those are the history keys `S_c` and `R_c`, together with `A_t`. The keys `S_t`
-and `R_t` hold the raw versions. Use the centred ones unless the scene is about
-the difference.
+The three statistics are those of the report. They are measured on the tangent
+kernel of the summed logits over the square root of p, on the 53 test pairs of
+a run. `S_t` is a plain ratio of norms, so 1 means no change. `R_t` is one minus
+the uncentred cosine to step 0. `A_t` is the centred alignment with the label
+kernel. In the data they are the columns `S_sum`, `R_sum` and `A_sum`. The keys
+`S_c` and `R_c` of the older saved runs hold the centred terms of the September
+draft, which only the explainer scenes use.
 
 ## Text on screen
 
@@ -69,9 +72,10 @@ Fix the seed inside the scene body for anything random, so the clip renders the
 same way twice.
 
 Use `-ql` while iterating. Use `-qh` for the version that goes into the deck.
-Rendered video lands in `out/mp4/`, which is in `.gitignore` because the files
-are large. Still frames land in `out/stills/` and are committed, because the
-report uses them.
+Rendered video lands in `out/mp4/`. The 13 deck clips there are committed at
+1080p, so that anyone can play the deck, and `.gitignore` names each one. Add a
+new deck clip to that list. Still frames land in `out/stills/` and are
+committed, because the report uses them.
 
 Every scene exports at least one still. Render it with `-s`, which saves the
 last frame, so make the last frame the one worth keeping.
@@ -85,6 +89,29 @@ A scene is not finished until it renders from start to end without an error.
 When you report a scene as done, say which command you ran and how long the
 render took. If it failed, say that instead.
 
+## Clips for the deck
+
+A clip for the deck is named after the `scene` attribute of its placeholder in
+`presentation/slides.qmd`, and it lives in `slides/`. The filter of the deck
+plays the clip as soon as `out/mp4/<scene>.mp4` exists.
+
+The slide heading states the message, so a clip has no title and no caption
+bar. Short labels sit next to what they name.
+
+A clip in a column of a slide is shown at about half size. Its labels use
+`LABEL_COLUMN`, and a clip across the whole slide uses `LABEL_WIDE`. Check a
+clip by looking at its still scaled down to the width of its column.
+
+A deck scene subclasses `layout.QuickScene`, which plays it `layout.SPEED`
+times faster than its run times say, so a ten-minute talk can show it in a
+few seconds. The `length` attribute of its placeholder gives the length of
+the rendered clip. The clip stops on its last frame, which is also the still
+in the PDF, so the last frame shows the message of the slide.
+
+A number on screen is read with `data.deck_number`, so the clip prints the same
+string as the slide. Colours follow `palette.py`, where accuracy is grey for
+training and ink for test, so that it never reads as a statistic.
+
 ## Where things are
 
 - Run data: `repoduced-code/results/*.json`, loaded through `common/data.py`.
@@ -97,13 +124,25 @@ render took. If it failed, say that instead.
 - The feature dataset: `model_fitting/data/`. The seed 0 curves of every cell,
   `curves/<run_id>.npz`, and the runs table, `runs.csv`, are committed and are
   loaded through `data.load_curves` and `data.load_runs_table`. The columns
-  are defined in `model_fitting/data/data_dictionary.md`.
+  are defined in `model_fitting/data/data_dictionary.md`. The curves match the
+  report extract, which `extract_deck_data.py` checks.
+- The report extract: `report_v2/code/data/`. `data.load_report_runs` reads its
+  runs table, with the events of every run. `data.report_numbers` reads the
+  results of a report item from `report_v2/code/out/numbers/`.
+- The deck data: `data/`, written once by `extract_deck_data.py` with the root
+  environment. It holds the 120 runs at width 100 at every checkpoint, the
+  split of data seed 42, and the weights of the baseline run with seed 0 at its
+  48 saved steps. `data.load_n100`, `data.load_split` and `data.load_weights`
+  read them, and `kernels.sum_kernel` rebuilds the report's kernel from the
+  weights.
+- The numbers the slides print: `presentation/_variables.yml`, read through
+  `data.deck_number`.
 - A starting point for a new scene: `scene_template.py`, which renders as it
   stands.
 - A check that every scene still renders: `uv run python render_all.py`.
-- Metric definitions: `docs/report.tex`, the Kernel metrics part of the Methods
-  section.
-- The decomposition: `docs/report.tex`, Equation `eq:decomp`.
+- Metric definitions: `report_v2/overleaf/main.tex`, Section `sec:statistics`
+  and Equation `eq:statistics`.
+- The identity that ties D to S and R: the same file, Equation `eq:identity`.
 
 ## Which paper backs which idea
 
@@ -126,7 +165,8 @@ Check these before writing a caption that makes a claim.
 ## Checklist before calling a scene done
 
 1. It renders at `-qh` with no error.
-2. Every measured curve came from `common/data.py`.
+2. Every measured curve came from `common/data.py`, and every number on screen
+   from `data.deck_number` or from a loader there.
 3. Every schematic says so on screen.
 4. Every symbol came from `common/notation.py`.
 5. A still frame is in `out/stills/`.
