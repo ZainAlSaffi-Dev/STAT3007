@@ -29,7 +29,8 @@ Every edit should serve this argument. If a change does not help a reader follow
    - Tier 1 asks whether grokking happens at a fixed value of a statistic.
    - Tier 2 asks how the grokking time scales with width and with weight decay.
    - Tier 3 asks which early statistic predicts the grokking time.
-4. All three tests give the same answer. Rotation matters most but is not enough on its own, and the time is set by rotation and scale together. Width sets the rotation and weight decay sets the scale. This is the "mixed clock". Tier 4' is a stretch theory section. Its direction is not decided: §4.5 of the report lists options A to E, with the costs and risks of each. Do not write the section until the group chooses.
+4. On modular addition the three tests give the same answer. Rotation matters most but is not enough on its own, and the time is set by rotation and scale together. Width sets the rotation and weight decay sets the scale. This is the "mixed clock". Tier 4' is a stretch theory section. Its direction is not decided: the commented-out §4.5 of the report lists options A to E, with the costs and risks of each. Do not write the section until the group chooses.
+5. Tier 4 (added 20 October 2026) repeats the Tier 1 and Tier 2 questions on MNIST, in the setup of Liu, Michaud and Tegmark (2023). There the weight-decay clock holds exactly: the grokking time is ln(s / n_c) / (ηλ) with n_c a fixed weight norm, the width exponent is zero, and width sets the rotation without setting the time. The report's closing claim is therefore that weight decay sets the time through the weight norm on both tasks, and that width enters only on modular addition, where a fixed kernel cannot solve the task (Mohamadi et al. 2024) so the kernel must change shape first. The second half is the group's own reading and the text labels it so.
 
 ## Decisions that differ from the golden report
 
@@ -68,6 +69,16 @@ These were taken by Jasper Chong on 17 October 2026.
 - A weight-decay appendix that fitted ηλ alone and paired with the statistics was tried and removed the same day as confusing. Do not bring it back unless asked.
 - Appendix D, the cross-check from the second pipeline (E14), is dropped. The later appendices moved up one letter, so the model settings are Appendix D and the grokking levels Appendix E.
 
+These were taken on 20 October 2026 (Samuel Rieger, with the user's approval of the plan).
+
+- Tier 4 (§4.5, `sec:tier4mnist`) holds the MNIST extension. Its data are the sweep of 19 October 2026 in `mnist/sweep/` (560 runs; `runs.parquet`, `report_kernel.parquet` and `manifest.json` are committed in git). `code/E19_mnist.py` reads them from the repository. This is the one exception to the rule that every result comes from `data/`.
+- The MNIST events keep the report's definitions, with two stated differences: the grokking level is 0.80, because no MNIST run reaches 0.95 within the budget, and the budget is 500,000 steps. The MNIST laziness setting is the initial scale s, which takes the place of α.
+- New sections: §3.6 "The second task" (Methods), Appendix F "Settings of the modular addition runs" (Table 2, moved out of §3.1 on 20 Oct to save space) and Appendix G "Settings of the MNIST runs". Figures 3 and 5 are 0.56 of the line width since 20 Oct. The Limitations are prose. The paragraph on seed-only intervals moved from §4.3 to Appendix E. The opening paragraph of §4.4 lost two sentences.
+- The abstract, the end of the Introduction and the Conclusion now say that weight decay sets the time through the weight norm on both tasks, and that width enters only where the task forces the kernel to change shape. The old headline, "rotation matters most", is gone.
+- Liu, Michaud and Tegmark (2023), Omnigrok, is cited, with the golden report's verified entry. It sits in the weight-decay row of Table 1.
+- The edits of 20 October were marked in blue (`\rev`, `\revnote`) for the group's review. The group reviewed and reworded them the same day, and the markup and its macros were then removed. The changelog in the draft notes records what changed.
+- The MNIST text says how the delay arises there, following Liu et al. Secs. 2, 4 and 5: standard initialisation learns MNIST with no delay, so they train on 1,000 images and enlarge the initial weights; the uncentred predictor keeps that enlarged random function and weight decay must shrink it, whereas the centred predictor of §3.1 removes it. §3.6 cites the group's pilot of 12 October 2026 (`mnist/exploration/results/mnist_pilot/summary_kumar_b.json`, one seed): the centred two-layer network on MNIST had test accuracy 0.87 to 0.90 at memorisation at every α, so no delay. Whether a one-seed pilot may be cited in the main text is an open decision for the group.
+
 ## What the data allow the report to claim
 
 These limits come from checks on `data/`. A claim that goes past them is wrong, even if it reads better.
@@ -82,6 +93,14 @@ These limits come from checks on `data/`. A claim that goes past them is wrong, 
   - The settings reference predicts better than any kernel model.
   - On an unseen α the trees reach 0.67 on log N alone, 0.72 on ηλ alone and 0.79 on both. So ηλ alone ranks runs better than any statistic alone (at most 0.55) and about as well as the trees on all three (0.70). Do not write that rotation or the kernel beats weight decay.
   - Do not claim that the kernel gives an earlier warning than the settings do.
+- **Tier 4 (MNIST).** The limits come from `code/out/numbers/E19.json`.
+  - The width exponent is zero and the decay exponent is minus one at every scale from 5 to 9, with a residual σ near 0.03. Do not write that width lengthens the time on MNIST.
+  - The weight norm at grokking, in units of the default initialisation norm, is about 2.1 with a spread of about 3 percent over every scale, width and decay at N ≥ 200. The norm follows pure decay, so T = ln(s / n_c) / (ηλ). This is the law of Liu et al. (2023), Section 2, and the text cites it there. Do not present it as new.
+  - R at grokking falls about twenty-fold from N = 200 to N = 800 while T does not move. Write that width sets the rotation and the rotation plays no part in the time. Do not write that rotation is absent on MNIST.
+  - Width 100 reaches level 0.80 in 87 of its 120 runs with decay, but its test accuracy at memorisation is already 0.72, it is later than the wider networks at the same decay, and its norm at the level is lower and scattered, so it does not follow the law and is left out of the fits. Do not write that width 100 never groks. The text calls this a capacity limit at 1,000 images and labels that as a reading.
+  - Tier 3 is not repeated on MNIST. Say why in one sentence (σ near 0.03 makes the time a function of the settings alone) and do not add MNIST prediction models unless asked.
+  - The curvature learning-rate rule and the fixed per-step decay must be stated in Methods and Limitations. The rule sets the memorisation step. Do not hide it.
+  - The reading that width enters only where the task forces the kernel to change shape rests on Mohamadi et al. (2024) and is the group's own. Label it so wherever it appears.
 - **Tier 4'.** Whatever option the group chooses, label as the group's own any model or derivation that no source gives. Option A, the rate-addition model 1/T = r0 N^(−q) + c·ηλ, is the clearest case. No source paper derives it.
   - Two parts come from sources. The weight-decay term of the kernel-flow equation only rescales the kernel (Lewkowycz and Gur-Ari, Eq. S5). The term that rotates the kernel, T_t, is of order 1/N at initialisation, which they credit to Dyer and Gur-Ari. Kim's law makes the decay route's rate grow in proportion to ηλ.
   - The rest is ours. That T_t stays of order 1/N during training, that the width route and the decay route act side by side so their rates add, and the form r0 N^(−q) are our assumptions.
@@ -94,6 +113,8 @@ These limits come from checks on `data/`. A claim that goes past them is wrong, 
 ```
 tectonic main.tex
 ```
+
+On a machine without Tectonic, `latexmk -pdf main.tex` from the same folder does the same job with pdflatex and bibtex, which the template's biblatex settings expect. Remove the files it leaves behind (`main.aux`, `main.bbl`, `main.blg`, `main.fdb_latexmk`, `main.fls`, `main.log`, `main.out`, `main.run.xml`, `main-blx.bib`) so that the folder stays clean for Overleaf.
 
 The build must finish with no errors, undefined citations or undefined references. It should also have no overfull boxes. Read the log, then delete `main.log` and `main.blg` so the folder stays clean for Overleaf.
 

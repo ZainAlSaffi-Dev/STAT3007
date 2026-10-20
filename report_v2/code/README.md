@@ -54,6 +54,7 @@ Each test in the main text answers one column of Table 1 of the report (`tab:pre
 | `E13_grid.py` | Appendix C | Outcomes over the whole grid | runs, checkpoints | 1 s |
 | `E15_settings.py` | Appendix D | Settings of the prediction models | E08, E09 | 1 s |
 | `E16_levels.py` | Appendix E | E03 and E06 at grokking levels 0.80 and 0.90 | runs, checkpoints, E03, E06 | 1 s |
+| `E19_mnist.py` | §4.5 (Tier 4), Fig. 6; Appendix F | The MNIST tier: the fit of E06 on the MNIST sweep, the weight norm at grokking and the law of Liu et al. (2023), the placebo test of E03 on S, R and A, and the statistics at grokking by width | `mnist/sweep/runs.parquet` and `report_kernel.parquet` in the repository, not `data/` | 15 min |
 
 Items that are not built:
 

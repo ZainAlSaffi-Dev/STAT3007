@@ -24,7 +24,7 @@ from extract import sha256
 
 ORDER = ['E01_baseline', 'E03_placebo', 'E02_thresholds', 'E04_map', 'E06_aft', 'E05_scaling', 'E07_mechanism',
          'E08_ladder', 'E09_surface', 'E10_subsets', 'E12_kumar', 'E13_grid', 'E15_settings', 'E16_levels',
-         'N_numbers']
+         'E19_mnist', 'N_numbers']
 
 
 def keep_awake():

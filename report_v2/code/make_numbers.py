@@ -174,6 +174,53 @@ def main():
                       f'E16.json {level}.{g}.{st}.sd.tightening')
                 M.add(name('Esixteen', ln, gname, st, 'p'), pval(r['p']), f'E16.json {level}.{g}.{st}.sd.p')
 
+    e19 = C.read_json('E19')
+    for row, rname in (('main', 'Main'), ('scale5', 'Scalefive'), ('scale9', 'Scalenine'), ('wide', 'Wide'),
+                       ('level85', 'Leightyfive'), ('mem', 'Mem')):
+        R = e19['rows'][row]
+        for k, kn in (('a', 'a'), ('b', 'b'), ('gamma', 'g')):
+            M.add(name('Enineteen', rname, kn), signed(R['estimate'][k]), f'E19.json rows.{row}.estimate.{k}')
+            M.add(name('Enineteen', rname, kn, 'lo'), signed(R['ci_cells'][k][0]), f'E19.json rows.{row}.ci_cells.{k}')
+            M.add(name('Enineteen', rname, kn, 'hi'), signed(R['ci_cells'][k][1]), f'E19.json rows.{row}.ci_cells.{k}')
+        M.add(name('Enineteen', rname, 's'), f'{R["estimate"]["sigma"]:.2f}', f'E19.json rows.{row}.estimate.sigma')
+        M.add(name('Enineteen', rname, 'Runs'), R['n_runs'], f'E19.json rows.{row}.n_runs')
+        M.add(name('Enineteen', rname, 'Cens'), R['n_censored'], f'E19.json rows.{row}.n_censored')
+    law = e19['law']
+    M.add('EnineteenNc', f'{law["n_c_mean"]:.2f}', 'E19.json law.n_c_mean')
+    M.add('EnineteenNcSd', f'{law["n_c_sd"]:.2f}', 'E19.json law.n_c_sd')
+    M.add('EnineteenNcRel', f'{100 * law["n_c_sd_over_mean"]:.0f}\\%', 'E19.json law.n_c_sd_over_mean')
+    M.add('EnineteenNcRuns', law['n_runs'], 'E19.json law.n_runs')
+    M.add('EnineteenNcMin', f'{law["n_c_min"]:.2f}', 'E19.json law.n_c_min')
+    M.add('EnineteenNcMax', f'{law["n_c_max"]:.2f}', 'E19.json law.n_c_max')
+    M.add('EnineteenCorr', f'{law["corr_predicted_measured"]:.4f}', 'E19.json law.corr_predicted_measured')
+    M.add('EnineteenPureGap', f'{law["pure_decay_max_abs_gap"]:.3f}', 'E19.json law.pure_decay_max_abs_gap')
+    M.add('EnineteenNormMemRel', f'{100 * law["norm_at_mem_sd_over_mean"]:.0f}\\%', 'E19.json law.norm_at_mem_sd_over_mean')
+    for s, v in law['decay_T_by_scale'].items():
+        M.add(name('Enineteen', 'DecayT', 's', s), f'{v:.2f}', f'E19.json law.decay_T_by_scale.{s}')
+    for w, v in e19['at_grok_by_width'].items():
+        M.add(name('Enineteen', 'R', 'w', w), f'{v["R"]:.3f}', f'E19.json at_grok_by_width.{w}.R')
+        M.add(name('Enineteen', 'S', 'w', w), f'{v["S"]:.4f}', f'E19.json at_grok_by_width.{w}.S')
+        M.add(name('Enineteen', 'T', 'w', w), steps(v['T_median']), f'E19.json at_grok_by_width.{w}.T_median')
+    M.add('EnineteenAzero', f'{e19["A"]["A0_median"]:.3f}', 'E19.json A.A0_median')
+    M.add('EnineteenAgrok', f'{e19["A"]["A_grok_median"]:.3f}', 'E19.json A.A_grok_median')
+    M.add('EnineteenAmem', f'{e19["A"]["A_mem_median"]:.3f}', 'E19.json A.A_mem_median')
+    for g, gname in (('N200', 'Ntwohundred'), ('scale7', 'Scaleseven'), ('all', 'All')):
+        G = e19['placebo'][g]
+        M.add(name('Enineteen', gname, 'Runs'), G['n_runs'], f'E19.json placebo.{g}.n_runs')
+        for st in C.STATS:
+            M.add(name('Enineteen', gname, st, 'ratio'), f'{G[st]["tightening"]:.2f}', f'E19.json placebo.{g}.{st}.tightening')
+            M.add(name('Enineteen', gname, st, 'p'), pval(G[st]['p']), f'E19.json placebo.{g}.{st}.p')
+    w100 = e19['width100']
+    M.add('EnineteenWhundredStrong', w100['n_strong'], 'E19.json width100.n_strong')
+    M.add('EnineteenWhundredReached', w100['n_reached'], 'E19.json width100.n_reached')
+    M.add('EnineteenWhundredAccmem', f'{w100["test_acc_at_mem_median"]:.2f}', 'E19.json width100.test_acc_at_mem_median')
+    M.add('EnineteenSthreeAccmem', f'{e19["scale3"]["test_acc_at_mem_median"]:.2f}', 'E19.json scale3.test_acc_at_mem_median')
+    M.add('EnineteenSsevenAccmem', f'{e19["scale7"]["test_acc_at_mem_median"]:.2f}', 'E19.json scale7.test_acc_at_mem_median')
+    for k in ('strong', 'weak', 'none'):
+        M.add(name('Enineteen', 'Verdict', k), e19['verdicts'].get(k, 0), f'E19.json verdicts.{k}')
+    M.add('EnineteenNoDecayReached', e19['no_decay']['n_reached'], 'E19.json no_decay.n_reached')
+    M.add('EnineteenHours', f'{e19["compute"]["summed_hours"]:.0f}', 'E19.json compute.summed_hours')
+
     n = C.read_json('N')
     M.add('NoneSummedHours', f'{n["N1"]["summed_run_hours"]:.1f}', 'N.json N1.summed_run_hours')
     M.add('NoneSummedSeconds', steps(n['N1']['summed_run_seconds']), 'N.json N1.summed_run_seconds')

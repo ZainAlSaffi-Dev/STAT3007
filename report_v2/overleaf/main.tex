@@ -104,28 +104,28 @@ Zac Kienzle (s4803349) $\cdot$ Samuel Rieger (s4904959)}
   \item The draft notes after the consent page hold the criteria
     self-assessment, the changelog of what was cut and why, and the reference
     checks.
+  \item Blue text marks the edits of 20 October 2026 that add the MNIST
+    tier (\cref{sec:tier4mnist}) and change the sections around it. A blue
+    bracketed note marks each cut or move. Delete the blue markup after
+    review, and keep the text.
 \end{itemize}
 \end{draftnote}
 
 \begin{abstract}
-  Grokking is the well-documented phenomenon of delayed generalisation, but what sets the length of the delay is disputed. Recent accounts time it by scale-like parameters: the weight norm, the scale of the
-  logits, or the weight-decay rate. We split the movement of the neural
-  tangent kernel into a change of scale and a rotation, and measure both, with
-  the kernel's alignment to the labels, on 720 runs of a two-layer network
-  learning modular addition. The runs cross laziness, width and weight decay.
-  % The usual distance between the kernel and its initial value mostly records
-  % the growth of the kernel.
-  We find that at a fixed width, rotation is the statistic most
-  tied to the grokking step, yet networks can reach that rotation without
-  grokking. Across widths no statistic takes a fixed value at grokking. The
-  grokking time grows with width and falls with weight decay, with exponents
-  of \EsixMainA{} and \EsixMainB{}, which neither a rotation clock (meaning rotation sets the grokking time) nor a
-  weight-decay clock predicts alone. Read before any run groks, rotation is the
-  best single predictor of the grokking time on held-out settings, and scale
-  adds information that rotation lacks. Each published grokking description, as well as our hypothesis of rotation, therefore describes one part of what sets the grokking time.
-
-  % Each published clock therefore
-  % describes one part of what sets the grokking time.
+  Grokking is delayed generalisation of a network, but what determines
+  the delay is disputed. We decompose the movement of the neural tangent
+  kernel into its scale and rotation, measuring both on a two-layer network
+  learning modular addition across laziness, width and weight decay. At a
+  fixed width, rotation is the statistic most tied to the grokking step, even
+  though some networks reach it without grokking. The grokking time grows
+  with width and falls with weight decay, which neither a rotation clock nor
+  a weight-decay clock predicts alone. Read early, rotation is the best
+  single predictor of the grokking time. We also measure the same statistics
+  on MNIST, where grokking is induced in a different way by scaling up the
+  initial weights. On this task the weight-decay clock holds and width drops
+  out. Weight decay therefore sets the time through the weight norm on both
+  tasks, and width enters only where the task forces the kernel to change
+  shape.
 \end{abstract}
 
 % =====================================================================
@@ -141,7 +141,7 @@ groks there with no explicit regularisation
 \citep{gromovGrokkingModularArithmetic2023}. What sets the length of the delay
 is an open question.
 
-% \cite{jacot2018ntk} defines the Neural Tangent Kernel to relate the behaviour of neural networks to kernel ridge regression. 
+% \cite{jacot2018ntk} defines the Neural Tangent Kernel to relate the behaviour of neural networks to kernel ridge regression.
 
 One account holds that grokking is a transition from lazy training to rich
 training \citep{kumarGrokkingTransitionLazy2024}. In lazy training the network
@@ -165,7 +165,6 @@ kernel rotates.
 Rotation is important for the lazy-to-rich account of grokking. A kernel that only grows keeps its eigenvectors, so a
 large distance does not by itself show that features were learned.
 
-
 We ask what sets the grokking time: the shape of the kernel, its scale, or the
 weight-decay rate. Our hypothesis is that rotation (change in shape) sets it. We measure three
 statistics of the empirical tangent kernel along training: its scale $S_t$, its
@@ -186,12 +185,14 @@ follows.
     with model width and weight decay. The hypotheses that rotation sets the
     grokking time and that weight decay sets it predict different exponents.
   \item We test whether the statistics can be used to predict grokking ahead of time.
-  % Tier 4' is commented out (11 October 2026). Restore this item with it.
-  % \item \TODO{A theory contribution, if \cref{sec:tier4} keeps one. Its form
-  %   depends on the option the group chooses there.}
+  \item We repeat the first two tests on the MNIST dataset, a task on which
+    \citet{liuOmnigrokGrokkingAlgorithmic2023} induce grokking through a different method,
+    to test if the findings are generalisable.
 \end{enumerate}
-We find that rotation is the most important single statistic, but it is not enough on its own: the grokking
-time depends on both width and weight decay.
+On modular addition, rotation is the most important single statistic,
+but it is not enough on its own: the grokking time depends on both width and
+weight decay. While on MNIST the time depends on weight decay alone, through the
+weight norm.
 
 The works we cite each follow one quantity: the distance the kernel moves
 \citep{mohamadiWhyYouGrok2024}, the weight norm \citep{khanhWeightNormSets2026},
@@ -199,8 +200,8 @@ the logit scale \citep{khanhWhatDoesWeight2026}, or the weight-decay rate
 \citep{kimGrokkingWeightDecayClock2026,pracherSpectralTheoryGrokking2026}. This
 report separates the growth of the tangent kernel from its rotation, and
 compares on one grid the hypotheses that scale, rotation or the weight-decay
-rate sets the grokking time.
-
+rate sets the grokking time, and then asks the same question on a second
+task.
 
 % =====================================================================
 \section{Related Work}\label{sec:related}
@@ -241,6 +242,12 @@ initial amplitude, and observes this scaling on modular addition.
 \citet{pracherSpectralTheoryGrokking2026} predict, for homogeneous networks
 trained on the squared error with weight decay, that the grokking time is set by
 the product of the learning rate and the weight decay.
+\citet{liuOmnigrokGrokkingAlgorithmic2023}
+describe the same relationship in terms of the weight norm.
+When weight decay is the only regulariser and the training loss is near zero
+after the data are fitted, a network starting with norm $w_0$ above a critical
+value $w_c$ generalises after roughly $\ln(w_0/w_c)/(\eta\lambda)$ steps.
+They induce grokking on MNIST by increasing $w_0$.
 
 \paragraph{The kernel under weight decay.}
 For a network trained by gradient flow with $L_2$ strength $\lambda$, the kernel
@@ -266,7 +273,7 @@ source. Add it to ref.bib only after checking it on arXiv.}
 
 \paragraph{Predictions.}
 \Cref{tab:predictions} sets out what each account predicts for the three tests
-of this report. If rotation sets the grokking time and $T_t$ stays of order $1/N$ along
+of this report, on either task. If rotation sets the grokking time and $T_t$ stays of order $1/N$ along
 training, a wider network rotates more slowly and groks later at a fixed weight
 decay. The weight decay should then matter little. A weight-decay clock (meaning that weight decay sets the grokking time) predicts
 the opposite. Each account was tested on its own, so these predictions have not
@@ -293,7 +300,7 @@ learning.
     Rotation clock (our hypothesis) & $R_t$ reaches a threshold &
     $a>0$, since $T_t$ shrinks with width (ours) & $b\approx0$ & $R_t$ \\
     Weight-decay clock
-    \citep{kimGrokkingWeightDecayClock2026,pracherSpectralTheoryGrokking2026} &
+    \citep{kimGrokkingWeightDecayClock2026,pracherSpectralTheoryGrokking2026,liuOmnigrokGrokkingAlgorithmic2023} &
     Not stated & $a\approx0$; width can enter Kim's law only inside the
     logarithm (ours) & $b\approx-1$ & $\eta\lambda$ alone \\
     Norm or scale clock
@@ -339,38 +346,7 @@ squared error averaged over the outputs and the training pairs. Training is
 full-batch gradient descent with weight decay,
 $\theta_{k+1}=(1-\eta\lambda)\theta_k-\eta\nabla L(\theta_k)$. For plain
 gradient descent this is the same as $L_2$ regularisation
-\citep{kimGrokkingWeightDecayClock2026}. \Cref{tab:hyper} lists every setting.
-
-\begin{table}[H]
-  \centering\small
-  \caption{Every setting of the runs. One combination of $(\alpha,N,\eta\lambda)$
-    is a cell (\cref{sec:grid}), and each cell has 5 seeds.}
-  \label{tab:hyper}
-  \begin{tabular}{ll}
-    \toprule
-    Setting & Value \\
-    \midrule
-    Modulus, pairs & $p=23$, all 529 pairs; 476 for training and 53 for testing \\
-    Split and seeds & Model seed $s\in\{0,\dots,4\}$; the split uses data seed $42+s$ \\
-    Network & \Cref{eq:network}, no biases, rectifier, weights from $\mathcal{N}(0,1)$ \\
-    Width $N$ & $\{50,100,200,400,800,1600\}$ \\
-    Output scale $\alpha$ & $\{0.5,1,2\}$ \\
-    Learning rate & $\eta=\eta_0/\alpha^2$ with $\eta_0=100$ \\
-    Weight decay $\eta\lambda$ & $\{0,\,3\times10^{-6},\,10^{-5},\,3\times10^{-5},\,10^{-4},\,3\times10^{-4},\,10^{-3},\,3\times10^{-3}\}$ \\
-    Optimiser and loss & Full-batch gradient descent, no momentum; mean squared error \\
-    Budget & 200\,000 steps \\
-    Checkpoints & 307 per run: step 0, 120 log-spaced steps to 200\,000, and every 1\,000 steps \\
-    Saved weights & 48 steps per run \\
-    Runs & 720, all finished \\
-    Compute & \NoneSummedHours{} h summed over runs; \NoneElapsedHours{} h elapsed on \NoneWorkers{} workers of one Mac \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-% Checkpoints: dataset_sweep.py takes np.logspace(0, log10(steps), 120) rounded
-% to integers (107 distinct steps) together with every 1,000 steps. Compute
-% (N1): manifest total_seconds is the sum of each run's own wall time
-% (dataset_sweep.py line 824); the elapsed time is from logs/sweep.log, run of
-% 3 Oct 2026 14:29 to 17:10 with 4 wide and 8 narrow workers.
+\citep{kimGrokkingWeightDecayClock2026}. \Cref{tab:hyper} (Appendix~\ref{app:settings}) lists every setting.
 
 \subsection{The grid}\label{sec:grid}
 
@@ -433,7 +409,7 @@ does not reach a level within 200\,000 steps is kept, and its grokking step is
 recorded as censored at the budget (200\,000 steps). The events are read on the checkpoint grid described above,
 so each one is known to lie between two checkpoints. The gap to the
 checkpoint before is at most \NthreeGrok{} of the grokking step and
-\NthreeMem{} of the memorisation step. 
+\NthreeMem{} of the memorisation step.
 % We use accuracy rather than loss because
 % the test loss levels off above zero after the test accuracy is perfect. In the
 % baseline cell it stays between \NfourMin{} and \NfourMax{}.
@@ -488,6 +464,23 @@ spread in $\log T$ explained on held-out runs. The concordance index is the shar
 of pairs of runs that a model puts in the right order, so that 0.5 is a coin toss
 \citep{harrellEvaluatingYieldMedical1982}. Appendix~\ref{app:fitting} gives the
 settings of each model.
+
+\subsection{The second task}\label{sec:mnistsetup}
+
+In tier 4 we apply the same questions from Tiers 1 and 2 to the
+MNIST dataset using the same setup with which \citet{liuOmnigrokGrokkingAlgorithmic2023}
+induce grokking. The network is trained on a subset of $1000$ images and the initial weights
+are multiplied by a scale $s>1$ so the weight decay must shrink the norm before the network generalises.
+This differs from \cref{sec:setup} which subtracts $f(x;\theta_0)$ so that every run is centered
+and starts from the zero function. Centring eliminates grokking delay on MNIST and
+instead the train and test accuracies rise at relatively the same time which is why it cannot be used.
+The architecture is a bias-free three-layer rectifier network of width $N$
+in the standard parameterisation, trained by minibatch gradient descent without momentum,
+with the learning rate reset from the curvature every $10000$ steps.
+The values tested on the grid are $s\in\{3,5,7,9\}$, $N\in\{100,200,400,800\}$ and
+seven decays from 0 to $4\times10^{-5}$, each with 5 seeds.
+Each run has a budget of $500000$ steps and the grokking level is $0.80$
+since no run reaches 0.95 (Appendix~\ref{app:mnist}).
 
 % =====================================================================
 \section{Experiments}\label{sec:experiments}
@@ -614,7 +607,7 @@ At a fixed width, weight decay shrinks its scale.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.72\linewidth]{figures/E4_map.pdf}
+  \includegraphics[width=0.56\linewidth]{figures/E4_map.pdf}% was 0.72\linewidth until 20 Oct
   \caption{Grokking time and outcome over width and weight decay at $\alpha=1$.
     Colour is the median $\log_{10}T$ over the seeds that grok, shown when at
     least 3 of 5 grok. Each square is one cell and gives the seeds that grok out
@@ -711,12 +704,6 @@ weight decay \NnineLogRDecay. The spread of $S_t$ is shared: $\alpha$ explains
 back to Tier 1. Width sets the rotation, weight decay is one of the settings that
 set the scale, and the grokking time depends on both.
 
-The intervals in \cref{tab:scaling} resample cells as well as seeds. The misfit
-of the cells about the fitted plane has an SD of \EsixMainMisfit{} in $\log T$,
-against \EsixMainWithin{} for the spread between the seeds of one cell. An
-interval that resamples seeds alone holds the cells fixed and is much narrower:
-for $a$ it runs from \EsixMainASeedlo{} to \EsixMainASeedhi.
-
 \subsection{Tier 3: predicting the grokking time from the kernel}\label{sec:tier3}
 \budget{1.6 pages}
 
@@ -729,15 +716,14 @@ clock of \cref{sec:tier2}.
 
 Each account in \cref{tab:predictions} names a different early predictor:
 $R_t$ for the rotation clock, $S_t$ for the norm or scale clock, and
-$\eta\lambda$ alone for the weight-decay clock. This tier tests the first two,
-with $A_t$ beside them, and does not test $\eta\lambda$ as a predictor. In our
-grid we set $\eta\lambda$, so it is known exactly. In a general network the
-effective regularisation is not reported and cannot be measured directly. The
-same holds for its laziness. The tangent kernel, by contrast, can be measured
-in any network. We want predictors that carry over to real models, so this tier
-asks how much of the grokking time the kernel statistics recover on their own.
-A model given the settings $N$ and $\eta\lambda$ serves as a reference that
-knows more than a general network would report.
+$\eta\lambda$ alone for the weight-decay clock. This tier tests the first
+two, with $A_t$ beside them. It does not test $\eta\lambda$, which we set and
+know exactly, while a general network reports neither its effective
+regularisation nor its laziness. Its tangent kernel can be measured. We want
+predictors that carry over to real models, so this tier asks how much of the
+grokking time the kernel statistics recover on their own. A model given the
+settings $N$ and $\eta\lambda$ serves as a reference that knows more than a
+general network would report.
 
 \begin{table}[H]
   \centering\small
@@ -775,7 +761,7 @@ a cell groks first.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.72\linewidth]{figures/E8_ladder.pdf}
+  \includegraphics[width=0.56\linewidth]{figures/E8_ladder.pdf}% was 0.72\linewidth until 20 Oct
   \caption{Predicting the grokking step of runs with an unseen $\alpha$. Each
     model is fitted on two values of $\alpha$ and scored on the third by the
     concordance index with censoring. Each statistic alone enters a linear
@@ -834,10 +820,58 @@ width and weight decay.
 % placeholder for an extension experiment on MNIST digits. It is a different
 % section from the commented-out Tier 4' below: Tier 4 is an empirical
 % extension to a second task, while Tier 4' was a theory extension.
-\subsection{Tier 4: an extension to MNIST digits}\label{sec:tier4mnist}
+\subsection{Tier 4: a second task, MNIST digits}\label{sec:tier4mnist}
+\budget{1.0 page}
 
-\TODO{This section will be populated with an extension experiment on MNIST
-digits.}
+\textbf{Finding.} On MNIST the weight-decay clock of \cref{tab:predictions}
+holds exactly. The grokking time falls inversely proportional to weight decay
+and does not depend on width. At grokking, the weight norm reaches a fixed value,
+and the kernel shrinks with it while its shape remains nearly unchanged.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.86\linewidth]{figures/E19_mnist.pdf}
+  \caption{MNIST at $s=7$. Panels (a) and (b) use widths 200 to 800;
+    (c) adds width 100, which reaches the level later and off the law
+    (Appendix~\ref{app:mnist}). (a) The grokking step against
+    weight decay, medians over 5 seeds, coloured by the initial scale $s$ with
+    one marker per width. The lines are $T=\ln(s/n_c)/(\eta\lambda)$ with the
+    mean $n_c$ of panel (b), and the dotted line is the budget. (b) The weight
+    norm at grokking in units of the norm at $s=1$, one point per run, with its
+    mean. (c) The map of \cref{fig:map} at $s=7$: the median grokking step
+    over the seeds where at least 3 of 5 grok, the seeds that grok out of 5,
+    and the phase letter of \cref{fig:map} where none does.}
+  \label{fig:mnist}
+\end{figure}
+
+In the main grid range, $s=7$ at $N\in\{200,400,800\}$ with $\eta\lambda$
+from $3\times10^{-6}$ to $10^{-5}$, every seed groks, and the fit of
+\eqref{eq:aft} gives $a=\EnineteenMainA$ [\EnineteenMainALo,
+\EnineteenMainAHi] and $b=\EnineteenMainB$ [\EnineteenMainBLo,
+\EnineteenMainBHi], against \EsixMainA{} and \EsixMainB{} on modular addition
+(\cref{tab:scaling}), with a residual $\sigma$ of \EnineteenMainS{} against
+\EsixMainS{}.
+
+This is likely a direct result of the weight norm. The product $\eta\lambda T$ is constant
+within each scale and increases with $s$ (\cref{fig:mnist}a), and at grokking the
+norm is \EnineteenNc{} times the norm at $s=1$, with a standard deviation of
+\EnineteenNcSd{} (\EnineteenNcRel) over the \EnineteenNcRuns{} runs that
+reach the level, across every scale, width and decay (\cref{fig:mnist}b). As in \citet{liuOmnigrokGrokkingAlgorithmic2023} the
+norm follows pure decay and the time is given by the law $T=\ln(s/n_c)/(\eta\lambda)$
+(Appendix~\ref{app:mnist}). As the norm falls, the kernel shrinks too where at grokking,
+it is between \EnineteenSWTwohundred{} and \EnineteenSWEighthundred{} of its initial value.
+As in modular addition the rotation decreases with width but in MNIST falls sharply
+going from \EnineteenRWTwohundred{} at $N=200$ to \EnineteenRWEighthundred{}
+at $N=800$ while $T$ remains approximately the same. The Tier 1 placebo test cannot
+distinguish these statistics here (Appendix~\ref{app:mnist}).
+
+The two tasks therefore grok by different routes. Grokking in MNIST is set by the
+\citet{liuOmnigrokGrokkingAlgorithmic2023} problem construction where the
+enlarged initial function must decay and the kernel need only shrink before generalisation occurs. On
+modular addition the delay happens because of the centring, and
+\citet{mohamadiWhyYouGrok2024} prove that a fixed permutation-equivariant
+kernel cannot learn the task from a constant fraction of the pairs. The
+kernel must change shape first and does so at a rate that depends on width.
 
 % TIER 4' COMMENTED OUT on 11 October 2026 at the user's request (Jasper Chong).
 % Tier 4' is the THEORY extension (options A to E: the rate-addition model, the
@@ -933,42 +967,50 @@ digits.}
 \section{Limitations}\label{sec:limitations}
 \budget{0.6 page}
 
-\TODO{Write each point as one or two sentences.}
-\begin{itemize}
-  \item Every run uses the NTK parameterisation, one task and one architecture.
-    A width effect measured here belongs to this parameterisation.
-  \item Each cell has 5 seeds.
-  \item The events are known only to the resolution of the checkpoint grid.
-  \item The fits in Tier 2 depend on which cells enter, and the decay edge bends
-    the plane (\cref{tab:scaling}).
-  \item The kernel statistics say nothing about which seed of a cell groks
-    first, and the reference model given the settings predicts better than any
-    kernel model.
-  \item The alignment here uses the kernel of the summed logits. The tangent
-    kernel of all $p$ logits may behave differently.
-  \item The centred predictor is not homogeneous, so the theorem behind
-    \eqref{eq:kernelflow} applies to our network only as a guide.
-  \item The proposal also planned a clamped-norm arm, a sweep over $p$ and the
-    training fraction, and a cross-entropy arm. They were not run.
-  \item The proposal defined the events by the loss. The report uses accuracy
-    (\cref{sec:events}).
-\end{itemize}
+Every modular addition run uses the NTK parameterisation, one task and
+one architecture. A width effect measured here belongs to this
+parameterisation. Each cell has 5 seeds. The events are known only to the
+resolution of the checkpoint grid. The fits in Tier 2 depend on which cells
+enter, and the decay edge bends the plane (\cref{tab:scaling}). The kernel
+statistics say nothing about which seed of a cell groks first, and the
+reference model given the settings predicts better than any kernel model. The
+alignment here uses the kernel of the summed logits. The tangent kernel of all
+$p$ logits may behave differently. The centred predictor is not homogeneous,
+so the theorem behind \eqref{eq:kernelflow} applies to our network only as a
+guide. The proposal also planned a clamped-norm arm, a sweep over $p$ and the
+training fraction, and a cross-entropy arm. They were not run. The proposal
+defined the events by the loss. The report uses accuracy (\cref{sec:events}).
+
+The MNIST runs differ in not only the task but the architecture and
+method for inducing grokking, with the most impactful of these being the
+uncentred predictor. Our comparison assumes that none of these changes
+which clock applies. With only two tasks to compare we cannot tell which of them,
+if any, is responsible for the different result. Tier 4 tests which clock
+sets the time once a delay exists, not whether rotation can cause one.
 
 % =====================================================================
 \section{Conclusion}\label{sec:conclusion}
 \budget{0.3 page}
 
 We asked what sets the grokking time: the shape of the tangent kernel, its
-scale, or the weight-decay rate. Rotation matters most and is not enough on its
-own. At a fixed width it is the statistic most tied to the grokking step, yet
-networks can reach that rotation without grokking. The grokking time grows with
-width and falls with weight decay. Width sets the rotation, and at a fixed width
-weight decay shrinks the scale. Early rotation and scale together predict the
-grokking time better than either one alone, and width and weight decay together
-predict it better than either setting alone. Each published clock therefore
-describes one part of it. What is new is the split into scale and rotation, the placebo test,
-the crossed grid, and prediction from quantities that any network exposes. A
-next step is to test whether the early rate of rotation falls as $1/N$.
+scale, or the weight-decay rate. On modular addition, rotation matters
+most and is not enough on its own. At a fixed width it is the statistic most
+tied to the grokking step, yet networks can reach that rotation without
+grokking. The grokking time grows with width and falls with weight decay.
+Width sets the rotation, and at a fixed width weight decay shrinks the scale.
+Early rotation and scale together predict the grokking time better than either
+one alone, and width and weight decay together predict it better than either
+setting alone. On MNIST, \citet{liuOmnigrokGrokkingAlgorithmic2023} create
+a delay by increasing the initial function's scale. The weight-decay clock predicts
+the grokking time exactly using the law \(\ln(s/n_c)/(\eta\lambda)\), with no
+dependence on width. The kernel shrinks but rotates very little where width
+affects only the rotation. Weight decay therefore sets the grokking time through
+the weight norm on both tasks, and width enters only on modular addition,
+where a fixed kernel cannot solve the task and the kernel must change shape first.
+What is new is the split into scale and rotation, the placebo test, the crossed grid on two
+tasks, and prediction from quantities that any network exposes. A next step
+is to test whether the early rate of rotation falls as $1/N$, and
+whether a kernel frozen at each step can generalise on either task.
 
 \section*{Contribution}
 
@@ -1146,6 +1188,140 @@ $b$ keep their signs at every level, and both intervals exclude zero.
   \input{tables/E16_scaling}
 \end{table}
 
+The intervals in \cref{tab:scaling} resample cells as well as seeds. The
+misfit of the cells about the fitted plane has an SD of \EsixMainMisfit{} in
+$\log T$, against \EsixMainWithin{} for the spread between the seeds of one
+cell. An interval that resamples seeds alone holds the cells fixed and is much
+narrower: for $a$ it runs from \EsixMainASeedlo{} to \EsixMainASeedhi.
+
+\section{Settings of the modular addition runs}\label{app:settings}
+
+\begin{table}[H]
+  \centering\small
+  \caption{Every setting of the runs. One combination of $(\alpha,N,\eta\lambda)$
+    is a cell (\cref{sec:grid}), and each cell has 5 seeds.}
+  \label{tab:hyper}
+  \begin{tabular}{ll}
+    \toprule
+    Setting & Value \\
+    \midrule
+    Modulus, pairs & $p=23$, all 529 pairs; 476 for training and 53 for testing \\
+    Split and seeds & Model seed $s\in\{0,\dots,4\}$; the split uses data seed $42+s$ \\
+    Network & \Cref{eq:network}, no biases, rectifier, weights from $\mathcal{N}(0,1)$ \\
+    Width $N$ & $\{50,100,200,400,800,1600\}$ \\
+    Output scale $\alpha$ & $\{0.5,1,2\}$ \\
+    Learning rate & $\eta=\eta_0/\alpha^2$ with $\eta_0=100$ \\
+    Weight decay $\eta\lambda$ & $\{0,\,3\times10^{-6},\,10^{-5},\,3\times10^{-5},\,10^{-4},\,3\times10^{-4},\,10^{-3},\,3\times10^{-3}\}$ \\
+    Optimiser and loss & Full-batch gradient descent, no momentum; mean squared error \\
+    Budget & 200\,000 steps \\
+    Checkpoints & 307 per run: step 0, 120 log-spaced steps to 200\,000, and every 1\,000 steps \\
+    Saved weights & 48 steps per run \\
+    Runs & 720, all finished \\
+    Compute & \NoneSummedHours{} h summed over runs; \NoneElapsedHours{} h elapsed on \NoneWorkers{} workers of one Mac \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+% Checkpoints: dataset_sweep.py takes np.logspace(0, log10(steps), 120) rounded
+% to integers (107 distinct steps) together with every 1,000 steps. Compute
+% (N1): manifest total_seconds is the sum of each run's own wall time
+% (dataset_sweep.py line 824); the elapsed time is from logs/sweep.log, run of
+% 3 Oct 2026 14:29 to 17:10 with 4 wide and 8 narrow workers.
+
+\section{Settings of the MNIST runs}\label{app:mnist}
+\budget{0.75 page}
+
+\Cref{tab:mnist-settings} gives every setting of the MNIST sweep beside
+the modular addition setting it replaces. \Cref{tab:mnist-rows} gives the
+fit of \cref{sec:tier4mnist} with its check rows, and the exponents are the
+same in every row. The runs of one width and one
+scale were trained together as one fused model on one H100, in
+\EnineteenHours{} summed GPU hours, with TF32 matrix multiplies. A second
+sweep in full float32 gave the same grokking outcome in every one of the 560
+runs and the same memorisation outcome in all but 3.
+% The float32 comparison is Zac Kienzle's certification run of 19 October 2026
+% (commit 42c6fbf, mnist_sweep.py certify): exact McNemar test, 0 flips at
+% level 0.80 and 3 flips in memorisation.
+
+Some outcomes stay out of \cref{sec:tier4mnist}. Width 100 reaches the
+level in \EnineteenWhundredReached{} of its 120 runs with decay, but its test
+accuracy at memorisation is already \EnineteenWhundredAccmem{}, so there is
+little delay to time; it reaches the level later than the wider networks at
+the same decay, with a lower and scattered norm, so it does not follow the
+law and is left out of the fits. We read this as a limit of capacity at
+1\,000 images. Without weight decay no run reaches the level within the
+budget. The three widths of the main range memorise
+within a few thousand steps of each other, and a network at $s=3$ already
+has test accuracy \EnineteenSthreeAccmem{} when it memorises. The norm
+follows pure decay, $\lVert\theta_T\rVert=\lVert\theta_0\rVert
+e^{-\eta\lambda T}$, to within \EnineteenPureGap{} of the initial norm, and
+the law of \cref{sec:tier4mnist} has correlation \EnineteenCorr{} with the
+measured product $\eta\lambda T$. The alignment at grokking is
+\EnineteenAgrok{} against \EnineteenAzero{} at initialisation, as on modular
+addition. Under the placebo every statistic tightens, because each is a
+function of the step and the grokking steps span more than a decade: the
+ratios are \EnineteenNtwohundredSRatio{} to \EnineteenNtwohundredARatio{} at
+$N=200$ and \EnineteenScalesevenRRatio{} to \EnineteenScalesevenSRatio{}
+across widths. Tier 3 is not repeated: with $\sigma$ of \EnineteenMainS{},
+an early read of the norm predicts the time and the rotation does not. The centred pilot of
+\cref{sec:mnistsetup} used the two-layer network of \cref{sec:setup} on
+MNIST with initial weights times 3, full-batch gradient descent,
+$\eta\lambda=10^{-5}$, one seed and 200\,000 steps, at
+$\alpha\in\{1,0.5,0.05,0.01\}$. Every run memorised within 1\,500 steps with
+test accuracy between 0.87 and 0.90, and the run at $\alpha=0.001$ did not
+memorise.
+% The pilot is mnist/exploration/results/mnist_pilot/summary_kumar_b.json
+% (runs mnist_kumarB_a1 to mnist_kumarB_a0.01): two layers of width 100, NTK
+% parameterisation, centred, init_scale 3, full batch, eta_kappa 1e-5, seed 0,
+% 200,000 steps. Test accuracy at memorisation 0.870, 0.874, 0.884, 0.899.
+
+\begin{table}[H]
+  \centering\small
+  \caption{The MNIST runs setting by setting, beside the modular addition
+    setting of \cref{tab:hyper}. The learning-rate rule and the probe follow
+    \file{mnist/README.md}.}
+  \label{tab:mnist-settings}
+  \begin{tabular}{L{2.6cm}L{6.1cm}L{4.3cm}}
+    \toprule
+    Setting & MNIST & Modular addition \\
+    \midrule
+    Task & 1\,000 training images drawn by data seed $42+s$; all 10\,000 test images & 476 of 529 pairs, split by seed \\
+    Network & Three layers of width $N$, rectifier, no biases, standard parameterisation, uniform initial weights multiplied by $s$ & \Cref{eq:network}, NTK parameterisation \\
+    Predictor & Uncentred, $f(x;\theta)$ & Centred, $\alpha[f-f_0]$ \\
+    Laziness & Initial scale $s\in\{3,5,7,9\}$ & $\alpha\in\{0.5,1,2\}$ \\
+    Width $N$ & $\{100,200,400,800\}$ & $\{50,\dots,1600\}$ \\
+    Weight decay $\eta\lambda$ & $\{0,10^{-6},3\times10^{-6},6\times10^{-6},10^{-5},2\times10^{-5},4\times10^{-5}\}$, fixed per step & eight values from 0 to $3\times10^{-3}$ \\
+    Optimiser and loss & SGD, batches of 200, no momentum; mean squared error on one-hot targets & Full-batch gradient descent \\
+    Learning rate & $\eta_0=1/\lambda_0$ with $\lambda_0$ the top Gauss-Newton eigenvalue at initialisation; reset every 10\,000 steps to $\eta_0\lambda_0/\lambda_t$, capped at $1000\,\eta_0$ & $\eta_0/\alpha^2$, fixed \\
+    Budget and checkpoints & 500\,000 steps; 120 log-spaced steps and every 2\,000 steps & 200\,000 steps; 307 checkpoints \\
+    Kernel and statistics & Closed-form kernel of the summed logits over $\sqrt{10}$, on a fixed draw of 1\,000 test images & Kernel of the summed logits over $\sqrt p$, on the 53 test pairs \\
+    Events & Memorisation at 0.99; grokking at test accuracy 0.80, counted from step 0; censored at 500\,000 & Grokking at 0.95; censored at 200\,000 \\
+    Runs & 560, all finished; \EnineteenHours{} summed GPU hours on H100s & 720 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[H]
+  \centering\footnotesize
+  \caption{Fits of \eqref{eq:aft} on MNIST at $N\in\{200,400,800\}$,
+    with 95\% intervals from the bootstrap of \cref{tab:scaling}. The main
+    row is the fit quoted in \cref{sec:tier4mnist}: $s=7$ with $\eta\lambda$
+    from $3\times10^{-6}$ to $10^{-5}$, where every seed groks. The other rows
+    change one thing.}
+  \label{tab:mnist-rows}
+  \begin{tabular}{lllll}
+    \toprule
+    Fit & $a$ & $b$ & $\gamma$ & $\sigma$ \\
+    \midrule
+    Main, $s=7$, level 0.80 (\EnineteenMainRuns{} runs) & \EnineteenMainA{} [\EnineteenMainALo, \EnineteenMainAHi] & \EnineteenMainB{} [\EnineteenMainBLo, \EnineteenMainBHi] & \EnineteenMainG{} [\EnineteenMainGLo, \EnineteenMainGHi] & \EnineteenMainS \\
+    $s=5$ & \EnineteenScalefiveA{} [\EnineteenScalefiveALo, \EnineteenScalefiveAHi] & \EnineteenScalefiveB{} [\EnineteenScalefiveBLo, \EnineteenScalefiveBHi] & \EnineteenScalefiveG{} [\EnineteenScalefiveGLo, \EnineteenScalefiveGHi] & \EnineteenScalefiveS \\
+    $s=9$ & \EnineteenScalenineA{} [\EnineteenScalenineALo, \EnineteenScalenineAHi] & \EnineteenScalenineB{} [\EnineteenScalenineBLo, \EnineteenScalenineBHi] & \EnineteenScalenineG{} [\EnineteenScalenineGLo, \EnineteenScalenineGHi] & \EnineteenScalenineS \\
+    Adding $\eta\lambda$ up to $4\times10^{-5}$ & \EnineteenWideA{} [\EnineteenWideALo, \EnineteenWideAHi] & \EnineteenWideB{} [\EnineteenWideBLo, \EnineteenWideBHi] & \EnineteenWideG{} [\EnineteenWideGLo, \EnineteenWideGHi] & \EnineteenWideS \\
+    Level 0.85 (\EnineteenLeightyfiveCens{} censored) & \EnineteenLeightyfiveA{} [\EnineteenLeightyfiveALo, \EnineteenLeightyfiveAHi] & \EnineteenLeightyfiveB{} [\EnineteenLeightyfiveBLo, \EnineteenLeightyfiveBHi] & \EnineteenLeightyfiveG{} [\EnineteenLeightyfiveGLo, \EnineteenLeightyfiveGHi] & \EnineteenLeightyfiveS \\
+    Memorisation step & \EnineteenMemA{} [\EnineteenMemALo, \EnineteenMemAHi] & \EnineteenMemB{} [\EnineteenMemBLo, \EnineteenMemBHi] & \EnineteenMemG{} [\EnineteenMemGLo, \EnineteenMemGHi] & \EnineteenMemS \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 \smaller
 \printbibliography
 
@@ -1214,9 +1390,8 @@ band we expect, and what would raise it. The bands are our own estimate.
   are in Sections 1 and 2, with \cref{tab:predictions}. The solution is in
   Section 3, the findings in Section 4, the limitations in Section 5 and the
   conclusion in Section 6. The contribution, AI use and consent sections exist.
-  & Good. & \Cref{sec:tier4mnist} (MNIST) is an empty TODO. Fill it or remove it,
-  since an empty section reads as missing work. Write the Limitations as prose,
-  with one or two sentences for each point. Fill in the contribution lines,
+  & Good. & \Cref{sec:tier4mnist} (MNIST) and the Limitations were
+  filled in on 20 October 2026. Fill in the contribution lines,
   the acknowledgement and the consent choice, and agree the AI-use text. \\
   \textbf{Correctness and reproducibility.} ``Sufficient technical details are
   provided. The work is reproducible and correct.'' Very good: ``Work is
@@ -1267,9 +1442,10 @@ band we expect, and what would raise it. The bands are our own estimate.
   states the answer. & Good. & Say in one sentence why a practitioner would
   measure $S_t$ and $R_t$, since the settings reference still predicts better
   (\cref{fig:ladder}). State what a single small task can and cannot show. Search
-  the literature beyond the works cited before any claim of a first. Decide on
-  the MNIST extension of \cref{sec:tier4mnist}. A second task would answer the
-  limit of one task, but it needs new training runs and the group's agreement. \\
+  the literature beyond the works cited before any claim of a first. The
+  MNIST tier of \cref{sec:tier4mnist} now answers the limit of one task. Decide
+  whether the group accepts the curvature learning-rate rule as part of that
+  setup (open decisions below). \\
   \bottomrule
 \end{longtable}
 }
@@ -1462,6 +1638,88 @@ submits a contribution statement.
     history of \file{main.tex} before this date.
 \end{itemize}
 
+\paragraph{Changes made on 20 October 2026 (Samuel Rieger).}
+\begin{itemize}
+  \item Tier 4 (\cref{sec:tier4mnist}) now holds the MNIST extension, built
+    from the sweep of 19 October 2026 in \file{mnist/sweep/} (560 runs, trained
+    by Zac Kienzle on the H100s). Its figure, table and numbers come from
+    \file{report_v2/code/E19_mnist.py}, which reads \file{mnist/sweep/} from
+    the repository. This is the one exception to the rule that every result
+    comes from \file{data/}; \file{report_v2/CLAUDE.md} records it.
+  \item New: \cref{sec:mnistsetup} (the second task, in Methods),
+    Appendix~\ref{app:mnist} (its settings and the check rows of its fit), a
+    contribution in the Introduction, a sentence on
+    \citet{liuOmnigrokGrokkingAlgorithmic2023} in Related Work, and that
+    paper in the weight-decay row of \cref{tab:predictions}.
+  \item Claims changed. The abstract, the end of the Introduction and the
+    Conclusion no longer say that rotation matters most or that each clock
+    describes one part of the time. They say that weight decay sets the time
+    through the weight norm on both tasks, and that width enters only on
+    modular addition, where the kernel must change shape before the task can
+    be solved. The second half of that is our reading, and the text says so.
+  \item To make room: the Limitations are prose; the paragraph on seed-only
+    intervals moved from \cref{sec:tier2} to Appendix~\ref{app:levels}; the
+    opening paragraph of \cref{sec:tier3} lost two sentences. Every change is
+    in blue with a bracketed note.
+  \item The MNIST events keep the report's definitions, except that the
+    grokking level is 0.80 and the budget is 500\,000 steps, since no MNIST run
+    reaches 0.95. \cref{sec:mnistsetup} says so.
+  \item Later on 20 October: the MNIST text was reworded to say how the delay
+    arises there, following \citet[Secs.~2, 4 and 5]{liuOmnigrokGrokkingAlgorithmic2023}:
+    the enlarged initial function is kept by the uncentred predictor and weight
+    decay must shrink it, whereas the centred predictor of \cref{sec:setup}
+    removes it. \cref{sec:mnistsetup} cites the group's pilot of 12 October
+    2026 (\file{mnist/exploration/results/mnist_pilot/}, one seed), in which
+    the centred predictor on MNIST showed no delay at any $\alpha$. Decide
+    whether a one-seed pilot may be cited in the main text.
+  \item Also later on 20 October, for the tutor's feedback on the proposal
+    (more datasets, stated assumptions, expected outcomes): the Introduction
+    says why a second task was added, the Predictions paragraph of
+    \cref{sec:related} states what each clock predicts for MNIST, the Tier 4
+    finding recalls those predictions, and the Limitations state the
+    assumption behind the comparison.
+  \item Last on 20 October, for the page limit: the MNIST text was cut to the
+    two points that matter, how the delay is induced on MNIST against modular
+    addition, and what that does to the Tier 1 and Tier 2 tests. The abstract,
+    contribution, Related Work, \cref{sec:mnistsetup}, \cref{sec:tier4mnist},
+    Limitations and Conclusion are shorter; Figure~\ref{fig:mnist} is
+    narrower. Nothing was dropped from the record: the check rows, width 100,
+    the no-decay runs, the alignment, the placebo ratios and the pilot are in
+    Appendix~\ref{app:mnist}. The entry for \citet{liuOmnigrokGrokkingAlgorithmic2023}
+    in \file{ref.bib} has a \texttt{shortauthor} field so that it cites as
+    ``Liu et al.''; the other three-author entries still cite in full, which
+    \texttt{maxcitenames=2} in the preamble would change for all of them.
+  \item Panel (c) of \cref{fig:mnist} is now the time and outcome map of
+    \cref{fig:map} at $s=7$, in place of rotation against width. Drawing it
+    showed that width 100 does reach the level in most runs with decay, so
+    the caption, the Limitations and Appendix~\ref{app:mnist} no longer say
+    that it never groks; they say it is later than the wider networks, with
+    little delay to time, and off the law.
+  \item A second cut of about 16 lines from the MNIST additions: the MNIST
+    predictions sentence in \cref{sec:related} became the clause ``on either
+    task'' before \cref{tab:predictions}; the pure-decay check, the placebo
+    reason, the $s=3$ accuracy, the check-row sentence and the note on Tier 3
+    moved from \cref{sec:tier4mnist} to Appendix~\ref{app:mnist};
+    \cref{sec:mnistsetup}, the Limitations paragraph and the Conclusion lost a
+    clause each. The two-route contrast, the finding and the width-100 caveat
+    are unchanged.
+  \item The Limitations and the Conclusion were re-marked so that only the
+    MNIST additions are blue. Limitations paragraph 1 is the group's bullet
+    list as prose, word for word, with ``modular addition'' added; the
+    proposal items are back in that paragraph. The Conclusion keeps the
+    original sentences, with ``On modular addition'' before ``rotation
+    matters most'', the MNIST sentences in place of ``Each published clock
+    therefore describes one part of it'', ``on two tasks'' after ``the
+    crossed grid'', and the frozen-kernel test added to the next step.
+  \item The abstract was rewritten at about half its length, with the group's
+    permission: one sentence per result, no numbers, the MNIST result in two
+    sentences, and the commented-out line removed.
+  \item To save space, \cref{tab:hyper} moved from \cref{sec:setup} to a new
+    Appendix~\ref{app:settings} just before the MNIST appendix, and
+    \cref{fig:map} and \cref{fig:ladder} were narrowed from 0.72 to 0.56 of
+    the line width. Nothing in the table or the figures changed.
+\end{itemize}
+
 \paragraph{Cut from the golden report.} Each item can be restored from the
 golden report's source, \file{docs/report_golden.tex} (added in commit 7da1996),
 and its figure files in \file{docs/figures/}.
@@ -1516,6 +1774,14 @@ methods are ported, and their numbers are not used.
     (17 October 2026).
   \item Whether to use figure E5 (the grokking time against weight decay at each
     width) in the seminar (17 October 2026).
+  \item Whether the group accepts the curvature learning-rate rule of the
+    MNIST runs (\cref{sec:mnistsetup}) as part of the setup. Every strong
+    MNIST cell uses it. The only fixed-rate grokking in the exploration was
+    weak, at $s=3$ (20 October 2026).
+  \item Whether to keep the reading that width enters only where the task
+    forces the kernel to change shape (\cref{sec:tier4mnist} and the
+    Conclusion). It rests on \citet{mohamadiWhyYouGrok2024} and is ours (20
+    October 2026).
 \end{itemize}
 
 \subsection*{3. Reference checks}
@@ -1551,6 +1817,7 @@ number cited in the text was checked in the PDF of the version named.
   Harrell et al.\ 1982 (new) & PubMed 7069920, Crossref & Matches & JAMA 247(18), 2543--2546. Crossref lists only the first author; PubMed lists all five. \\
   Chen, Guestrin 2016 (new) & arXiv 1603.02754 & Matches & KDD 2016. \\
   Cho et al.\ 2014 (new) & arXiv 1406.1078 & Matches & EMNLP 2014. \\
+  Liu, Michaud, Tegmark 2023 (new, 20 Oct 2026) & arXiv 2210.01117, PDF of v2 & Matches & v2 of 23 Mar 2023; ICLR 2023. The entry is the golden report's, without its abstract field. Section 2 (page 3) gives $w(t)\approx e^{-\gamma t}w_0$ and $t\approx\ln(w_0/w_c)/\gamma$ when weight decay is the only regulariser and the training loss is negligible after fitting; Figure 2(c) shows the time to 95\% test accuracy inversely proportional to the decay. Section 4 (page 5) gives the MNIST recipe: 1k training images, Kaiming uniform initial weights scaled by $\alpha>1$, a depth-3 width-200 ReLU MLP, AdamW, MSE on one-hot targets. Our runs use SGD without biases in place of AdamW. \\
   \bottomrule
 \end{longtable}
 }
