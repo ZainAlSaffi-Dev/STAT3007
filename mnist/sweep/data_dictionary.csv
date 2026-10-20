@@ -1,0 +1,253 @@
+table,name,group,meaning,formula,source,units
+checkpoints,run_id,ids,"The name of the run, mnist_sweep.run_id.",-,mnist_sweep.run_id,-
+checkpoints,init_scale,ids,The initial scale s. The initial weights are multiplied by s. For this 3-homogeneous network the initial output is s^3 and the initial kernel s^4 times its value at s = 1.,-,"Liu, Michaud and Tegmark (2023), Omnigrok, arXiv:2210.01117, Section 4",-
+checkpoints,width,ids,The width of both hidden layers.,-,-,-
+checkpoints,eta_kappa,ids,"The weight decay per step, eta lambda in the report. It is unchanged when the learning rate changes.",-,"docs/report.tex, The laziness and weight-decay knobs",-
+checkpoints,seed,ids,The model seed.,-,-,-
+checkpoints,data_seed,ids,"The seed of the draw of the training images, 42 + seed.",-,-,-
+checkpoints,step,grid,The checkpoint step.,-,-,steps
+checkpoints,log10_step1,grid,Base 10 logarithm of the step plus one.,log10(step + 1),-,-
+checkpoints,dt_prev,grid,Steps since the previous checkpoint. NaN at step 0.,-,-,steps
+checkpoints,on_linear_grid,grid,True if the step is a multiple of the linear checkpoint interval.,-,-,-
+checkpoints,on_log_grid,grid,True if the step is one of the log-spaced checkpoints.,-,-,-
+checkpoints,wall_seconds,grid,Wall-clock seconds since the run started. It depends on the machine and the load.,-,-,s
+checkpoints,train_loss,performance,Mean squared error of the network on the train set.,-,"ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,train_acc,performance,"Accuracy of the network on the train set, by the largest output.",-,"ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,test_loss,performance,Mean squared error of the network on the test set.,-,"ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,test_acc,performance,"Accuracy of the network on the test set, by the largest output.",-,"ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,train_margin_mean,performance,Mean over the train set of the correct output minus the largest other output.,mean_i (f_i[y_i] - max_{c != y_i} f_i[c]),"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,train_margin_min,performance,Smallest margin over the train set.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,train_correct_out_mean,performance,Mean output at the correct class on the train set. The MSE target there is one.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,train_wrong_out_rms,performance,Root mean square output at the wrong classes on the train set. The MSE target there is zero.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,train_out_rms,performance,"Root mean square of all outputs on the train set, the output scale.",-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,train_out_max_mean,performance,Mean over the train set of the largest output.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,test_margin_mean,performance,Mean over the test set of the correct output minus the largest other output.,mean_i (f_i[y_i] - max_{c != y_i} f_i[c]),"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,test_margin_min,performance,Smallest margin over the test set.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,test_correct_out_mean,performance,Mean output at the correct class on the test set. The MSE target there is one.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,test_wrong_out_rms,performance,Root mean square output at the wrong classes on the test set. The MSE target there is zero.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,test_out_rms,performance,"Root mean square of all outputs on the test set, the output scale.",-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,test_out_max_mean,performance,Mean over the test set of the largest output.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,lr,learning_rate,The learning rate in force for the steps after the checkpoint. The curvature rule sets it to eta_0 lam_0 / lam_t every lr_update_interval steps.,-,"ntk_lib.train_run history, copied at the checkpoint (eta)",-
+checkpoints,lr_factor,learning_rate,lr over its value at step 0.,lr / eta_0,The group's own definition,-
+checkpoints,lam,learning_rate,"The latest top Gauss-Newton eigenvalue of the training loss, from the last update of the learning rate.",lambda_max((2 / (n C)) J^T J),"ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,grad_norm,optimisation,"Norm of the gradient of the full training loss, without the decay term.",||dL/dtheta||,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,grad_norm_W1,optimisation,Norm of the gradient of the full training loss with respect to W1.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,grad_norm_W2,optimisation,Norm of the gradient of the full training loss with respect to W2.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,grad_norm_W3,optimisation,Norm of the gradient of the full training loss with respect to W3.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,update_norm,optimisation,"Norm of a full-batch gradient step with decay at the current learning rate. Training takes minibatch steps, so this is the size of the mean step.","lr ||g + wd theta||, wd = eta_kappa / lr","repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,grad_weight_cos,optimisation,Cosine between the loss gradient and the weights. Near minus one at a point where decay and gradient cancel.,"<g, theta> / (||g|| ||theta||)","repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,grad_decay_ratio,optimisation,Size of the loss gradient over the size of the decay pull. NaN without decay.,||g|| / (wd ||theta||),"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,decay_residual,optimisation,"How far the gradient and the decay pull are from cancelling. Zero at a fixed point of gradient descent with decay, one when the two are orthogonal.",||g + wd theta|| / (||g|| + wd ||theta||),"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,stationary,optimisation,True if the run has decay and decay_residual is below 0.001.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,sharpness,optimisation,"Largest eigenvalue of the Hessian of the full training loss, without the decay term, by 20 power iterations with Hessian-vector products, warm started.",lambda_max(d^2 L / d theta^2),"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,lr_sharpness,optimisation,Learning rate times sharpness. Gradient descent on a quadratic with this curvature is stable when it is below 2.,lr lambda_max,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,weight_norm,weights,Norm of all the parameters.,-,"ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,param_dist,weights,Relative parameter movement.,||theta_t - theta_0|| / ||theta_0||,"ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,log_weight_norm_ratio,weights,"Log of the weight norm over its value at step 0. The kernel of this 3-homogeneous network under a uniform rescaling of the weights by c is c^4 times larger, so four times this value is the scale term such a rescaling would give.",log(||theta_t|| / ||theta_0||),The group's own definition,-
+checkpoints,W1_norm,weights,Frobenius norm of W1.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,W1_dist,weights,Relative movement of W1.,||W1_t - W1_0|| / ||W1_0||,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,W1_stable_rank,weights,Stable rank of W1.,||W||_F^2 / sigma_max^2,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,W1_eff_rank,weights,"Effective rank of W1, the exponential of the entropy of the singular values normalised to sum to one.","exp(-sum q log q), q = sigma / sum sigma","repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,W2_norm,weights,Frobenius norm of W2.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,W2_dist,weights,Relative movement of W2.,||W2_t - W2_0|| / ||W2_0||,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,W2_stable_rank,weights,Stable rank of W2.,||W||_F^2 / sigma_max^2,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,W2_eff_rank,weights,"Effective rank of W2, the exponential of the entropy of the singular values normalised to sum to one.","exp(-sum q log q), q = sigma / sum sigma","repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,W3_norm,weights,Frobenius norm of W3.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,W3_dist,weights,Relative movement of W3.,||W3_t - W3_0|| / ||W3_0||,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,W3_stable_rank,weights,Stable rank of W3.,||W||_F^2 / sigma_max^2,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,W3_eff_rank,weights,"Effective rank of W3, the exponential of the entropy of the singular values normalised to sum to one.","exp(-sum q log q), q = sigma / sum sigma","repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,layer_imbalance_12,weights,Difference of the squared norms of W1 and W2 over the squared total norm. Gradient flow without decay keeps ||W_l||^2 - ||W_(l+1)||^2 fixed for a bias-free ReLU network. With decay it shrinks by (1 - eta_kappa)^2 per step.,(||W1||^2 - ||W2||^2) / ||theta||^2,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,layer_imbalance_23,weights,Difference of the squared norms of W2 and W3 over the squared total norm. Gradient flow without decay keeps ||W_l||^2 - ||W_(l+1)||^2 fixed for a bias-free ReLU network. With decay it shrinks by (1 - eta_kappa)^2 per step.,(||W2||^2 - ||W3||^2) / ||theta||^2,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,dead_frac_h1,weights,Fraction of the units of hidden layer 1 that are inactive on every training image.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,active_frac_h1,weights,Mean over training images of the fraction of the units of hidden layer 1 that are active.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,dead_frac_h2,weights,Fraction of the units of hidden layer 2 that are inactive on every training image.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,active_frac_h2,weights,Mean over training images of the fraction of the units of hidden layer 2 that are active.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,S_t,kernel_raw,Scale term on the raw probe kernel.,log(||K_t||_F / ||K_0||_F),"ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,R_t,kernel_raw,Rotation term on the raw probe kernel.,"1 - <K_t / ||K_t||, K_0 / ||K_0||>","ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,K_norm,kernel_raw,"Frobenius norm of the raw probe kernel, the sum-over-outputs kernel.",-,"ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,yKy,kernel_raw,"y^T K^+ y on the probe set, summed over the label columns.",-,"ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,S_c,kernel_centred,Scale term on the centred probe kernel.,log(||Kc_t||_F / ||Kc_0||_F),"docs/report.tex, Kernel metrics section. ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,R_c,kernel_centred,Rotation term on the centred probe kernel.,"1 - <k_t, k_0>","docs/report.tex, Kernel metrics section. ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,A_t,kernel_centred,Centred kernel-target alignment on the probe.,"<Kc_t, G> / (||Kc_t|| ||G||), G = H Y Y^T H","Cortes, Mohri and Rostamizadeh (2012), Definition 4. docs/report.tex, Kernel metrics section. ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,A_u,kernel_centred,Uncentred alignment on the probe.,"<K_t, Y Y^T> / (||K_t|| ||Y Y^T||)","ntk_lib.uncentred_alignment. ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,S_c_train,kernel_centred,"The scale term on the train part of the probe, with the kernel restricted to those images.",-,"docs/report.tex, Kernel metrics section. ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,R_c_train,kernel_centred,"The rotation term on the train part of the probe, with the kernel restricted to those images.",-,"docs/report.tex, Kernel metrics section. ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,A_t_train,kernel_centred,"The centred alignment on the train part of the probe, with the kernel restricted to those images.",-,"docs/report.tex, Kernel metrics section. ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,A_u_train,kernel_centred,"The uncentred alignment on the train part of the probe, with the kernel restricted to those images.",-,"docs/report.tex, Kernel metrics section. ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,S_c_test,kernel_centred,"The scale term on the test part of the probe, with the kernel restricted to those images.",-,"docs/report.tex, Kernel metrics section. ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,R_c_test,kernel_centred,"The rotation term on the test part of the probe, with the kernel restricted to those images.",-,"docs/report.tex, Kernel metrics section. ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,A_t_test,kernel_centred,"The centred alignment on the test part of the probe, with the kernel restricted to those images.",-,"docs/report.tex, Kernel metrics section. ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,A_u_test,kernel_centred,"The uncentred alignment on the test part of the probe, with the kernel restricted to those images.",-,"docs/report.tex, Kernel metrics section. ntk_lib.train_run history, copied at the checkpoint",-
+checkpoints,K_norm_centred,kernel_centred,Frobenius norm of the centred probe kernel.,||Kc_t||_F,"Cortes, Mohri and Rostamizadeh (2012), Lemma 1, for H K H",-
+checkpoints,inner_K0,kernel_centred,Inner product of the centred kernel with the centred kernel at step 0.,"<Kc_t, Kc_0>","repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,inner_G,kernel_centred,Inner product of the centred kernel with the centred target Gram matrix.,"<Kc_t, G>","repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,D,kernel_centred,The usual kernel movement statistic on the centred kernel.,||Kc_t - Kc_0||_F / ||Kc_0||_F,"docs/report.tex, Equation eq:decomp",-
+checkpoints,exp2S_term,kernel_centred,First piece of Equation eq:decomp. D^2 = exp2S_term + 1 - cross_term.,e^(2 S_c),"docs/report.tex, Equation eq:decomp, the group's own algebra",-
+checkpoints,cross_term,kernel_centred,Last piece of Equation eq:decomp.,2 e^S_c (1 - R_c),"docs/report.tex, Equation eq:decomp, the group's own algebra",-
+checkpoints,gamma,kernel_centred,"The aim, the cosine between the part of k_t orthogonal to k_0 and the part of the unit target orthogonal to k_0. NaN at step 0.","<v_t, g_perp> / ||v_t||, v_t = k_t - <k_t, k_0> k_0","repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,share_k0,kernel_centred,Share of the squared change of the unit kernel along k_0. It equals R_c / 2.,"<d_t, k_0>^2 / ||d_t||^2, d_t = k_t - k_0","repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,share_gperp,kernel_centred,Share of the squared change of the unit kernel along g_perp.,"<d_t, g_perp>^2 / ||d_t||^2","repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,share_residual,kernel_centred,"Share of the squared change of the unit kernel orthogonal to both k_0 and g_perp. share_k0, share_gperp and share_residual sum to one.",-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,kernel_degenerate,kernel_centred,True if the centred probe kernel norm is below 1e-30. The unit-kernel columns are then NaN.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,S_W1,layer_kernels,Scale term of the centred kernel term from the gradient of W1 alone.,"log(||Kc_W1,t|| / ||Kc_W1,0||)",kernel_terms. The group's own definition,-
+checkpoints,R_W1,layer_kernels,Rotation term of the centred kernel term from W1 alone.,-,kernel_terms. The group's own definition,-
+checkpoints,A_W1,layer_kernels,Centred alignment of the kernel term from W1 alone.,-,kernel_terms. The group's own definition,-
+checkpoints,W1_kernel_share,layer_kernels,Share of the trace of the centred probe kernel that comes from W1.,tr(Kc_W1) / tr(Kc),kernel_terms. The group's own definition,-
+checkpoints,S_W2,layer_kernels,Scale term of the centred kernel term from the gradient of W2 alone.,"log(||Kc_W2,t|| / ||Kc_W2,0||)",kernel_terms. The group's own definition,-
+checkpoints,R_W2,layer_kernels,Rotation term of the centred kernel term from W2 alone.,-,kernel_terms. The group's own definition,-
+checkpoints,A_W2,layer_kernels,Centred alignment of the kernel term from W2 alone.,-,kernel_terms. The group's own definition,-
+checkpoints,W2_kernel_share,layer_kernels,Share of the trace of the centred probe kernel that comes from W2.,tr(Kc_W2) / tr(Kc),kernel_terms. The group's own definition,-
+checkpoints,S_W3,layer_kernels,Scale term of the centred kernel term from the gradient of W3 alone.,"log(||Kc_W3,t|| / ||Kc_W3,0||)",kernel_terms. The group's own definition,-
+checkpoints,R_W3,layer_kernels,Rotation term of the centred kernel term from W3 alone.,-,kernel_terms. The group's own definition,-
+checkpoints,A_W3,layer_kernels,Centred alignment of the kernel term from W3 alone.,-,kernel_terms. The group's own definition,-
+checkpoints,W3_kernel_share,layer_kernels,Share of the trace of the centred probe kernel that comes from W3.,tr(Kc_W3) / tr(Kc),kernel_terms. The group's own definition,-
+checkpoints,S_first_logit,first_logit,The scale term of the centred kernel of the first output alone. The report uses this kernel as a robustness check.,-,"docs/report.tex, Kernel metrics section. kernel_terms",-
+checkpoints,R_first_logit,first_logit,The rotation term of the centred kernel of the first output alone. The report uses this kernel as a robustness check.,-,"docs/report.tex, Kernel metrics section. kernel_terms",-
+checkpoints,A_first_logit,first_logit,The centred alignment of the centred kernel of the first output alone. The report uses this kernel as a robustness check.,-,"docs/report.tex, Kernel metrics section. kernel_terms",-
+checkpoints,S_sum,report_kernel,"Scale, the plain ratio of Frobenius norms to step 0, of the kernel of the sum of the logits divided by sqrt(C), on a fixed draw of 1000 test images. These are the S_t, R_t, D_t and A_t of the golden report.",-,"docs/report_golden.pdf, Equations 5 and 6. kernel_terms",-
+checkpoints,R_sum,report_kernel,"Shape change, one minus the uncentred cosine to step 0, of the kernel of the sum of the logits divided by sqrt(C), on a fixed draw of 1000 test images. These are the S_t, R_t, D_t and A_t of the golden report.",-,"docs/report_golden.pdf, Equations 5 and 6. kernel_terms",-
+checkpoints,D_sum,report_kernel,"Variation, the Frobenius norm of the change from step 0 over the norm at step 0, of the kernel of the sum of the logits divided by sqrt(C), on a fixed draw of 1000 test images. These are the S_t, R_t, D_t and A_t of the golden report.",-,"docs/report_golden.pdf, Equations 5 and 6. kernel_terms",-
+checkpoints,A_sum,report_kernel,"Centred alignment with Y Y^T, of the kernel of the sum of the logits divided by sqrt(C), on a fixed draw of 1000 test images. These are the S_t, R_t, D_t and A_t of the golden report.",-,"docs/report_golden.pdf, Equations 5 and 6. kernel_terms",-
+checkpoints,eig_trace,spectrum,Trace of the centred probe kernel.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,eig_top1,spectrum,Largest eigenvalue of the centred probe kernel.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,eig_top1_share,spectrum,Largest eigenvalue over the trace.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,eig_eff_rank,spectrum,"Exponential of the entropy of the eigenvalues normalised to sum to one. The zero eigenvalue that centring creates is left out, and so is every column below.",-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,eig_participation,spectrum,Participation ratio of the eigenvalues.,(sum lambda)^2 / sum lambda^2,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,eig_n90,spectrum,Number of the largest eigenvalues that hold 90 percent of the trace.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,eig_gap_label,spectrum,"Ratio of eigenvalue 9 to eigenvalue 10, counting from one. The centred labels span 9 dimensions.",-,The group's own definition,-
+checkpoints,eig_gap_top36,spectrum,"Ratio of eigenvalue 36 to eigenvalue 37, the edge of the eigenvectors that the tracking columns follow.",-,The group's own definition,-
+checkpoints,probe_energy_label,subspaces,Share of the trace of the centred probe kernel inside the centred label span on the probe.,"tr(Q^T Kc Q) / tr(Kc), Q an orthonormal basis of H Y","repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,label_capture_9,eigvec_tracking,Share of the centred label matrix inside the top 9 eigenvectors of the centred probe kernel.,||V_9^T H Y||_F^2 / ||H Y||_F^2,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,label_capture_18,eigvec_tracking,Share of the centred label matrix inside the top 18 eigenvectors of the centred probe kernel.,||V_18^T H Y||_F^2 / ||H Y||_F^2,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,label_capture_36,eigvec_tracking,Share of the centred label matrix inside the top 36 eigenvectors of the centred probe kernel.,||V_36^T H Y||_F^2 / ||H Y||_F^2,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,topk_drift,eigvec_tracking,Mean squared sine of the principal angles between the span of the top 36 eigenvectors and the same span at step 0.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,overlap_zero_median,eigvec_tracking,Median over the top 36 eigenvectors of the largest absolute overlap with any of the top 36 eigenvectors at step 0. dataset_features.py follows a chain of matches back to step 0 instead.,-,The group's own definition,-
+checkpoints,krr_probe_test_acc,probe_krr,Accuracy of kernel ridge regression with the current probe kernel from the training part of the probe to its test part. The ridge is 0.001 times the mean diagonal of the training block.,"argmax K_te,tr (K_tr,tr + r I)^-1 Y_tr","repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,krr_probe_test_mse,probe_krr,Mean squared error of the same kernel ridge regression on the test part.,-,"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,dS_step,instant_rates,"Change of the centred scale term over one virtual full-batch gradient step with decay at the current learning rate, in float64.",S(K_{t+1}) - S(K_t),"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,dA_step,instant_rates,Change of the centred alignment over the same virtual step.,A(K_{t+1}) - A(K_t),"repoduced-code/dataset_features.py, the same column for modular addition",-
+checkpoints,R_step,instant_rates,Rotation of the centred unit kernel over the same virtual step.,"1 - <k_{t+1}, k_t>","repoduced-code/dataset_features.py, the same column for modular addition",-
+runs,run_id,run,"The name of the run, run_id.",-,-,-
+runs,init_scale,run,The initial scale s.,-,"Liu, Michaud and Tegmark (2023), Omnigrok, arXiv:2210.01117, Section 4",-
+runs,width,run,The width of both hidden layers.,-,-,-
+runs,eta_kappa,run,"The weight decay per step, eta lambda.",-,"docs/report.tex, The laziness and weight-decay knobs",-
+runs,seed,run,The model seed.,-,-,-
+runs,data_seed,run,"The seed of the draw of the 1000 training images, 42 + seed.",-,-,-
+runs,n_train,run,The number of training images.,-,-,-
+runs,batch_size,run,The minibatch size.,-,-,-
+runs,lam_0,run,The top Gauss-Newton eigenvalue of the loss at the initial weights.,-,ntk_lib.gauss_newton_top_eigenvalue,-
+runs,eta_0,run,"The initial learning rate, 1 / lam_0.",-,-,-
+runs,status,run,"ok, diverged (the training loss stopped being finite) or failed (an exception).",-,-,-
+runs,error,run,"The traceback of a failed run, empty otherwise.",-,-,-
+runs,diverged_step,run,The checkpoint at which the training loss was first not finite.,-,-,-
+runs,steps,run,The step budget.,-,-,-
+runs,last_step,run,The last recorded checkpoint.,-,-,-
+runs,n_checkpoints,run,The number of recorded checkpoints.,-,-,-
+runs,seconds,run,"Wall-clock seconds for the run, logger included.",-,-,-
+runs,callback_seconds,run,Wall-clock seconds spent in the feature logger.,-,-,-
+runs,feature_version,run,mnist_features.FEATURE_VERSION when the run was made.,-,-,-
+runs,git_commit,run,The commit of the repository when the run was made.,-,-,-
+runs,git_dirty,run,True if mnist/ or ntk_lib.py had uncommitted changes when the run was made.,-,-,-
+runs,closed_form_check,run,Largest relative difference between the autograd and closed-form kernels on 32 probe images at the first and last checkpoints.,-,ntk_lib.entk_closed_form_deep,-
+runs,init_weight_norm,run,Weight norm at step 0.,-,ntk_lib.train_run,-
+runs,final_weight_norm,run,Weight norm at the last checkpoint.,-,-,-
+runs,weight_norm_growth,run,final_weight_norm / init_weight_norm.,-,-,-
+runs,final_lr_factor,run,The learning rate at the last checkpoint over eta_0.,-,-,-
+runs,A_t_final,run,A_t at the last checkpoint.,-,-,-
+runs,S_c_final,run,S_c at the last checkpoint.,-,-,-
+runs,R_c_final,run,R_c at the last checkpoint.,-,-,-
+runs,S_sum_final,run,S_sum at the last checkpoint.,-,-,-
+runs,R_sum_final,run,R_sum at the last checkpoint.,-,-,-
+runs,D_sum_final,run,D_sum at the last checkpoint.,-,-,-
+runs,A_sum_final,run,A_sum at the last checkpoint.,-,-,-
+runs,train_acc_final,run,train_acc at the last checkpoint.,-,-,-
+runs,test_acc_final,run,test_acc at the last checkpoint.,-,-,-
+runs,train_loss_final,run,train_loss at the last checkpoint.,-,-,-
+runs,test_loss_final,run,test_loss at the last checkpoint.,-,-,-
+runs,A_0,run,A_t at step 0.,-,-,-
+runs,A_peak,run,Largest A_t over the run.,-,-,-
+runs,A_peak_step,run,The step of A_peak.,-,-,-
+runs,A_min,run,Smallest A_t over the run.,-,-,-
+runs,A_min_step,run,The step of A_min.,-,-,-
+runs,best_test_acc,run,Largest test accuracy over the run.,-,-,-
+runs,best_test_step,run,The step of best_test_acc.,-,-,-
+runs,memorised,run,"True if the training accuracy reached 0.99 at some checkpoint. A run that never memorises has no grokking time, which is different from a censored one.",-,"docs/report_golden.pdf, section 3.5",-
+runs,t_mem,run,First checkpoint at which the training accuracy is at least 0.99.,-,"docs/report_golden.pdf, section 3.5",-
+runs,t_mem_prev,run,"The checkpoint before t_mem. The event lies in (t_mem_prev, t_mem].",-,-,-
+runs,t_mem100,run,"First checkpoint at which the training accuracy is 1, the memorisation of dataset_sweep.py.",-,ntk_lib.accuracy_crossings,-
+runs,test_acc_at_mem,run,Test accuracy at t_mem.,-,-,-
+runs,t_gen_acc50,run,"First checkpoint at which the test accuracy reaches 0.5, counted from step 0.",-,-,-
+runs,t_gen_acc50_prev,run,The checkpoint before t_gen_acc50.,-,-,-
+runs,t_grok_acc50,run,"Grokking time at test level 0.5: t_gen_acc50 - t_mem, or last_step - t_mem if censored. Empty if the run never memorised. Negative if the level came before memorisation.",-,"dataset_sweep.py, the same column",-
+runs,censored_acc50,run,"True if the test accuracy never reached 0.5, or the run never memorised.",-,-,-
+runs,t_gen_acc60,run,"First checkpoint at which the test accuracy reaches 0.6, counted from step 0.",-,-,-
+runs,t_gen_acc60_prev,run,The checkpoint before t_gen_acc60.,-,-,-
+runs,t_grok_acc60,run,"Grokking time at test level 0.6: t_gen_acc60 - t_mem, or last_step - t_mem if censored. Empty if the run never memorised. Negative if the level came before memorisation.",-,"dataset_sweep.py, the same column",-
+runs,censored_acc60,run,"True if the test accuracy never reached 0.6, or the run never memorised.",-,-,-
+runs,t_gen_acc70,run,"First checkpoint at which the test accuracy reaches 0.7, counted from step 0.",-,-,-
+runs,t_gen_acc70_prev,run,The checkpoint before t_gen_acc70.,-,-,-
+runs,t_grok_acc70,run,"Grokking time at test level 0.7: t_gen_acc70 - t_mem, or last_step - t_mem if censored. Empty if the run never memorised. Negative if the level came before memorisation.",-,"dataset_sweep.py, the same column",-
+runs,censored_acc70,run,"True if the test accuracy never reached 0.7, or the run never memorised.",-,-,-
+runs,t_gen_acc80,run,"First checkpoint at which the test accuracy reaches 0.8, counted from step 0.",-,-,-
+runs,t_gen_acc80_prev,run,The checkpoint before t_gen_acc80.,-,-,-
+runs,t_grok_acc80,run,"Grokking time at test level 0.8: t_gen_acc80 - t_mem, or last_step - t_mem if censored. Empty if the run never memorised. Negative if the level came before memorisation.",-,"dataset_sweep.py, the same column",-
+runs,censored_acc80,run,"True if the test accuracy never reached 0.8, or the run never memorised.",-,-,-
+runs,t_gen_acc85,run,"First checkpoint at which the test accuracy reaches 0.85, counted from step 0.",-,-,-
+runs,t_gen_acc85_prev,run,The checkpoint before t_gen_acc85.,-,-,-
+runs,t_grok_acc85,run,"Grokking time at test level 0.85: t_gen_acc85 - t_mem, or last_step - t_mem if censored. Empty if the run never memorised. Negative if the level came before memorisation.",-,"dataset_sweep.py, the same column",-
+runs,censored_acc85,run,"True if the test accuracy never reached 0.85, or the run never memorised.",-,-,-
+runs,t_gen_acc90,run,"First checkpoint at which the test accuracy reaches 0.9, counted from step 0.",-,-,-
+runs,t_gen_acc90_prev,run,The checkpoint before t_gen_acc90.,-,-,-
+runs,t_grok_acc90,run,"Grokking time at test level 0.9: t_gen_acc90 - t_mem, or last_step - t_mem if censored. Empty if the run never memorised. Negative if the level came before memorisation.",-,"dataset_sweep.py, the same column",-
+runs,censored_acc90,run,"True if the test accuracy never reached 0.9, or the run never memorised.",-,-,-
+runs,t_train_loss8e-2,run,First checkpoint at which the training loss is below 0.08.,-,ntk_lib.grokking_time,-
+runs,t_test_loss8e-2,run,First checkpoint at which the test loss is below 0.08.,-,ntk_lib.grokking_time,-
+runs,t_grok_loss8e-2,run,Grokking time under the loss definition with both thresholds 0.08.,-,"ntk_lib.grokking_time. docs/report.tex, Defining t_grok",-
+runs,censored_loss8e-2,run,"True if the test loss never fell below 0.08, or the training loss never did.",-,ntk_lib.grokking_time,-
+runs,t_train_loss6e-2,run,First checkpoint at which the training loss is below 0.06.,-,ntk_lib.grokking_time,-
+runs,t_test_loss6e-2,run,First checkpoint at which the test loss is below 0.06.,-,ntk_lib.grokking_time,-
+runs,t_grok_loss6e-2,run,Grokking time under the loss definition with both thresholds 0.06.,-,"ntk_lib.grokking_time. docs/report.tex, Defining t_grok",-
+runs,censored_loss6e-2,run,"True if the test loss never fell below 0.06, or the training loss never did.",-,ntk_lib.grokking_time,-
+runs,t_train_loss4e-2,run,First checkpoint at which the training loss is below 0.04.,-,ntk_lib.grokking_time,-
+runs,t_test_loss4e-2,run,First checkpoint at which the test loss is below 0.04.,-,ntk_lib.grokking_time,-
+runs,t_grok_loss4e-2,run,Grokking time under the loss definition with both thresholds 0.04.,-,"ntk_lib.grokking_time. docs/report.tex, Defining t_grok",-
+runs,censored_loss4e-2,run,"True if the test loss never fell below 0.04, or the training loss never did.",-,ntk_lib.grokking_time,-
+runs,t_train_loss3e-2,run,First checkpoint at which the training loss is below 0.03.,-,ntk_lib.grokking_time,-
+runs,t_test_loss3e-2,run,First checkpoint at which the test loss is below 0.03.,-,ntk_lib.grokking_time,-
+runs,t_grok_loss3e-2,run,Grokking time under the loss definition with both thresholds 0.03.,-,"ntk_lib.grokking_time. docs/report.tex, Defining t_grok",-
+runs,censored_loss3e-2,run,"True if the test loss never fell below 0.03, or the training loss never did.",-,ntk_lib.grokking_time,-
+runs,t_train_loss2e-2,run,First checkpoint at which the training loss is below 0.02.,-,ntk_lib.grokking_time,-
+runs,t_test_loss2e-2,run,First checkpoint at which the test loss is below 0.02.,-,ntk_lib.grokking_time,-
+runs,t_grok_loss2e-2,run,Grokking time under the loss definition with both thresholds 0.02.,-,"ntk_lib.grokking_time. docs/report.tex, Defining t_grok",-
+runs,censored_loss2e-2,run,"True if the test loss never fell below 0.02, or the training loss never did.",-,ntk_lib.grokking_time,-
+runs,A_t_at_mem,run,A_t at t_mem. Empty if the event did not happen.,-,-,-
+runs,S_c_at_mem,run,S_c at t_mem. Empty if the event did not happen.,-,-,-
+runs,R_c_at_mem,run,R_c at t_mem. Empty if the event did not happen.,-,-,-
+runs,gamma_at_mem,run,gamma at t_mem. Empty if the event did not happen.,-,-,-
+runs,D_at_mem,run,D at t_mem. Empty if the event did not happen.,-,-,-
+runs,weight_norm_at_mem,run,weight_norm at t_mem. Empty if the event did not happen.,-,-,-
+runs,lr_factor_at_mem,run,lr_factor at t_mem. Empty if the event did not happen.,-,-,-
+runs,S_sum_at_mem,run,S_sum at t_mem. Empty if the event did not happen.,-,-,-
+runs,R_sum_at_mem,run,R_sum at t_mem. Empty if the event did not happen.,-,-,-
+runs,D_sum_at_mem,run,D_sum at t_mem. Empty if the event did not happen.,-,-,-
+runs,A_sum_at_mem,run,A_sum at t_mem. Empty if the event did not happen.,-,-,-
+runs,S_W1_at_mem,run,S_W1 at t_mem. Empty if the event did not happen.,-,-,-
+runs,S_W2_at_mem,run,S_W2 at t_mem. Empty if the event did not happen.,-,-,-
+runs,S_W3_at_mem,run,S_W3 at t_mem. Empty if the event did not happen.,-,-,-
+runs,A_t_at_gen,run,A_t at t_gen_acc80. Empty if the event did not happen.,-,-,-
+runs,S_c_at_gen,run,S_c at t_gen_acc80. Empty if the event did not happen.,-,-,-
+runs,R_c_at_gen,run,R_c at t_gen_acc80. Empty if the event did not happen.,-,-,-
+runs,gamma_at_gen,run,gamma at t_gen_acc80. Empty if the event did not happen.,-,-,-
+runs,D_at_gen,run,D at t_gen_acc80. Empty if the event did not happen.,-,-,-
+runs,weight_norm_at_gen,run,weight_norm at t_gen_acc80. Empty if the event did not happen.,-,-,-
+runs,lr_factor_at_gen,run,lr_factor at t_gen_acc80. Empty if the event did not happen.,-,-,-
+runs,S_sum_at_gen,run,S_sum at t_gen_acc80. Empty if the event did not happen.,-,-,-
+runs,R_sum_at_gen,run,R_sum at t_gen_acc80. Empty if the event did not happen.,-,-,-
+runs,D_sum_at_gen,run,D_sum at t_gen_acc80. Empty if the event did not happen.,-,-,-
+runs,A_sum_at_gen,run,A_sum at t_gen_acc80. Empty if the event did not happen.,-,-,-
+runs,S_W1_at_gen,run,S_W1 at t_gen_acc80. Empty if the event did not happen.,-,-,-
+runs,S_W2_at_gen,run,S_W2 at t_gen_acc80. Empty if the event did not happen.,-,-,-
+runs,S_W3_at_gen,run,S_W3 at t_gen_acc80. Empty if the event did not happen.,-,-,-
+runs,t_A45,run,First checkpoint at which A_t reaches 0.45. Empty if it never does.,-,-,-
+runs,t_A50,run,First checkpoint at which A_t reaches 0.5. Empty if it never does.,-,-,-
+runs,verdict,run,"strong, weak or none, by the criterion of exploration/PLAN_mnist_closed_form.md section 3 with memorisation at 0.99. Strong: test accuracy at t_mem at most 0.30, best test accuracy at least 0.80, and t_gen_acc50 / t_mem at least 3. Weak: not strong, a gain after t_mem of at least 0.25, and the step at half that gain at least 3 t_mem.",-,"exploration/PLAN_mnist_closed_form.md, section 3",-

@@ -283,8 +283,8 @@ def compute_task_alignment(K_t, y_probe):
     device = K_t.device
     
     # Centring matrix H = I - (1/n) 1 1^T from Cortes et al. (2012), Lemma 1.
-    I = torch.eye(n, device=device)
-    ones = torch.ones((n, n), device=device)
+    I = torch.eye(n, device=device, dtype=K_t.dtype)
+    ones = torch.ones((n, n), device=device, dtype=K_t.dtype)
     H = I - (1.0 / n) * ones
     
     # Centred kernel H K H.

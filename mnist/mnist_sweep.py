@@ -90,6 +90,7 @@ DECAYS = [0.0, 1e-6, 3e-6, 6e-6, 1e-5, 2e-5, 4e-5]
 SEEDS = [0, 1, 2, 3, 4]
 DATA_SEED_BASE = 42
 STEPS = 500_000
+FP32_PRECISION = "tf32"
 N_TRAIN, BATCH_SIZE, DEPTH = 1000, 200, 3
 LR_UPDATE_INTERVAL = 10_000
 LINEAR_INTERVAL = 2000
@@ -152,7 +153,7 @@ def run_spec(width, scale, eta_kappa, seed, steps):
                 momentum=0.0, batch_size=BATCH_SIZE, eta_kappa=eta_kappa, lr_schedule="curvature",
                 lr_update_interval=LR_UPDATE_INTERVAL, seed=seed, steps=steps, eval_interval=LINEAR_INTERVAL,
                 kernel_save_interval=steps, probe="mixed", probe_size=256, kernel_method="closed_form",
-                checkpoint_steps=checkpoint_grid(steps))
+                checkpoint_steps=checkpoint_grid(steps), fp32_precision=FP32_PRECISION)
 
 
 def build_tasks(scales, widths, decays, seeds, steps, out_dir, grid=None):
@@ -288,7 +289,7 @@ def closed_form_check(logger, weights, width, n_points=16):
     from torch.func import functional_call, jacrev
     import ntk_lib as L
     import mnist_features as F
-    x = logger.x_probe[:n_points].double()
+    x = logger.x_probe[:n_points].cpu().double()
     out = {}
     for step, Ws in weights.items():
         model = L.DeepBiasFreeMLP(x.shape[1], width, Ws[-1].shape[0], depth=DEPTH, scaling="standard").double()
@@ -322,28 +323,39 @@ def run_events(run):
     return dict(t_mem=t_mem, t_gen=t_gen, censored=t_gen is None, best_test=float(max(h["test_acc"])))
 
 
+def finished(task):
+    """True if the task's meta file records a finished run of the same spec and feature version."""
+    import mnist_features as F
+    meta_path = Path(task["out_dir"]) / f"{task['run_id']}_meta.json"
+    if not meta_path.exists():
+        return False
+    try:
+        old = json.loads(meta_path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return False
+    return (old.get("status") in ("ok", "diverged") and old.get("spec") == clean(task["spec"])
+            and old.get("feature_version") == F.FEATURE_VERSION)
+
+
+def log_start(log, task):
+    s = task["spec"]
+    log.info(f"{task['run_id']}: start, width {s['hidden_dim']}, scale {s['init_scale']:g}, eta_kappa "
+             f"{s['eta_kappa']:g}, seed {s['seed']}, {s['steps']} steps", extra=event("start", run_id=task["run_id"]))
+
+
 def run_one(task):
     """Train one run with the feature logger and write its files. Never raises."""
-    import pandas as pd
     import ntk_lib as L
     import mnist_features as F
 
     log = logging.getLogger("sweep")
     rid, out_dir = task["run_id"], Path(task["out_dir"])
     out_dir.mkdir(parents=True, exist_ok=True)
-    meta_path = out_dir / f"{rid}_meta.json"
-    if meta_path.exists():
-        try:
-            old = json.loads(meta_path.read_text())
-            if (old.get("status") in ("ok", "diverged") and old.get("spec") == clean(task["spec"])
-                    and old.get("feature_version") == F.FEATURE_VERSION):
-                return dict(run_id=rid, status="skipped", width=task["width"], seconds=0.0)
-        except (json.JSONDecodeError, OSError):
-            pass
+    if finished(task):
+        return dict(run_id=rid, status="skipped", width=task["width"], seconds=0.0)
 
     s = task["spec"]
-    log.info(f"{rid}: start, width {s['hidden_dim']}, scale {s['init_scale']:g}, eta_kappa {s['eta_kappa']:g}, "
-             f"seed {s['seed']}, {s['steps']} steps", extra=event("start", run_id=rid))
+    log_start(log, task)
     t0 = time.time()
     error, run, logger, lam_0, config = None, None, None, None, None
     try:
@@ -353,11 +365,93 @@ def run_one(task):
         logger = F.FeatureLogger(cfg, rid, save_steps=task["save_steps"], linear_interval=LINEAR_INTERVAL,
                                  log_steps=task["log_steps"])
         run = L.train_run(rid, verbose=False, on_checkpoint=logger, results_dir=out_dir, **config)
-        status = "diverged" if run["diverged"] else "ok"
     except Exception:
-        error, status = traceback.format_exc(), "failed"
-    seconds = time.time() - t0
+        error = traceback.format_exc()
+    return write_run(task, run, logger, lam_0, config, time.time() - t0, error)
 
+
+def initial_curvatures(specs, device):
+    """lam_0 of initial_curvature for several runs, from one vmapped power iteration on device.
+
+    Each run's weights are drawn as initial_curvature draws them, and each
+    run starts the power iteration from seed 0, as initial_curvature does.
+    """
+    import copy
+    import torch
+    from torch.func import stack_module_state
+    import ntk_lib as L
+    models, Xs, alphas = [], [], []
+    for spec in specs:
+        cfg = {**L.DEFAULTS, **spec}
+        (X, y), _ = L.make_dataset(cfg)
+        torch.manual_seed(cfg["seed"])
+        models.append(L.build_model(cfg["parameterisation"], X.shape[1], cfg["hidden_dim"], y.shape[1],
+                                    cfg["activation"], cfg["init_scale"], depth=cfg["depth"]))
+        Xs.append(X)
+        alphas.append(cfg["alpha"])
+    params = {k: v.detach().to(device) for k, v in stack_module_state(models)[0].items()}
+    X = torch.stack(Xs).to(device)
+    alpha = torch.tensor(alphas, dtype=X.dtype, device=device)
+    base = copy.deepcopy(models[0]).to("meta")
+    return L.fused_gauss_newton_top_eigenvalue(base, params, X, alpha, seeds=[0] * len(specs))
+
+
+def run_group(tasks, device=None):
+    """Train tasks of one width as one fused model with ntk_lib.train_fused, and write each run's files.
+
+    Each task gets the files and log lines run_one writes. Finished runs are
+    skipped. An exception fails every run of the group. Never raises.
+    """
+    import torch
+    import ntk_lib as L
+    import mnist_features as F
+
+    log = logging.getLogger("sweep")
+    for t in tasks:
+        Path(t["out_dir"]).mkdir(parents=True, exist_ok=True)
+    results = [dict(run_id=t["run_id"], status="skipped", width=t["width"], seconds=0.0) for t in tasks
+               if finished(t)]
+    todo = [t for t in tasks if not finished(t)]
+    if not todo:
+        return results
+    if len({t["out_dir"] for t in todo}) > 1:
+        raise ValueError("the tasks of a fused group must share one output directory")
+    for t in todo:
+        log_start(log, t)
+    device = torch.device(device) if device is not None else (
+        torch.accelerator.current_accelerator(check_available=True) or torch.device("cpu"))
+    t0 = time.time()
+    error, runs, loggers = None, None, None
+    lams, configs = [None] * len(todo), [None] * len(todo)
+    try:
+        lams = initial_curvatures([t["spec"] for t in todo], device)
+        configs = [dict(t["spec"], eta_0=1.0 / lam) for t, lam in zip(todo, lams)]
+        loggers = [F.FeatureLogger(L.normalise_checkpoints({**L.DEFAULTS, **c}), t["run_id"],
+                                   save_steps=t["save_steps"], linear_interval=LINEAR_INTERVAL,
+                                   log_steps=t["log_steps"], device=device) for t, c in zip(todo, configs)]
+        fused_logger = F.FusedFeatureLogger(loggers)
+        runs = L.train_fused([t["run_id"] for t in todo], configs, results_dir=todo[0]["out_dir"], verbose=False,
+                             device=device, on_fused_checkpoint=fused_logger)
+        fused_logger.finish()
+    except Exception:
+        error = traceback.format_exc()
+    seconds = time.time() - t0
+    for i, t in enumerate(todo):
+        results.append(write_run(t, runs[i] if runs else None, loggers[i] if loggers else None, lams[i],
+                                 configs[i], seconds, error))
+    return results
+
+
+def write_run(task, run, logger, lam_0, config, seconds, error):
+    """Write a trained run's meta file, feature table and weights, log its end, and return its summary."""
+    import pandas as pd
+    import mnist_features as F
+
+    log = logging.getLogger("sweep")
+    rid, out_dir = task["run_id"], Path(task["out_dir"])
+    meta_path = out_dir / f"{rid}_meta.json"
+    s = task["spec"]
+    status = "failed" if run is None else ("diverged" if run["diverged"] else "ok")
     meta = dict(run_id=rid, status=status, error=error, spec=task["spec"], config=config, lam_0=lam_0,
                 feature_version=F.FEATURE_VERSION, seconds=seconds, git=git_state(), versions=versions(),
                 finished=time.strftime("%Y-%m-%dT%H:%M:%S"))
@@ -522,12 +616,143 @@ def cmd_check(args, log):
     ident_ok = all(v < 1e-4 for v in ident.values() if math.isfinite(v))
     ok &= ident_ok
     log.info(f"check: identities {'pass' if ident_ok else 'FAIL'} (limit 1e-4, float32 rounding of the history)")
+    # The fused trainer must give each run the history train_run gives it. In float32 the two drift apart once
+    # the curvature rule raises the learning rate, because SGD amplifies their different rounding. In float64
+    # the same amplification stays below the float64 tolerances of torch.testing.assert_close, while an error
+    # in the fused step would not.
+    specs = []
+    for seed in (1, 2):
+        spec = run_spec(100, 7.0, 1e-5, seed, steps)
+        spec.update(lr_update_interval=1000, checkpoint_steps=checkpoint_grid(steps), dtype="float64")
+        specs.append(dict(spec, eta_0=1.0 / initial_curvature(spec)))
+    serial = [L.train_run(f"serial{i}", verbose=False, results_dir=scratch, **c) for i, c in enumerate(specs)]
+    fused = L.train_fused([f"fused{i}" for i in range(len(specs))], specs, results_dir=scratch, verbose=False,
+                          device="cpu")
+    fused_ok, worst_fused = True, 0.0
+    for a, b in zip(fused, serial):
+        for k in b["history"]:
+            x = torch.tensor(np.asarray(a["history"][k], float), dtype=torch.float64)
+            y = torch.tensor(np.asarray(b["history"][k], float), dtype=torch.float64)
+            if x.shape != y.shape:
+                fused_ok = False
+                log.info(f"check: fused history {k} has {len(x)} checkpoints, train_run {len(y)}")
+                continue
+            worst_fused = max(worst_fused, float(torch.nan_to_num((x - y).abs()).max()))
+            try:
+                torch.testing.assert_close(x, y, equal_nan=True)
+            except AssertionError as error:
+                fused_ok = False
+                log.info(f"check: fused history {k}: {str(error).splitlines()[0]}")
+    ok &= fused_ok
+    log.info(f"check: fused against train_run, largest difference {worst_fused:.1e} over {len(specs)} runs "
+             f"({'pass' if fused_ok else 'FAIL'}, torch.testing.assert_close float64 defaults)")
+
+    # The fused feature logger must give each run the rows FeatureLogger gives it, also in float64.
+    def logger_for(i, c, prefix, device=None):
+        return F.FeatureLogger(L.normalise_checkpoints({**L.DEFAULTS, **c}), f"{prefix}{i}", save_steps=[0, steps],
+                               log_steps=log_steps(steps), device=device, dtype=torch.float64)
+
+    serial_loggers = [logger_for(i, c, "serial") for i, c in enumerate(specs)]
+    for i, (c, lg) in enumerate(zip(specs, serial_loggers)):
+        L.train_run(f"serial{i}", verbose=False, on_checkpoint=lg, results_dir=scratch, **c)
+    # The fused side runs on the accelerator when there is one, so its cuSOLVER drivers meet the CPU reference.
+    device = torch.accelerator.current_accelerator(check_available=True) or torch.device("cpu")
+    fused_loggers = [logger_for(i, c, "fused", device) for i, c in enumerate(specs)]
+    group = F.FusedFeatureLogger(fused_loggers)
+    L.train_fused([f"fused{i}" for i in range(len(specs))], specs, results_dir=scratch, verbose=False, device=device,
+                  on_fused_checkpoint=group)
+    group.finish()
+    rows_ok, worst_rows = True, 0.0
+    skip = {"run_id", "wall_seconds"}
+    for a, b in zip(fused_loggers, serial_loggers):
+        if len(a.rows) != len(b.rows):
+            rows_ok = False
+            log.info(f"check: fused logger has {len(a.rows)} rows, FeatureLogger {len(b.rows)}")
+            continue
+        for k in F.COLUMN_NAMES:
+            if k in skip:
+                continue
+            x = torch.tensor([float(r[k]) for r in a.rows], dtype=torch.float64)
+            y = torch.tensor([float(r[k]) for r in b.rows], dtype=torch.float64)
+            worst_rows = max(worst_rows, float(torch.nan_to_num((x - y).abs()).max()))
+            try:
+                torch.testing.assert_close(x, y, equal_nan=True)
+            except AssertionError as error:
+                rows_ok = False
+                log.info(f"check: fused logger column {k}: {str(error).splitlines()[0]}")
+    ok &= rows_ok
+    log.info(f"check: fused logger against FeatureLogger, largest difference {worst_rows:.1e} over "
+             f"{len(F.COLUMN_NAMES) - len(skip)} columns ({'pass' if rows_ok else 'FAIL'}, "
+             "torch.testing.assert_close float64 defaults)")
     log.info("check: all passed" if ok else "check: SOME CHECKS FAILED")
     return 0 if ok else 1
 
 
+def run_fused(tasks, log):
+    """Run the tasks as one fused group for each width, widest first, and log each group's end."""
+    results, t_start = [], time.time()
+    for width in sorted({t["width"] for t in tasks}, reverse=True):
+        group = [t for t in tasks if t["width"] == width]
+        t0 = time.time()
+        done = run_group(group)
+        results += done
+        counts = {s: sum(r["status"] == s for r in done) for s in ("ok", "diverged", "failed", "skipped")}
+        log.info(f"fused: width {width} finished in {(time.time() - t0) / 3600:.2f} h, {counts}, elapsed "
+                 f"{(time.time() - t_start) / 3600:.2f} h", extra=event("fused_group", width=width, **counts))
+    return results
+
+
+def pilot_fused(args, log):
+    """Short fused runs of the whole grid at every width, and the projected wall time of the fused sweep.
+
+    Each width trains all its runs of the chosen grid as one fused model for
+    3000 steps, with the checkpoints of cmd_pilot. The wall times of the
+    first run of the group give the seconds of one fused step and of one
+    checkpoint of all the runs, by the same two equations as cmd_pilot.
+    """
+    import pandas as pd
+    out_dir = OUT / "pilot_fused"
+    steps = 3000
+    grid = list(range(0, 1001, 50)) + [steps]
+    per_width = {}
+    for width in args.widths:
+        tasks = build_tasks(args.scales, [width], args.decays, args.seeds, steps, out_dir, grid)
+        for t in tasks:
+            t.update(run_id=f"pilot_{t['run_id']}", save_steps=[steps], log_steps=[])
+            meta = out_dir / f"{t['run_id']}_meta.json"
+            if meta.exists():
+                meta.unlink()
+        t0 = time.time()
+        results = run_group(tasks)
+        failed = [r["run_id"] for r in results if r["status"] == "failed"]
+        if failed:
+            log.error(f"pilot fused: width {width} failed for {len(failed)} runs, see sweep.log")
+            return 1
+        frame = pd.read_parquet(out_dir / f"{tasks[0]['run_id']}.parquet")
+        wall = dict(zip(frame["step"], frame["wall_seconds"]))
+        # From step 0 to 1000 there are 1000 steps and 20 checkpoints; from 1000 to 3000, 2000 steps and 1.
+        A = np.array([[1000.0, 20.0], [2000.0, 1.0]])
+        b = np.array([wall[1000] - wall[0], wall[steps] - wall[1000]])
+        per_width[width] = (np.linalg.solve(A, b), len(tasks), time.time() - t0)
+    n_ckpt = len(checkpoint_grid(args.steps))
+    total = 0.0
+    for width in sorted(per_width):
+        (step_s, ckpt_s), n_runs, wall_s = per_width[width]
+        per_group = args.steps * step_s + n_ckpt * ckpt_s
+        total += per_group
+        log.info(f"pilot fused: width {width:4d}: {n_runs} runs as one model, {step_s * 1000:.3f} ms per fused "
+                 f"step, {ckpt_s * 1000:.0f} ms per checkpoint of all runs, {per_group / 3600:.2f} h for the width, "
+                 f"pilot wall {wall_s:.0f} s")
+    log.info(f"pilot fused: projected wall time {total / 3600:.2f} h with the widths one after another on one "
+             f"device, {n_ckpt} checkpoints of {args.steps} steps. Learning rate updates are counted only if they "
+             "fall in the pilot, so the projection is a little low.")
+    return 0
+
+
 def cmd_pilot(args, log):
     """Short runs at every width under the real concurrency, and the projected wall time of the sweep."""
+    if args.fused:
+        return pilot_fused(args, log)
     out_dir = OUT / "pilot"
     steps = 3000
     grid = list(range(0, 1001, 50)) + [steps]
@@ -592,7 +817,10 @@ def cmd_run(args, log):
     log.info(f"run: {len(tasks)} runs, {args.wide_workers} wide and {args.narrow_workers} narrow workers, "
              f"{len(checkpoint_grid(args.steps))} checkpoints per run, output in {RUNS}",
              extra=event("sweep_start", n_runs=len(tasks)))
-    results = run_pools(tasks, args.wide_workers, args.narrow_workers, log)
+    if args.fused:
+        results = run_fused(tasks, log)
+    else:
+        results = run_pools(tasks, args.wide_workers, args.narrow_workers, log)
     counts = {s: sum(r["status"] == s for r in results) for s in ("ok", "diverged", "failed", "skipped")}
     log.info(f"run: finished, {counts}", extra=event("sweep_finish", **counts))
     return 0 if counts["failed"] == 0 else 1
@@ -678,7 +906,7 @@ rcol("memorised", f"True if the training accuracy reached {MEM_LEVEL} at some ch
      "memorises has no grokking time, which is different from a censored one.", "docs/report_golden.pdf, section 3.5")
 rcol("t_mem", f"First checkpoint at which the training accuracy is at least {MEM_LEVEL}.",
      "docs/report_golden.pdf, section 3.5")
-rcol("t_mem_prev", "The checkpoint before t_mem, so the event lies in (t_mem_prev, t_mem].")
+rcol("t_mem_prev", "The checkpoint before t_mem. The event lies in (t_mem_prev, t_mem].")
 rcol("t_mem100", "First checkpoint at which the training accuracy is 1, the memorisation of dataset_sweep.py.",
      "ntk_lib.accuracy_crossings")
 rcol("test_acc_at_mem", "Test accuracy at t_mem.")
@@ -696,7 +924,7 @@ for tau in LOSS_TAUS:
          "ntk_lib.grokking_time")
     rcol(f"t_test_loss{tag}", f"First checkpoint at which the test loss is below {tau:g}.", "ntk_lib.grokking_time")
     rcol(f"t_grok_loss{tag}", f"Grokking time under the loss definition with both thresholds {tau:g}.",
-         "ntk_lib.grokking_time; docs/report.tex, Defining t_grok")
+         "ntk_lib.grokking_time. docs/report.tex, Defining t_grok")
     rcol(f"censored_loss{tag}", f"True if the test loss never fell below {tau:g}, or the training loss never did.",
          "ntk_lib.grokking_time")
 for when, word in (("mem", "t_mem"), ("gen", f"t_gen_acc{acc_tag(PRIMARY_LEVEL)}")):
@@ -804,7 +1032,8 @@ def write_dictionary(out):
              "This file is written by `mnist_sweep.py assemble` from `mnist_features.COLUMNS` and "
              "`mnist_sweep.RUN_COLUMNS`. Edit those, not this file.", "",
              "`checkpoints.parquet` has one row per run and checkpoint. `runs.parquet` and `runs.csv` have one row "
-             "per run. The two tables join on `run_id`. The weights are in `runs/<run_id>_weights.npz`, with arrays "
+             "per run. `runs.parquet` and `checkpoints.parquet` join on `run_id`. The weights are in "
+             "`runs/<run_id>_weights.npz`, with arrays "
              "`steps`, `W1` of shape (T, N, 784), `W2` of shape (T, N, N) and `W3` of shape (T, 10, N). Seed 0 saves "
              f"about {N_WEIGHT_LOG + 2} checkpoints and the other seeds the last one. "
              "`mnist_features.kernel_terms` rebuilds any kernel from them.", "",
@@ -879,7 +1108,8 @@ def cmd_assemble(args, log):
                    parameterisation="deep_standard", depth=DEPTH, biases=False, centred=False, loss="mse",
                    optimizer="sgd", momentum=0.0, batch_size=BATCH_SIZE, eta_0="1 / lam_0",
                    lr_schedule="curvature", lr_update_interval=LR_UPDATE_INTERVAL, probe="mixed", probe_size=256,
-                   kernel_method="closed_form", linear_interval=LINEAR_INTERVAL, n_log=N_LOG),
+                   kernel_method="closed_form", linear_interval=LINEAR_INTERVAL, n_log=N_LOG,
+                   fp32_precision=FP32_PRECISION),
         feature_version=F.FEATURE_VERSION, krr_ridge=F.KRR_RIDGE, sharpness_iters=F.SHARPNESS_ITERS,
         report_kernel=dict(test_images=F.REPORT_SIZE, seed=F.REPORT_SEED),
         events=dict(memorisation=MEM_LEVEL, primary_test_level=PRIMARY_LEVEL, acc_levels=ACC_LEVELS,
@@ -924,8 +1154,38 @@ def exploration_runs():
     return found
 
 
+def cmd_certify(args, log):
+    """Compare the assembled runs of --out with those of --baseline, paired by run id.
+
+    The two sweeps differ only in their numerical environment. Each event is
+    compared as Section 5 of arXiv:2607.05104 compares grokking under two
+    floating-point environments: the runs whose outcome flips between the
+    sweeps, and the exact McNemar test of the paired outcomes.
+    """
+    from statsmodels.stats.contingency_tables import mcnemar
+    import pandas as pd
+
+    tag = acc_tag(PRIMARY_LEVEL)
+    events = {"memorised": lambda r: r["memorised"].astype(bool),
+              f"acc{tag}": lambda r: r["memorised"].astype(bool) & ~r[f"censored_acc{tag}"].astype(bool)}
+    runs = {}
+    for side, root in (("new", OUT), ("baseline", args.baseline.resolve())):
+        r = pd.read_parquet(root / "runs.parquet")
+        runs[side] = r[r["status"] != "failed"].set_index("run_id")
+    common = runs["new"].index.intersection(runs["baseline"].index)
+    log.info(f"certify: {len(common)} runs in both sweeps, {len(runs['new'])} in --out, "
+             f"{len(runs['baseline'])} in --baseline")
+    for name, event in events.items():
+        a, b = event(runs["new"].loc[common]), event(runs["baseline"].loc[common])
+        table = pd.crosstab(b, a).reindex(index=[False, True], columns=[False, True], fill_value=0)
+        result = mcnemar(table.to_numpy(), exact=True)
+        log.info(f"certify: {name}: baseline rate {int(b.sum())}/{len(common)}, new rate {int(a.sum())}/{len(common)}, "
+                 f"{int((a != b).sum())} flips, exact McNemar p={result.pvalue:.3g}")
+    return 0
+
+
 def cmd_validate(args, log):
-    metas = [json.loads(p.read_text()) for p in sorted(RUNS.glob("*_meta.json"))]
+    metas =[json.loads(p.read_text()) for p in sorted(RUNS.glob("*_meta.json"))]
     good = [m for m in metas if m["status"] != "failed"]
     out = {}
 
@@ -984,8 +1244,9 @@ def cmd_validate(args, log):
 # Entry point
 # =====================================================================
 def main(argv=None):
+    global FP32_PRECISION
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("command", choices=["check", "pilot", "run", "status", "assemble", "validate"])
+    parser.add_argument("command", choices=["check", "pilot", "run", "status", "assemble", "validate", "certify"])
     parser.add_argument("--scales", type=float, nargs="+", default=SCALES)
     parser.add_argument("--widths", type=int, nargs="+", default=WIDTHS)
     parser.add_argument("--decays", type=float, nargs="+", default=DECAYS)
@@ -994,7 +1255,13 @@ def main(argv=None):
     parser.add_argument("--wide-workers", type=int, default=WIDE_WORKERS)
     parser.add_argument("--narrow-workers", type=int, default=NARROW_WORKERS)
     parser.add_argument("--out", type=Path, default=None, help="output directory instead of mnist/sweep, for tests")
+    parser.add_argument("--fused", action="store_true",
+                        help="run and pilot train each width as one fused model with ntk_lib.train_fused")
+    parser.add_argument("--fp32-precision", choices=["ieee", "tf32"], default=FP32_PRECISION,
+                        help="torch.backends.cuda.matmul.fp32_precision of the training runs")
+    parser.add_argument("--baseline", type=Path, help="certify: the assembled sweep to compare --out with")
     args = parser.parse_args(argv)
+    FP32_PRECISION = args.fp32_precision
     if args.out is not None:
         global OUT, RUNS, LOGS
         OUT = args.out.resolve()
@@ -1005,7 +1272,7 @@ def main(argv=None):
     root.setLevel(logging.INFO)
     log = logging.getLogger("sweep")
     commands = dict(check=cmd_check, pilot=cmd_pilot, run=cmd_run, status=cmd_status, assemble=cmd_assemble,
-                    validate=cmd_validate)
+                    validate=cmd_validate, certify=cmd_certify)
     return commands[args.command](args, log)
 
 

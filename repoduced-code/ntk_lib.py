@@ -31,7 +31,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
-from torch.func import functional_call, vmap, grad
+from torch.func import functional_call, vmap, grad, stack_module_state
 
 from RepoducedCode import (
     make_modular_addition_dataset,
@@ -403,6 +403,12 @@ def gauss_newton_top_eigenvalue(model, X, alpha=1.0, f0=None, iters=50, seed=0):
     MSELoss averages over. This is top_gauss_newton_eigenvalue of mnist/exploration/mnist_pilot.py
     applied to a given model. The start vector comes from a generator seeded
     with seed, so the global random state is not touched.
+
+    The weights stay fixed while the iteration runs, so the Jacobian-vector
+    product comes from torch.func.linearize, which its documentation gives
+    for a jvp computed many times at the same primals, and the
+    vector-Jacobian product from one torch.func.vjp, whose function is
+    called with each new cotangent.
     """
     params = {k: v.detach() for k, v in model.named_parameters()}
 
@@ -411,13 +417,14 @@ def gauss_newton_top_eigenvalue(model, X, alpha=1.0, f0=None, iters=50, seed=0):
         return alpha * (out - f0) if f0 is not None else alpha * out
 
     gen = torch.Generator().manual_seed(seed)
-    v = {k: torch.randn(t.shape, generator=gen, dtype=t.dtype) for k, t in params.items()}
+    v = {k: torch.randn(t.shape, generator=gen, dtype=t.dtype).to(t.device) for k, t in params.items()}
+    _, jvp_fn = torch.func.linearize(predict, params)
+    _, pullback = torch.func.vjp(predict, params)
     lam = 0.0
     for _ in range(iters):
         norm = torch.sqrt(sum((t ** 2).sum() for t in v.values()))
         v = {k: t / norm for k, t in v.items()}
-        _, Jv = torch.func.jvp(predict, (params,), (v,))
-        _, pullback = torch.func.vjp(predict, params)
+        Jv = jvp_fn(v)
         (Gv,) = pullback(2.0 * Jv / Jv.numel())
         lam = sum((Gv[k] * v[k]).sum() for k in v).item()
         v = Gv
@@ -430,8 +437,40 @@ def gauss_newton_top_eigenvalue(model, X, alpha=1.0, f0=None, iters=50, seed=0):
 def centre_kernel(K):
     """Return H K H with H = I - (1/n) 1 1^T, Cortes et al. (2012), Lemma 1."""
     n = K.shape[0]
-    H = torch.eye(n, device=K.device) - torch.ones((n, n), device=K.device) / n
+    H = torch.eye(n, device=K.device, dtype=K.dtype) - torch.ones((n, n), device=K.device, dtype=K.dtype) / n
     return H @ K @ H
+
+
+def batched_centre(K):
+    """centre_kernel for a stack of kernels with any leading dimensions."""
+    n = K.shape[-1]
+    H = torch.eye(n, device=K.device, dtype=K.dtype) - torch.ones((n, n), device=K.device, dtype=K.dtype) / n
+    return H @ K @ H
+
+
+def batched_scale_and_rotation(K_0, K_t):
+    """compute_scale_and_rotation for stacks of kernels, returning tensors with the leading dimensions."""
+    norm_0, norm_t = torch.linalg.matrix_norm(K_0), torch.linalg.matrix_norm(K_t)
+    overlap = ((K_t / norm_t[..., None, None]) * (K_0 / norm_0[..., None, None])).sum((-2, -1))
+    return torch.log(norm_t / norm_0), 1.0 - overlap
+
+
+def batched_task_alignment(K_t, y_probe):
+    """compute_task_alignment for stacks of kernels and labels, zero where a centred matrix vanishes."""
+    n = K_t.shape[-1]
+    H = (torch.eye(n, device=K_t.device, dtype=K_t.dtype)
+         - (1.0 / n) * torch.ones((n, n), device=K_t.device, dtype=K_t.dtype))
+    HKH = H @ K_t @ H
+    HYH = H @ (y_probe @ y_probe.mT) @ H
+    norm_HKH, norm_HYH = torch.linalg.matrix_norm(HKH), torch.linalg.matrix_norm(HYH)
+    alignment = (HKH * HYH).sum((-2, -1)) / (norm_HKH * norm_HYH)
+    return torch.where((norm_HKH == 0) | (norm_HYH == 0), torch.zeros_like(alignment), alignment)
+
+
+def batched_uncentred_alignment(K, y):
+    """uncentred_alignment for stacks of kernels and labels."""
+    YY = y @ y.mT
+    return (K * YY).sum((-2, -1)) / (torch.linalg.matrix_norm(K) * torch.linalg.matrix_norm(YY))
 
 
 def uncentred_alignment(K, y):
@@ -495,7 +534,8 @@ DEFAULTS = dict(parameterisation="mean_field", p=23, hidden_dim=100, alpha=1.0,
                 checkpoint_steps=None, kernel_method="autograd",
                 dataset="modular_addition", n_train=None, centred=True, optimizer="sgd",
                 batch_size=None, momentum=0.0,
-                depth=None, lr_schedule=None, lr_update_interval=10000, lr_norm_power=4.0, lr_cap=1000.0)
+                depth=None, lr_schedule=None, lr_update_interval=10000, lr_norm_power=4.0, lr_cap=1000.0,
+                dtype="float32", fp32_precision="ieee")
 
 # Configuration keys added after some runs were saved, with the value those
 # runs were trained with. A saved run that lacks one of them is compared as if
@@ -503,7 +543,8 @@ DEFAULTS = dict(parameterisation="mean_field", p=23, hidden_dim=100, alpha=1.0,
 LEGACY_VALUES = dict(probe="train", checkpoint_steps=None, kernel_method="autograd",
                      dataset="modular_addition", n_train=None, centred=True, optimizer="sgd",
                      batch_size=None, momentum=0.0,
-                     depth=None, lr_schedule=None, lr_update_interval=10000, lr_norm_power=4.0, lr_cap=1000.0)
+                     depth=None, lr_schedule=None, lr_update_interval=10000, lr_norm_power=4.0, lr_cap=1000.0,
+                     dtype="float32", fp32_precision="ieee")
 
 # The centred terms and the two alignments on the training part and on the
 # test part of the probe. A part with fewer than two pairs gives NaN.
@@ -664,118 +705,196 @@ def train_run(name, verbose=True, on_checkpoint=None, results_dir=None, **overri
     the rate for the steps after the checkpoint, and under "curvature" also
     lam, the latest eigenvalue. These extra history keys appear only for
     the runs they describe, so the history of every other run is unchanged.
+
+    dtype, added on 18 October 2026, names the torch floating point type of
+    the data and the model. Its default "float32" is the type every earlier
+    run was trained in.
     """
     unknown = set(overrides) - set(DEFAULTS)
     if unknown:
         raise TypeError(f"unknown configuration keys: {sorted(unknown)}")
     cfg = normalise_checkpoints({**DEFAULTS, **overrides})
-    config = dict(name=name, **cfg)
-    alpha = cfg["alpha"]
     out_dir = Path(results_dir) if results_dir is not None else RESULTS
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    torch.backends.cuda.matmul.fp32_precision = cfg["fp32_precision"]
     (X_train, y_train), (X_test, y_test) = make_dataset(cfg)
-    X_train, y_train, X_test, y_test = [t.to(DEVICE) for t in (X_train, y_train, X_test, y_test)]
-
-    # The probe set is fixed for the run. select_probe says which pairs each choice of probe takes.
-    x_probe, y_probe, probe_is_test = select_probe(X_train, y_train, X_test, y_test,
-                                                   cfg["probe"], cfg["probe_size"])
-    parts = [~probe_is_test, probe_is_test]
+    data = [t.to(DEVICE, getattr(torch, cfg["dtype"])) for t in (X_train, y_train, X_test, y_test)]
 
     torch.manual_seed(cfg["seed"])
-    if cfg["depth"] is None:
-        model = build_model(cfg["parameterisation"], X_train.shape[1], cfg["hidden_dim"], y_train.shape[1],
-                            cfg["activation"], cfg["init_scale"]).to(DEVICE)
-    else:
-        model = build_model(cfg["parameterisation"], X_train.shape[1], cfg["hidden_dim"], y_train.shape[1],
-                            cfg["activation"], cfg["init_scale"], depth=cfg["depth"]).to(DEVICE)
-    model_0 = copy.deepcopy(model)
-    for q in model_0.parameters():
-        q.requires_grad = False
+    model = new_model(cfg, data[0].shape[1], data[1].shape[1]).to(DEVICE, getattr(torch, cfg["dtype"]))
+    run = Run(name, cfg, model, data, on_checkpoint)
 
-    lr = cfg["eta_0"] / alpha ** 2
+    lr = run.lr
     weight_decay = cfg["eta_kappa"] / lr
     # AdamW multiplies the weights by 1 - lr weight_decay each step, so eta_kappa
     # is the per-step decay under both optimisers.
     if cfg["optimizer"] == "sgd":
-        optimizer = torch.optim.SGD(model.parameters(), lr=lr, weight_decay=weight_decay,
-                                    momentum=cfg["momentum"])
+        run.optimizer = torch.optim.SGD(model.parameters(), lr=lr, weight_decay=weight_decay,
+                                        momentum=cfg["momentum"])
     elif cfg["optimizer"] == "adamw":
-        optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+        run.optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
     else:
         raise ValueError(f"unknown optimizer {cfg['optimizer']!r}")
+    optimizer = run.optimizer
     loss_fn = nn.MSELoss()
+    schedule = cfg["lr_schedule"]
 
-    with torch.no_grad():
-        f0_train, f0_test = model_0(X_train), model_0(X_test)
+    # With batch_size set, each step takes the next batch_size training points
+    # of a random order that is drawn again once fewer remain. One step is
+    # then one minibatch, not one epoch.
+    batch_size = cfg["batch_size"]
+    batch_gen = torch.Generator().manual_seed(cfg["seed"])
+    order = []
+
+    t0 = time.time()
+    diverged_step = None
+    if not run.evaluate(0):
+        diverged_step = 0
+    for step in range(1, cfg["steps"] + 1):
+        if diverged_step is not None:
+            break
+        optimizer.zero_grad()
+        if batch_size is None:
+            loss = loss_fn(run.predict(run.X_train, run.f0_train), run.y_train)
+        else:
+            if len(order) < batch_size:
+                order = torch.randperm(len(run.X_train), generator=batch_gen).tolist()
+            idx, order = order[:batch_size], order[batch_size:]
+            loss = loss_fn(run.predict(run.X_train[idx], run.f0_train[idx]), run.y_train[idx])
+        loss.backward()
+        optimizer.step()
+        if schedule == "norm":
+            run.set_lr((run.norm_0 / run.current_norm()) ** cfg["lr_norm_power"])
+        elif schedule == "curvature" and step % cfg["lr_update_interval"] == 0:
+            run.lr_state["lam"] = run.curvature_now(step)
+            run.set_lr(run.lr_state["lam_0"] / run.lr_state["lam"] if run.lr_state["lam"] > 0 else float("inf"))
+        if run.is_checkpoint(step):
+            if not run.evaluate(step):
+                diverged_step = step
+                break
+            if verbose and step % (cfg["eval_interval"] * 40) == 0:
+                h = run.history
+                print(f"{name}: step {step:6d}  train {h['train_loss'][-1]:.2e}  "
+                      f"test {h['test_loss'][-1]:.2e}  S {h['S_t'][-1]:+.2f}  "
+                      f"R {h['R_t'][-1]:.3f}  Rc {h['R_c'][-1]:.3f}  A {h['A_t'][-1]:.3f}")
+    return run.finish(time.time() - t0, diverged_step, out_dir, verbose)
+
+
+def new_model(cfg, input_dim, output_dim):
+    """Return the fresh model of a configuration. The caller sets the seed before calling this."""
+    if cfg["depth"] is None:
+        return build_model(cfg["parameterisation"], input_dim, cfg["hidden_dim"], output_dim,
+                           cfg["activation"], cfg["init_scale"])
+    return build_model(cfg["parameterisation"], input_dim, cfg["hidden_dim"], output_dim,
+                       cfg["activation"], cfg["init_scale"], depth=cfg["depth"])
+
+
+class Run:
+    """The record of one run: its probe, its values at step 0, its history and its learning rate.
+
+    train_run trains one run and train_fused trains several at once. Both
+    keep one Run for each run, and Run.evaluate records a checkpoint with
+    the code train_run has always used, so the history of a run does not
+    depend on how its gradient steps were taken. The model is the run's own
+    module. Under train_fused its parameters are views into the stacked
+    parameters of all the runs.
+    """
+
+    def __init__(self, name, cfg, model, data, on_checkpoint=None, curvature=True):
+        self.name, self.cfg, self.model, self.on_checkpoint = name, cfg, model, on_checkpoint
+        self.X_train, self.y_train, self.X_test, self.y_test = data
+        self.alpha = cfg["alpha"]
+        self.optimizer = None
+
+        # The probe set is fixed for the run. select_probe says which pairs each choice of probe takes.
+        self.x_probe, self.y_probe, probe_is_test = select_probe(self.X_train, self.y_train, self.X_test,
+                                                                 self.y_test, cfg["probe"], cfg["probe_size"])
+        self.parts = [~probe_is_test, probe_is_test]
+
+        self.model_0 = copy.deepcopy(model)
+        for q in self.model_0.parameters():
+            q.requires_grad = False
+        self.lr = cfg["eta_0"] / self.alpha ** 2
+        self.loss_fn = nn.MSELoss()
+        with torch.no_grad():
+            self.f0_train, self.f0_test = self.model_0(self.X_train), self.model_0(self.X_test)
+
+        self.params_0 = torch.cat([q.detach().flatten() for q in model.parameters()]).clone()
+        self.norm_0 = torch.linalg.norm(self.params_0).item()
+        # A DeepBiasFreeMLP with the closed form also records per-layer terms.
+        self.layer_terms = isinstance(model, DeepBiasFreeMLP) and cfg["kernel_method"] == "closed_form"
+        self.K_0, self.layer_0 = self.kernel_now()
+
+        # The learning-rate schedule, off by default. lr_state holds the rate in
+        # force and, under "curvature", the eigenvalues.
+        schedule = cfg["lr_schedule"]
+        self.lr_state = dict(lr=self.lr)
+        if schedule is not None:
+            if cfg["optimizer"] != "sgd":
+                raise ValueError("lr_schedule is implemented for sgd only")
+            if schedule not in ("curvature", "norm"):
+                raise ValueError(f"unknown lr_schedule {schedule!r}")
+        if schedule == "curvature" and curvature:
+            self.lr_state["lam_0"] = self.lr_state["lam"] = self.curvature_now(0)
+
+        self.history = {k: [] for k in HISTORY_KEYS}
+        self.saved_steps, self.saved_kernels = [], []
+        self.checkpoints = None if cfg["checkpoint_steps"] is None else set(cfg["checkpoint_steps"])
 
     # With centred=False the initial function is kept, as in Liu, Michaud and
     # Tegmark (2023), whose large initialisations start from a large random output.
-    def predict(X, f0):
-        return alpha * (model(X) - f0) if cfg["centred"] else alpha * model(X)
+    def predict(self, X, f0):
+        return self.alpha * (self.model(X) - f0) if self.cfg["centred"] else self.alpha * self.model(X)
 
-    params_0 = torch.cat([q.detach().flatten() for q in model.parameters()]).clone()
-    norm_0 = torch.linalg.norm(params_0).item()
-    # A DeepBiasFreeMLP with the closed form also records per-layer terms.
-    layer_terms = isinstance(model, DeepBiasFreeMLP) and cfg["kernel_method"] == "closed_form"
+    def kernel_now(self):
+        if self.layer_terms:
+            terms = entk_closed_form_deep(self.model, self.x_probe, parts=True)
+            return sum(terms).to(self.X_train.dtype), terms
+        return probe_kernel(self.model, self.x_probe, self.cfg["kernel_method"]).to(self.X_train.dtype), None
 
-    def kernel_now():
-        if layer_terms:
-            terms = entk_closed_form_deep(model, x_probe, parts=True)
-            return sum(terms).float(), terms
-        return probe_kernel(model, x_probe, cfg["kernel_method"]), None
-
-    K_0, layer_0 = kernel_now()
-
-    # The learning-rate schedule, off by default. lr_state holds the rate in
-    # force and, under "curvature", the eigenvalues.
-    schedule = cfg["lr_schedule"]
-    lr_state = dict(lr=lr)
-    if schedule is not None:
-        if cfg["optimizer"] != "sgd":
-            raise ValueError("lr_schedule is implemented for sgd only")
-        if schedule not in ("curvature", "norm"):
-            raise ValueError(f"unknown lr_schedule {schedule!r}")
-
-    def current_norm():
+    def current_norm(self):
         with torch.no_grad():
-            return math.sqrt(sum((q.detach() ** 2).sum().item() for q in model.parameters()))
+            return math.sqrt(sum((q.detach() ** 2).sum().item() for q in self.model.parameters()))
 
-    def curvature_now(step):
-        model.eval()
-        f0 = f0_train if cfg["centred"] else None
-        lam = gauss_newton_top_eigenvalue(model, X_train, alpha=alpha, f0=f0, seed=cfg["seed"] + step)
-        model.train()
+    def curvature_now(self, step):
+        self.model.eval()
+        f0 = self.f0_train if self.cfg["centred"] else None
+        lam = gauss_newton_top_eigenvalue(self.model, self.X_train, alpha=self.alpha, f0=f0,
+                                          seed=self.cfg["seed"] + step)
+        self.model.train()
         return lam
 
-    def set_lr(factor):
-        new_lr = lr * min(factor, cfg["lr_cap"])
-        for g in optimizer.param_groups:
-            g["lr"] = new_lr
-            g["weight_decay"] = cfg["eta_kappa"] / new_lr
-        lr_state["lr"] = new_lr
+    def set_lr(self, factor):
+        new_lr = self.lr * min(factor, self.cfg["lr_cap"])
+        if self.optimizer is not None:
+            for g in self.optimizer.param_groups:
+                g["lr"] = new_lr
+                g["weight_decay"] = self.cfg["eta_kappa"] / new_lr
+        self.lr_state["lr"] = new_lr
 
-    if schedule == "curvature":
-        lr_state["lam_0"] = lr_state["lam"] = curvature_now(0)
+    def is_checkpoint(self, step):
+        if self.checkpoints is None:
+            return step % self.cfg["eval_interval"] == 0
+        return step in self.checkpoints
 
-    history = {k: [] for k in HISTORY_KEYS}
-    saved_steps, saved_kernels = [], []
-
-    def evaluate(step):
+    def evaluate(self, step):
         """Record one checkpoint. Return False, and record nothing, if the training loss is not finite."""
+        model, history, cfg = self.model, self.history, self.cfg
         model.eval()
         with torch.no_grad():
-            tr, te = predict(X_train, f0_train), predict(X_test, f0_test)
-            train_loss, test_loss = loss_fn(tr, y_train).item(), loss_fn(te, y_test).item()
+            tr, te = self.predict(self.X_train, self.f0_train), self.predict(self.X_test, self.f0_test)
+            train_loss, test_loss = self.loss_fn(tr, self.y_train).item(), self.loss_fn(te, self.y_test).item()
             if not math.isfinite(train_loss):
                 model.train()
                 return False
-            train_acc = (tr.argmax(1) == y_train.argmax(1)).float().mean().item()
-            test_acc = (te.argmax(1) == y_test.argmax(1)).float().mean().item()
+            train_acc = (tr.argmax(1) == self.y_train.argmax(1)).float().mean().item()
+            test_acc = (te.argmax(1) == self.y_test.argmax(1)).float().mean().item()
             params_t = torch.cat([q.flatten() for q in model.parameters()])
             weight_norm = torch.linalg.norm(params_t).item()
-            param_dist = (torch.linalg.norm(params_t - params_0) / norm_0).item()
-        K_t, layer_t = kernel_now()
+            param_dist = (torch.linalg.norm(params_t - self.params_0) / self.norm_0).item()
+        K_t, layer_t = self.kernel_now()
+        K_0, y_probe = self.K_0, self.y_probe
         S_t, R_t = compute_scale_and_rotation(K_0, K_t)
         S_c, R_c = compute_centred_scale_and_rotation(K_0, K_t)
         A_t = compute_task_alignment(K_t, y_probe)
@@ -787,7 +906,7 @@ def train_run(name, verbose=True, on_checkpoint=None, results_dir=None, **overri
             yKy = float("nan")
         # The same terms on the training part and on the test part of the probe, in the order of PART_KEYS.
         part_terms = []
-        for mask in parts:
+        for mask in self.parts:
             if int(mask.sum()) < 2:
                 part_terms += [float("nan")] * 4
                 continue
@@ -799,84 +918,377 @@ def train_run(name, verbose=True, on_checkpoint=None, results_dir=None, **overri
                                        yKy, K_norm, *part_terms]):
             history[k].append(v)
         extra = {}
-        if layer_terms:
+        if self.layer_terms:
             trace_K = sum(torch.trace(T) for T in layer_t).item()
-            for l, (T, T0) in enumerate(zip(layer_t, layer_0), start=1):
-                extra[f"A_W{l}"] = compute_task_alignment(T.float(), y_probe)
+            for l, (T, T0) in enumerate(zip(layer_t, self.layer_0), start=1):
+                extra[f"A_W{l}"] = compute_task_alignment(T.to(y_probe.dtype), y_probe)
                 n_t, n_0 = torch.linalg.norm(T).item(), torch.linalg.norm(T0).item()
                 extra[f"S_W{l}"] = math.log(n_t / n_0) if n_t > 0 and n_0 > 0 else float("nan")
                 extra[f"share_W{l}"] = torch.trace(T).item() / trace_K if trace_K > 0 else float("nan")
+        schedule = cfg["lr_schedule"]
         if schedule is not None:
-            extra["eta"] = lr_state["lr"]
+            extra["eta"] = self.lr_state["lr"]
             if schedule == "curvature":
-                extra["lam"] = lr_state["lam"]
+                extra["lam"] = self.lr_state["lam"]
         for k, v in extra.items():
             history.setdefault(k, []).append(v)
         if step % cfg["kernel_save_interval"] == 0:
-            saved_steps.append(step)
-            saved_kernels.append(K_t.cpu().numpy().astype(np.float32))
-        if on_checkpoint is not None:
+            self.saved_steps.append(step)
+            self.saved_kernels.append(K_t.cpu().numpy().astype(np.float32))
+        if self.on_checkpoint is not None:
             # The row holds every history value of this checkpoint, the extra keys of a
             # deep or scheduled run included. For other runs that is HISTORY_KEYS alone.
-            on_checkpoint(step, model, K_t, {k: v[-1] for k, v in history.items()})
+            self.on_checkpoint(step, model, K_t, {k: v[-1] for k, v in history.items()})
         model.train()
         return True
 
-    checkpoints = None if cfg["checkpoint_steps"] is None else set(cfg["checkpoint_steps"])
+    def finish(self, seconds, diverged_step, out_dir, verbose):
+        """Write the run's JSON and kernels to out_dir and return the run dictionary."""
+        name = self.name
+        run = dict(config=dict(name=name, **self.cfg), history=self.history, init_weight_norm=self.norm_0,
+                   seconds=seconds, diverged=diverged_step is not None, diverged_step=diverged_step)
+        (out_dir / f"{name}.json").write_text(json.dumps(run))
+        if self.saved_kernels:
+            np.savez_compressed(out_dir / f"{name}_kernels.npz",
+                                steps=np.asarray(self.saved_steps), K=np.stack(self.saved_kernels))
+        if verbose:
+            note = f", diverged at step {diverged_step}" if diverged_step is not None else ""
+            print(f"{name}: done in {run['seconds']:.0f} s{note}, saved to {out_dir / name}.json")
+        return run
 
-    def is_checkpoint(step):
-        if checkpoints is None:
-            return step % cfg["eval_interval"] == 0
-        return step in checkpoints
 
-    # With batch_size set, each step takes the next batch_size training points
-    # of a random order that is drawn again once fewer remain. One step is
-    # then one minibatch, not one epoch.
-    batch_size = cfg["batch_size"]
-    batch_gen = torch.Generator().manual_seed(cfg["seed"])
-    order = []
+# Configuration keys that every run of train_fused must share, because they fix
+# the shapes of the fused computation, the steps it takes or the checkpoints.
+FUSED_SHARED = ("parameterisation", "p", "hidden_dim", "train_fraction", "activation", "steps", "eval_interval",
+                "probe_size", "kernel_save_interval", "probe", "checkpoint_steps", "kernel_method", "dataset",
+                "n_train", "centred", "optimizer", "batch_size", "momentum", "depth", "lr_schedule",
+                "lr_update_interval", "lr_cap", "dtype", "fp32_precision")
+
+
+def train_fused(names, configs, on_checkpoints=None, results_dir=None, verbose=True, device=None,
+                on_fused_checkpoint=None):
+    """Train several runs at once as one horizontally fused model, and return the dictionary of each run.
+
+    names and configs give the runs that train_run would train one at a time,
+    and each run returns the dictionary and writes the files that train_run
+    returns and writes. on_checkpoints, if given, holds one on_checkpoint
+    callback for each run. The runs must agree on every key in
+    FUSED_SHARED. They may differ in the seeds, the initial scale, alpha,
+    eta_0 and eta_kappa. The optimiser must be plain SGD without momentum,
+    and the schedule None or "curvature".
+
+    The parameters of the runs are stacked with
+    torch.func.stack_module_state and trained together under vmap. This is
+    the model-ensembling pattern of the PyTorch tutorials, and the
+    horizontally fused training of Wang et al. (2021), arXiv:2102.02344,
+    Section 3, in which the learning rate and the decay of each model enter
+    the fused step as one entry of a vector. Each run keeps its own data
+    draw, initial weights and minibatch order. A run's minibatch is drawn as
+    train_run draws it: the next batch_size points of a permutation from
+    the run's own generator, which is drawn again when fewer than batch_size
+    points remain. The step is that of torch.optim.SGD with weight decay
+    eta_kappa / eta, so the parameters move by eta times the gradient plus
+    eta_kappa times the parameters. The curvature schedule takes the
+    eigenvalue of every run from one vmapped power iteration,
+    fused_gauss_newton_top_eigenvalue.
+
+    The device defaults to the accelerator that
+    torch.accelerator.current_accelerator reports, or the CPU. On a CUDA
+    device the step is compiled with torch.compile in its default mode and
+    captured as one CUDA graph after one warm-up step on a side stream, as
+    the CUDA Graphs section of the PyTorch CUDA semantics notes describes
+    whole-network capture. A replay then launches the whole step at once.
+    The permutations and the learning rates, which change between steps,
+    are copied into the static tensors the graph reads.
+
+    Checkpoints are recorded run by run with Run.evaluate, the code of
+    train_run. A run whose training loss stops being finite records nothing
+    after that checkpoint, as under train_run. Its parameters keep taking
+    fused steps. vmap keeps the computation of every run separate, so this
+    cannot change the other runs.
+    """
+    if on_checkpoints is None:
+        on_checkpoints = [None] * len(names)
+    if not (len(names) == len(configs) == len(on_checkpoints)) or not names:
+        raise ValueError("train_fused needs one name, one configuration and one callback for each run")
+    cfgs = []
+    for overrides in configs:
+        unknown = set(overrides) - set(DEFAULTS)
+        if unknown:
+            raise TypeError(f"unknown configuration keys: {sorted(unknown)}")
+        cfgs.append(normalise_checkpoints({**DEFAULTS, **overrides}))
+    for key in FUSED_SHARED:
+        if len({json.dumps(c[key]) for c in cfgs}) > 1:
+            raise ValueError(f"the runs of train_fused must share {key!r}")
+    shared = cfgs[0]
+    if shared["optimizer"] != "sgd" or shared["momentum"] != 0.0:
+        raise ValueError("train_fused takes plain SGD steps without momentum only")
+    schedule = shared["lr_schedule"]
+    if schedule not in (None, "curvature"):
+        raise ValueError(f"train_fused does not implement lr_schedule {schedule!r}")
+    if device is None:
+        device = torch.accelerator.current_accelerator(check_available=True) or torch.device("cpu")
+    device = torch.device(device)
+    dtype = getattr(torch, shared["dtype"])
+    # fp32_precision is the setting of torch.backends.cuda.matmul.fp32_precision: "ieee", or "tf32" for the
+    # TensorFloat32 tensor cores the PyTorch numerical accuracy notes describe.
+    torch.backends.cuda.matmul.fp32_precision = shared["fp32_precision"]
+    out_dir = Path(results_dir) if results_dir is not None else RESULTS
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    runs, test_set = [], None
+    for name, cfg, hook in zip(names, cfgs, on_checkpoints):
+        (X_train, y_train), (X_test, y_test) = make_dataset(cfg)
+        # Every run of the same dataset has the same test set, so it is held on the device once.
+        if test_set is None or not (torch.equal(X_test, test_set[0]) and torch.equal(y_test, test_set[1])):
+            test_set = (X_test, y_test, X_test.to(device, dtype), y_test.to(device, dtype))
+        data = [X_train.to(device, dtype), y_train.to(device, dtype), test_set[2], test_set[3]]
+        torch.manual_seed(cfg["seed"])
+        model = new_model(cfg, data[0].shape[1], data[1].shape[1]).to(device, dtype)
+        runs.append(Run(name, cfg, model, data, hook, curvature=False))
+    M = len(runs)
+
+    params = {k: v.detach().clone() for k, v in stack_module_state([r.model for r in runs])[0].items()}
+    for m, run in enumerate(runs):
+        for k, v in params.items():
+            owner, _, leaf = k.rpartition(".")
+            setattr(run.model.get_submodule(owner), leaf, nn.Parameter(v[m]))
+    X = torch.stack([r.X_train for r in runs])
+    Y = torch.stack([r.y_train for r in runs])
+    for m, run in enumerate(runs):
+        run.X_train, run.y_train = X[m], Y[m]
+    centred = shared["centred"]
+    F0 = torch.stack([r.f0_train for r in runs]) if centred else None
+    alpha = torch.tensor([r.alpha for r in runs], dtype=X.dtype, device=device)
+    eta_kappa = torch.tensor([c["eta_kappa"] for c in cfgs], dtype=X.dtype, device=device)
+    lr_v = torch.tensor([r.lr_state["lr"] for r in runs], dtype=X.dtype, device=device)
+    wd_v = eta_kappa / lr_v
+    base = copy.deepcopy(runs[0].model).to("meta")
+    if schedule == "curvature":
+        # The eigenvalue at step 0 that Run.curvature_now(0) would give each run, for all runs at once.
+        lams = fused_gauss_newton_top_eigenvalue(base, params, X, alpha, f0=F0, seeds=[c["seed"] for c in cfgs])
+        for run, lam in zip(runs, lams):
+            run.lr_state["lam_0"] = run.lr_state["lam"] = lam
+
+    def fnet(p, x):
+        return functional_call(base, (p,), (x,))
+
+    def loss(p, x, y, f0, a):
+        out = a * (fnet(p, x) - f0) if f0 is not None else a * fnet(p, x)
+        return nn.functional.mse_loss(out, y)
+
+    fused_grad = vmap(grad(loss), in_dims=(0, 0, 0, 0 if centred else None, 0))
+    n = X.shape[1]
+    batch = n if shared["batch_size"] is None else shared["batch_size"]
+    per_epoch = n // batch
+    perm = torch.arange(n, device=device).expand(M, n).clone()
+    counter = torch.zeros((), dtype=torch.long, device=device)
+    offsets = torch.arange(batch, device=device)
+    gens = [torch.Generator().manual_seed(c["seed"]) for c in cfgs]
+
+    def advance():
+        idx = perm[:, (counter % per_epoch) * batch + offsets]
+        xb = torch.take_along_dim(X, idx[..., None], dim=1)
+        yb = torch.take_along_dim(Y, idx[..., None], dim=1)
+        f0b = torch.take_along_dim(F0, idx[..., None], dim=1) if centred else None
+        grads = fused_grad(params, xb, yb, f0b, alpha)
+        for k, p in params.items():
+            shape = (-1,) + (1,) * (p.dim() - 1)
+            p.sub_(lr_v.view(shape) * (grads[k] + wd_v.view(shape) * p))
+        counter.add_(1)
+
+    graph, captured = None, False
+    if device.type == "cuda":
+        advance = torch.compile(advance)
+        graph = torch.cuda.CUDAGraph()
+
+    def take_step():
+        nonlocal captured
+        if graph is None:
+            advance()
+        elif not captured:
+            # The real step warms the workload up on a side stream once, then it is captured.
+            side = torch.Stream(device)
+            side.wait_stream(torch.accelerator.current_stream())
+            with side:
+                advance()
+            torch.accelerator.current_stream().wait_stream(side)
+            with torch.cuda.graph(graph):
+                advance()
+            captured = True
+        else:
+            graph.replay()
+
+    live, diverged = [True] * M, [None] * M
+    # The closed-form deep kernel lets every run's checkpoint be computed at once, as tensors with a leading
+    # run dimension, with one copy to the host per checkpoint. Other models are recorded run by run.
+    batched = all(r.layer_terms for r in runs) and all(
+        all(torch.equal(a, b) for a, b in zip(r.parts, runs[0].parts)) for r in runs)
+    if batched:
+        x_probe, y_probe = torch.stack([r.x_probe for r in runs]), torch.stack([r.y_probe for r in runs])
+        K_0 = torch.stack([r.K_0 for r in runs])
+        layer_0 = [torch.stack(T) for T in zip(*[r.layer_0 for r in runs])]
+        theta_0 = torch.stack([r.params_0 for r in runs])
+        norm_0 = torch.tensor([r.norm_0 for r in runs], dtype=X.dtype, device=device)
+        F0_test = torch.stack([r.f0_test for r in runs]) if centred else None
+        X_test, y_test = runs[0].X_test, runs[0].y_test
+        factors = runs[0].model.factors
+        layer_terms = vmap(lambda Ws, x: closed_form_terms_deep(Ws, factors, x))
+
+    test_chunk = [None]
+
+    def record(step):
+        if not batched:
+            for m, run in enumerate(runs):
+                if live[m] and not run.evaluate(step):
+                    live[m], diverged[m] = False, step
+            return
+        with torch.no_grad():
+            out_train = vmap(fnet)(params, X)
+            # The test forward of every member at once can exceed the device memory, 40 GB on an A100
+            # at width 800. vmap's chunk_size bounds it; the chunk is the free memory over the peak
+            # that one member's forward measures.
+            if test_chunk[0] is None:
+                test_chunk[0] = len(runs)
+                if device.type == "cuda":
+                    torch.cuda.reset_peak_memory_stats(device)
+                    base = torch.cuda.memory_allocated(device)
+                    vmap(fnet, in_dims=(0, None))({k: v[:1] for k, v in params.items()}, X_test)
+                    peak = torch.cuda.max_memory_allocated(device) - base
+                    test_chunk[0] = max(1, min(len(runs), torch.cuda.mem_get_info(device)[0] // max(peak, 1)))
+            out_test = vmap(fnet, in_dims=(0, None), chunk_size=test_chunk[0])(params, X_test)
+            if centred:
+                out_train, out_test = out_train - F0, out_test - F0_test
+            tr, te = alpha[:, None, None] * out_train, alpha[:, None, None] * out_test
+            values = dict(train_loss=((tr - Y) ** 2).mean((1, 2)), test_loss=((te - y_test) ** 2).mean((1, 2)),
+                          train_acc=(tr.argmax(-1) == Y.argmax(-1)).to(X.dtype).mean(1),
+                          test_acc=(te.argmax(-1) == y_test.argmax(-1)).to(X.dtype).mean(1))
+            theta = torch.cat([p.flatten(1) for p in params.values()], 1)
+            values["weight_norm"] = torch.linalg.vector_norm(theta, dim=1)
+            values["param_dist"] = torch.linalg.vector_norm(theta - theta_0, dim=1) / norm_0
+        terms = layer_terms(list(base_weights(params)), x_probe)
+        K_t = sum(terms).to(X.dtype)
+        values["S_t"], values["R_t"] = batched_scale_and_rotation(K_0, K_t)
+        values["S_c"], values["R_c"] = batched_scale_and_rotation(batched_centre(K_0), batched_centre(K_t))
+        values["A_t"] = batched_task_alignment(K_t, y_probe)
+        values["A_u"] = batched_uncentred_alignment(K_t, y_probe)
+        values["K_norm"] = torch.linalg.matrix_norm(K_t)
+        # K_t is symmetric, so pinv takes the eigh route of hermitian=True: 8.67 ms against 994 ms for the
+        # SVD route on 140 stacked 256x256 float32 kernels on an H100 (pyperf timeit).
+        values["yKy"] = torch.where(values["K_norm"] > 0, (y_probe * (torch.linalg.pinv(K_t, rtol=1e-6, hermitian=True) @ y_probe))
+                                    .sum((1, 2)), torch.nan)
+        for part, mask in zip(("train", "test"), runs[0].parts):
+            names = [f"{term}_{part}" for term in ("S_c", "R_c", "A_t", "A_u")]
+            if int(mask.sum()) < 2:
+                values.update({k: torch.full_like(values["K_norm"], torch.nan) for k in names})
+                continue
+            K_p, K_p0, y_p = K_t[:, mask][:, :, mask], K_0[:, mask][:, :, mask], y_probe[:, mask]
+            S_p, R_p = batched_scale_and_rotation(batched_centre(K_p0), batched_centre(K_p))
+            values.update(zip(names, (S_p, R_p, batched_task_alignment(K_p, y_p),
+                                      batched_uncentred_alignment(K_p, y_p))))
+        traces = [T.diagonal(dim1=-2, dim2=-1).sum(-1) for T in terms]
+        trace_K = sum(traces)
+        for l, (T, T0, tr_l) in enumerate(zip(terms, layer_0, traces), start=1):
+            values[f"A_W{l}"] = batched_task_alignment(T.to(y_probe.dtype), y_probe)
+            n_t, n_0 = torch.linalg.matrix_norm(T), torch.linalg.matrix_norm(T0)
+            values[f"S_W{l}"] = torch.where((n_t > 0) & (n_0 > 0), torch.log(n_t / n_0), torch.nan)
+            values[f"share_W{l}"] = torch.where(trace_K > 0, tr_l / trace_K, torch.nan)
+        names = list(values)
+        host = torch.stack([values[k].to(torch.float64) for k in names]).cpu().tolist()
+        saving = step % shared["kernel_save_interval"] == 0
+        K_host = K_t.cpu().numpy().astype(np.float32) if saving else None
+        rows = [None] * M
+        for m, run in enumerate(runs):
+            if not live[m]:
+                continue
+            row = {k: host[i][m] for i, k in enumerate(names)}
+            if not math.isfinite(row["train_loss"]):
+                live[m], diverged[m] = False, step
+                continue
+            row["step"] = step
+            if schedule is not None:
+                row["eta"] = run.lr_state["lr"]
+                if schedule == "curvature":
+                    row["lam"] = run.lr_state["lam"]
+            for k in HISTORY_KEYS:
+                run.history[k].append(row[k])
+            for k in [k for k in row if k not in HISTORY_KEYS]:
+                run.history.setdefault(k, []).append(row[k])
+            if saving:
+                run.saved_steps.append(step)
+                run.saved_kernels.append(K_host[m])
+            rows[m] = {k: v[-1] for k, v in run.history.items()}
+            if on_fused_checkpoint is None and run.on_checkpoint is not None:
+                run.on_checkpoint(step, run.model, K_t[m], rows[m])
+        if on_fused_checkpoint is not None:
+            on_fused_checkpoint(step, [m for m in range(M) if live[m]], params, K_t, terms, rows, fnet, factors)
+
+    def base_weights(p):
+        return (p[k] for k in params)
 
     t0 = time.time()
-    diverged_step = None
-    if not evaluate(0):
-        diverged_step = 0
-    for step in range(1, cfg["steps"] + 1):
-        if diverged_step is not None:
+    record(0)
+    for step in range(1, shared["steps"] + 1):
+        if not any(live):
             break
-        optimizer.zero_grad()
-        if batch_size is None:
-            loss = loss_fn(predict(X_train, f0_train), y_train)
-        else:
-            if len(order) < batch_size:
-                order = torch.randperm(len(X_train), generator=batch_gen).tolist()
-            idx, order = order[:batch_size], order[batch_size:]
-            loss = loss_fn(predict(X_train[idx], f0_train[idx]), y_train[idx])
-        loss.backward()
-        optimizer.step()
-        if schedule == "norm":
-            set_lr((norm_0 / current_norm()) ** cfg["lr_norm_power"])
-        elif schedule == "curvature" and step % cfg["lr_update_interval"] == 0:
-            lr_state["lam"] = curvature_now(step)
-            set_lr(lr_state["lam_0"] / lr_state["lam"] if lr_state["lam"] > 0 else float("inf"))
-        if is_checkpoint(step):
-            if not evaluate(step):
-                diverged_step = step
-                break
-            if verbose and step % (cfg["eval_interval"] * 40) == 0:
-                h = history
-                print(f"{name}: step {step:6d}  train {h['train_loss'][-1]:.2e}  "
-                      f"test {h['test_loss'][-1]:.2e}  S {h['S_t'][-1]:+.2f}  "
-                      f"R {h['R_t'][-1]:.3f}  Rc {h['R_c'][-1]:.3f}  A {h['A_t'][-1]:.3f}")
-    run = dict(config=config, history=history, init_weight_norm=norm_0,
-               seconds=time.time() - t0, diverged=diverged_step is not None, diverged_step=diverged_step)
-    (out_dir / f"{name}.json").write_text(json.dumps(run))
-    if saved_kernels:
-        np.savez_compressed(out_dir / f"{name}_kernels.npz",
-                            steps=np.asarray(saved_steps), K=np.stack(saved_kernels))
-    if verbose:
-        note = f", diverged at step {diverged_step}" if diverged_step is not None else ""
-        print(f"{name}: done in {run['seconds']:.0f} s{note}, saved to {out_dir / name}.json")
-    return run
+        if shared["batch_size"] is not None and (step - 1) % per_epoch == 0:
+            perm.copy_(torch.stack([torch.randperm(n, generator=g) for g in gens]))
+        take_step()
+        if schedule == "curvature" and step % shared["lr_update_interval"] == 0:
+            lams = fused_gauss_newton_top_eigenvalue(base, params, X, alpha, f0=F0,
+                                                     seeds=[c["seed"] + step for c in cfgs])
+            for run, lam in zip(runs, lams):
+                run.lr_state["lam"] = lam
+                run.set_lr(run.lr_state["lam_0"] / lam if lam > 0 else float("inf"))
+            lr_v.copy_(torch.tensor([r.lr_state["lr"] for r in runs], dtype=X.dtype))
+            wd_v.copy_(eta_kappa / lr_v)
+        if runs[0].is_checkpoint(step):
+            record(step)
+    seconds = time.time() - t0
+    return [run.finish(seconds, d, out_dir, verbose) for run, d in zip(runs, diverged)]
+
+
+def fused_gauss_newton_top_eigenvalue(base, params, X, alpha, f0=None, seeds=None, iters=50):
+    """The eigenvalue of gauss_newton_top_eigenvalue for every run of a fused model, from one vmapped power iteration.
+
+    base is a module with the runs' architecture, params their stacked
+    parameters, X their stacked inputs and alpha their output scales. f0,
+    if given, holds their stacked initial outputs on X. Run m starts from
+    the vector that gauss_newton_top_eigenvalue draws from a generator
+    seeded with seeds[m], so each run takes the iteration it would take
+    alone. The whole iteration of one run is vmapped over the runs, with its
+    vjp built once per run. torch.func.linearize has no batching rule under
+    vmap in PyTorch 2.14 (aten::_make_dual), so the Jacobian-vector product
+    is a torch.func.jvp at each iteration. Returns a list with one float for
+    each run.
+    """
+    M = next(iter(params.values())).shape[0]
+    seeds = [0] * M if seeds is None else seeds
+    device = next(iter(params.values())).device
+    starts = []
+    for s in seeds:
+        gen = torch.Generator().manual_seed(s)
+        starts.append({k: torch.randn(t.shape[1:], generator=gen, dtype=t.dtype) for k, t in params.items()})
+    v = {k: torch.stack([st[k] for st in starts]).to(device) for k in params}
+
+    def power_iteration(p, x, a, f, u):
+        def predict(q):
+            out = functional_call(base, (q,), (x,))
+            return a * (out - f) if f is not None else a * out
+
+        _, pullback = torch.func.vjp(predict, p)
+        lam = torch.zeros((), dtype=x.dtype, device=x.device)
+        for _ in range(iters):
+            norm = torch.sqrt(sum((t ** 2).sum() for t in u.values()))
+            u = {k: t / norm for k, t in u.items()}
+            _, Jv = torch.func.jvp(predict, (p,), (u,))
+            (Gv,) = pullback(2.0 * Jv / Jv.numel())
+            lam = sum((Gv[k] * u[k]).sum() for k in u)
+            u = Gv
+        return lam
+
+    return vmap(power_iteration, in_dims=(0, 0, 0, 0 if f0 is not None else None, 0))(
+        params, X, alpha, f0, v).tolist()
 
 
 def run_or_load(name, rerun=False, verbose=True, on_checkpoint=None, results_dir=None, **overrides):

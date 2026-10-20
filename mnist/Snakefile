@@ -1,0 +1,90 @@
+"""The MNIST sweep as one fused job per width, then assemble and certify.
+
+Each width trains as one model with ntk_lib.train_fused, so the widths are
+independent jobs that the global profile routes and sizes. On Friday:
+
+    uv run --no-sync snakemake --profile friday --workflow-profile none \
+        --config out=/scratch/$USER/mnist/grid-tf32
+
+certify compares out with the assembled sweep at config baseline.
+"""
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, workflow.basedir)
+import mnist_sweep as S
+
+OUT = Path(config.get("out", "sweep"))
+WIDTHS = config.get("widths", S.WIDTHS)
+SCALES = [f"{s:g}" for s in config.get("scales", S.SCALES)]
+SWEEP = f"uv run --no-sync python {workflow.basedir}/mnist_sweep.py"
+
+
+rule all:
+    input:
+        OUT / "runs.parquet",
+        *([OUT / "certify.done"] if "baseline" in config else []),
+
+
+# One job trains the runs of one width and one initial scale as one fused model, so each job fits
+# the hour of the debug partition, the only one with H100s on Friday.
+rule width:
+    output:
+        touch(OUT / "widths" / "{width}-{scale}.done"),
+    log:
+        OUT / "logs" / "width" / "{width}-{scale}.log",
+    benchmark:
+        OUT / "benchmarks" / "width" / "{width}-{scale}.tsv"
+    wildcard_constraints:
+        width=r"\d+",
+        scale=r"[\d.]+",
+    # Each run meets its pair in the other sweep on the same GPU model, the paired comparison of
+    # arXiv:2607.05104, Section 5, and TF32 needs an Ampere or later GPU (PyTorch numerical
+    # accuracy notes).
+    # The first allocation of Tovar et al. (doi:10.1109/tpds.2017.2762310), Equation 2, over the
+    # measured peaks of this rule in the 50 MB bins of their Section 5: sacct with --acctg-freq=task=1
+    # gave 2323 MB at width 100 and 4546 MB at width 800 (jobs 1367562 and 1367563, commit 7326b54).
+    resources:
+        gpu=1,
+        gpu_model=config.get("gpu_model", "h100"),
+        mem_mb=4550,
+    params:
+        sweep=SWEEP,
+        out=OUT,
+        precision=config.get("fp32_precision", S.FP32_PRECISION),
+    shell:
+        "{params.sweep} run --fused --widths {wildcards.width} --scales {wildcards.scale} "
+        "--fp32-precision {params.precision} --out {params.out} > {log} 2>&1"
+
+
+rule assemble:
+    input:
+        expand(OUT / "widths" / "{width}-{scale}.done", width=WIDTHS, scale=SCALES),
+    output:
+        OUT / "runs.parquet",
+    log:
+        OUT / "logs" / "assemble.log",
+    benchmark:
+        OUT / "benchmarks" / "assemble.tsv"
+    params:
+        sweep=SWEEP,
+        out=OUT,
+    shell:
+        "{params.sweep} assemble --out {params.out} > {log} 2>&1"
+
+
+rule certify:
+    input:
+        OUT / "runs.parquet",
+        Path(config.get("baseline", ".")) / "runs.parquet",
+    output:
+        touch(OUT / "certify.done"),
+    log:
+        OUT / "logs" / "certify.log",
+    params:
+        sweep=SWEEP,
+        out=OUT,
+        baseline=config.get("baseline"),
+    shell:
+        "{params.sweep} certify --out {params.out} --baseline {params.baseline} > {log} 2>&1"

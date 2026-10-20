@@ -20,6 +20,8 @@ dependencies = [
     "xgboost>=3.2.0",
     "duckdb>=1.5.6",
     "pdfrw>=0.4",
+    "snakemake>=9.27.0",
+    "snakemake-executor-plugin-slurm>=2.8.0",
 ]
 
 [tool.uv]

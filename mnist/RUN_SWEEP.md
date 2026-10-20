@@ -14,7 +14,7 @@ Run every command from the `mnist/` folder.
    uv run python mnist_sweep.py pilot
    ```
 
-3. Start the sweep.
+3. Start the sweep with the `run` command.
 
    ```bash
    uv run python mnist_sweep.py run
@@ -43,5 +43,18 @@ Run every command from the `mnist/` folder.
 
 The tables are written to `sweep/`: `runs.parquet`, `checkpoints.parquet`,
 `report_kernel.parquet`, the data dictionary and the manifest. The saved
-weights take a few gigabytes. To write somewhere else, for example a folder
-that is not synced to cloud storage, add `--out <folder>` to every command.
+weights take a few gigabytes. To write somewhere else, such as a folder that
+is not synced to cloud storage, add `--out <folder>` to every command.
+
+## Fused runs on a GPU
+
+With `--fused`, `pilot` and `run` train all the runs of one width as a
+single fused model with `ntk_lib.train_fused`, one width after another, on
+the accelerator that PyTorch reports, or on the CPU. Each run writes the
+same files as before. `check` also compares the fused trainer with
+`train_run` in float64.
+
+```bash
+uv run python mnist_sweep.py pilot --fused   # times every width as one fused model
+uv run python mnist_sweep.py run --fused     # the full sweep; it resumes where it stopped
+```
