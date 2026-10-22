@@ -1,4 +1,4 @@
-"""Slide versions of the report figures E2, E4, E5, E7 and E8.
+"""Slide versions of the report figures E2, E4, E5, E7, E8 and E19.
 
 The report figures come from the scripts in report_v2/code. They are drawn for an A4 page, so their
 type is too small on a projector. This script draws each one again for its place in slides.qmd.
@@ -251,7 +251,79 @@ def e8():
     save(fig, 'E8_ladder')
 
 
+
+
+def e19():
+    """Slide 18: MNIST, after E19_mnist.py.
+
+    Two panels of the report figure, without its map of the grid. (a) The grokking step against
+    weight decay, medians over 5 seeds, one colour per initial scale and one marker per width, with
+    the law T = ln(s / n_c) / (eta lambda) drawn through them. (b) The weight norm at grokking in
+    units of the norm at s = 1, one point per run, with its mean. Together they say that the time
+    follows weight decay alone and that what is fixed at grokking is the norm.
+    """
+    import matplotlib
+    scales = [3.0, 5.0, 7.0, 9.0]
+    widths = [200, 400, 800]
+    budget = 500_000
+    runs = pd.read_parquet(C.REPO / 'mnist' / 'sweep' / 'runs.parquet')
+    # The event of E19: test accuracy 0.80, censored at the budget.
+    hit = ~runs['censored_acc80'].to_numpy(dtype=bool)
+    runs = runs.assign(T=np.where(hit, runs['t_gen_acc80'].to_numpy(dtype=float), budget), hit=hit)
+    # n_c is the weight norm at grokking in units of the default initialisation norm, over the runs
+    # of E19's law: width 200 and above, decay above zero, and the level reached.
+    law = runs[(runs.width >= 200) & (runs.eta_kappa > 0) & runs.hit].copy()
+    law['n_c'] = law.weight_norm_at_gen / law.init_weight_norm * law.init_scale
+    n_c = law.n_c.mean()
+
+    cmap = matplotlib.colormaps[C.VIOLET_CMAP]
+    colours = {s: cmap(v) for s, v in zip(scales, np.linspace(0.45, 0.95, len(scales)))}
+    markers = {200: 'o', 400: 's', 800: '^'}
+    fig, axes = plt.subplots(1, 2, figsize=COLUMN, layout='constrained', gridspec_kw={'width_ratios': [1.18, 0.82]})
+
+    ax = axes[0]
+    grok = runs[(runs.width >= 200) & (runs.eta_kappa > 0)]
+    xs = np.array([1e-6, 4e-5])
+    for s in scales:
+        for w in widths:
+            cell = grok[(grok.init_scale == s) & (grok.width == w)].groupby('eta_kappa')
+            med = cell.apply(lambda g: g['T'].median() if g.hit.all() else np.nan, include_groups=False)
+            ax.plot(med.index, med.values, marker=markers[w], color=colours[s], linestyle='none', markersize=11,
+                    markerfacecolor=colours[s] if w == 400 else 'white', markeredgewidth=1.8, zorder=3)
+        ax.plot(xs, np.log(s / n_c) / xs, color=colours[s], linewidth=2.0, alpha=0.85, zorder=2)
+    ax.axhline(budget, color=C.MUTED, linewidth=1.4, linestyle=':')
+    ax.text(1.05e-6, budget * 1.1, 'budget', color=C.MUTED, va='bottom', fontsize=19)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.yaxis.set_major_formatter(POW10)
+    ax.set_xlabel(r'weight decay $\eta\lambda$')
+    ax.set_ylabel('grokking step $T$')
+    ax.set_title('(a) the time follows the decay', loc='left')
+    h = [matplotlib.lines.Line2D([], [], color=colours[s], linewidth=3, label=f'$s={s:g}$') for s in scales]
+    h += [matplotlib.lines.Line2D([], [], color=C.MUTED, marker=markers[w], linestyle='none', markersize=10,
+                                  markerfacecolor=C.MUTED if w == 400 else 'white', markeredgewidth=1.8,
+                                  label=f'$N={w}$') for w in widths]
+    ax.legend(handles=h, ncol=2, loc='lower left', handlelength=1.4, columnspacing=1.0, borderaxespad=0.2,
+              fontsize=19)
+
+    ax = axes[1]
+    rng = np.random.default_rng(1)
+    for s in scales:
+        g = law[law.init_scale == s]
+        jitter = g.width.map({200: -0.3, 400: 0.0, 800: 0.3}) + rng.normal(0, 0.06, len(g))
+        ax.plot(s + jitter, g.n_c, linestyle='none', marker='.', markersize=9, color=colours[s], alpha=0.8)
+    ax.axhline(n_c, color=C.TEXT, linewidth=2)
+    ax.text(2.2, n_c + 0.012, f'mean {n_c:.2f}', color=C.TEXT, va='bottom', ha='left', fontsize=20)
+    ax.set_xticks(scales, [f'{s:g}' for s in scales])
+    ax.set_xlim(2.0, 9.8)
+    ax.set_ylim(1.7, 2.5)
+    ax.set_xlabel('initial scale $s$')
+    ax.set_ylabel(r'norm at $T$, $n_c$')
+    ax.set_title('(b) the norm is fixed', loc='left')
+    save(fig, 'E19_mnist')
+
+
 if __name__ == '__main__':
-    for draw in (e2, e4, e5, e7, e8):
+    for draw in (e2, e4, e5, e7, e8, e19):
         draw()
         print('drew', draw.__name__)
