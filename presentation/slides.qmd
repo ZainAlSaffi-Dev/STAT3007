@@ -80,10 +80,10 @@ $$
 ::: {.notes}
 Speaker: TBD. Introduce the group and the question in one sentence each.
 
-Say: We study grokking, where a network generalises long after it has fitted
-its training data. We ask what sets the length of that delay. Our tool is the
-neural tangent kernel, and our idea is to split its movement into three parts:
-growth, change of shape, and alignment with the labels.
+Say: We are group G2 and our project revolves around grokking, the phenomenon
+where a network generalises long after it fits the training data. Specifically,
+we analysed the neural tangent kernel as the network trained via three measurements
+to see what predicts the delay between the memorising the trainig data and generalising. 
 :::
 
 # Grokking {.act time="0:05"}
