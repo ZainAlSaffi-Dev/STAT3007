@@ -220,10 +220,10 @@ Speaker: TBD.
 Message: three published accounts give three different clocks, and none of
 them looks at the shape of the kernel.
 
-Say: Recent papers disagree about what sets the delay. The candidates are the
+Say: The literature disagrees about what actually sets this delay. The current candidates are the
 weight norm, the weight-decay rate, and a move from lazy to rich training,
 where the network's kernel starts to adapt. To decide between them we need to
-measure the kernel itself, so the next part explains what the kernel is.
+measure the kernel itself.
 :::
 
 # The tangent kernel {.act time="0:05"}
@@ -271,11 +271,11 @@ Speaker: TBD.
 Message: the kernel is the network's own similarity between inputs.
 
 Say: Suppose we take one gradient step to fix the output on one input, x. The
-weights move in the direction of the gradient at x. That changes the output on
+weights move in the direction of the gradient at x, but it also changes the output on
 every other input as well. For an input x-prime, the change is proportional to
-this inner product of gradients, which is the tangent kernel. If the kernel is
-large, the network treats the two inputs alike. Collect it over every pair and
-you get a matrix that describes what the network currently thinks is similar.
+the inner product of the two gradients, which is the tangent kernel. If the kernel is
+large, the network treats the two inputs alike. Collecting these values over every pair of test values
+produces a matrix that describes what the network currently thinks is similar. 
 :::
 
 ## In the lazy regime the kernel stays fixed during training {time="0:25"}
