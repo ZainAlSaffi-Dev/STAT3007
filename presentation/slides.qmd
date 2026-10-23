@@ -130,12 +130,11 @@ Speaker: TBD.
 Message: grokking is a long gap between fitting the training data and
 generalising.
 
-Say: This is one of our baseline networks. Over five seeds, training accuracy
-reaches 0.99 by a median step of {{< var NfiveAOneMemMedian >}}. Test accuracy
-stays low for much longer and only reaches 0.95 at a median step of
-{{< var NfiveAOneGrokMedian >}}. That delay is grokking. We call the
-step where test accuracy reaches 0.95 the grokking step T, and the whole talk
-is about what sets T.
+Say: This graph depicts one of our baseline networks. Over five seeds, training accuracy
+reaches 0.99 by a median step of {{< var NfiveAOneMemMedian >}}, but test accuracy only reaches 0.95 at a median step of
+{{< var NfiveAOneGrokMedian >}}. That delay between these two events is grokking. We call the
+step where test accuracy reaches 0.95 the grokking step T, and the rest of our project
+revolves around trying to predict T.
 :::
 
 ## The task is addition on a clock with 23 hours {time="0:25"}
