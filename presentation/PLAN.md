@@ -32,13 +32,13 @@ The talk asks one question: what sets the grokking time? It answers in five acts
 | 2. The tangent kernel | What does it mean for a network to learn features? | The kernel is the network's similarity between inputs. It can grow or change shape, and a distance cannot tell the two apart. Theory says weight decay only rescales it. | 3:05 |
 | 3. The experiment | How can one experiment tell the clocks apart? | Each account predicts a different result, and 720 runs cross the three knobs. | 1:00 |
 | 4. Results | Which clock does the grokking time follow? | The distance is mostly growth. Rotation is tied to grokking at a fixed width but is not enough. Both width and weight decay set the time. Rotation is the best early predictor, and scale adds to it. | 3:30 |
-| 5. What we found | So what sets the grokking time? | A mixed clock, with honest limits. | 1:05 |
+| 5. What we found | So what sets the grokking time? | Weight decay sets the time through the weight norm on both tasks, and width enters only on modular addition. | 1:05 |
 
 The times include 5 seconds for each act slide. The render log prints these totals every time the deck builds.
 
 ## 4. Slide by slide
 
-The talk has 21 slides and five act slides, for 9:50 in all. On 18 October 2026 the nine optional slides moved to the backup, behind the closing slide, so they stay ready for questions. The speaker notes of every slide hold its message, a draft of what to say, and the budget with the running total.
+The talk has 21 slides and five act slides, for 10:00 in all, since the MNIST slide grew from 0:20 to 0:30 on 22 October 2026 when the sweep results went in. On 18 October 2026 the nine optional slides moved to the backup, behind the closing slide, so they stay ready for questions. The speaker notes of every slide hold its message, a draft of what to say, and the budget with the running total.
 
 | # | Act | Slide title (the message) | Visual | Budget |
 |---|---|---|---|---|
@@ -59,9 +59,9 @@ The talk has 21 slides and five act slides, for 9:50 in all. On 18 October 2026 
 | 15 | Results | Reaching that rotation is not enough to grok | text | 0:20 |
 | 16 | Results | Tier 2: the grokking time depends on both width and weight decay | slide figure E5 | 0:40 |
 | 17 | Results | Tier 3: rotation is the best single predictor, and scale adds what rotation lacks | live bar chart from E10 | 0:40 |
-| 18 | Results | Tier 4: does the split hold beyond modular addition? | figure MnistResult, to make | 0:20 |
-| 19 | What we found | Limitations | text | 0:15 |
-| 20 | What we found | Rotation matters most, and the clock is mixed | three cards | 0:30 |
+| 18 | Results | Tier 4: on MNIST the time is set by weight decay alone | slide figure E19 | 0:30 |
+| 19 | What we found | Limitations, including the three things MNIST changes at once | text | 0:15 |
+| 20 | What we found | Weight decay sets the time, through the weight norm | three cards | 0:30 |
 | 21 | What we found | Thank you, with the AI-use statement | text | 0:05 |
 
 The backup slides come after the closing slide and do not count toward the time or the slide numbers. First come the nine slides that were optional: the distance as the usual evidence, the arrows (clip KernelAsArrows), the pattern on the torus (clip KernelOnTheTorus), the three tests, the statistics at grokking (E2), the two clocks (clip TwoClocks), the decay edge (E4), width sets the rotation (E7) and the unseen $\alpha$ (E8). Then come the identity behind the split, the placebo test in numbers, the Tier 2 fit with its checks, Tier 3 on held-out cells and on an unseen $\alpha$ in numbers, how the prediction models were scored, the baseline beside Kumar et al., and the references.
@@ -72,7 +72,7 @@ The talk comes to 9:50. Five speakers hand over four times, which costs about 20
 
 1. The nine optional slides moved to the backup. Together they took 3:50.
 2. The identity starts in its split form, on one slide. This saved 0:10.
-3. The MNIST slide shows the setup and says the results are pending, with the details in its notes. This saved 0:10.
+3. The MNIST slide showed the setup and said the results were pending, which saved 0:10. That cut was undone on 22 October 2026, when the sweep results replaced the placeholder and the slide went to 0:30. The talk is now at 10:00, so the next cut in this list has to be made.
 4. The limitations slide keeps the three points that bear on the claims, and the other two are in its notes. This saved 0:10.
 5. Every deck clip plays three times faster, so each lasts 5 to 10 seconds. `SPEED` in `animations/common/layout.py` sets the factor.
 
@@ -149,7 +149,7 @@ The report figures were drawn for an A4 page, so their text is small on a projec
 | E9 surface | none | `E09_surface.py` | dropped on 18 October 2026, since the report cut the figure and the claim that rotation and scale interact on 17 October |
 | Tier 3 subsets | 26 | `E10.json` through `_variables.yml` | done: the filter draws the bars |
 | GridDiagram | 16 | none | replaced by the clip `GridOfRuns` |
-| MnistResult | 28 | `mnist/sweep/`, once it has run | waits on the sweep, which had not run on 16 October 2026 |
+| E19 MNIST | 28 | `mnist/sweep/runs.parquet` and `E19.json` | done 22 October 2026: panels (a) the time against weight decay and (b) the weight norm at grokking, without the report's grid map, which does not read on a projector. The placeholder `MnistResult` is gone |
 
 This plan first suggested a slide style inside the report scripts, so that both versions come from one place. The slide versions went into a separate script in `presentation/` instead, so that no file in `report_v2` changed. The cost is that the drawing code exists twice, and a change to a report figure has to be made in `make_figures.py` as well.
 
@@ -167,6 +167,15 @@ The limits in `report_v2/CLAUDE.md` apply to every slide and every speaker note.
 - The kernel statistics do not predict better than the settings, and they give no earlier warning.
 - The rate-addition model and every other step of Tier 4′ are our own. No source paper derives them, and Tier 4′ is not in the deck.
 
+On MNIST (Tier 4), the limits come from `report_v2/code/out/numbers/E19.json`.
+
+- The width exponent is zero and the decay exponent is minus one. Never say that width lengthens the time on MNIST.
+- The law $T = \ln(s/n_c)/(\eta\lambda)$ is from Liu, Michaud and Tegmark (2023), Section 2. Do not present it as ours.
+- Width sets the rotation and the rotation plays no part in the time. Do not say that rotation is absent on MNIST.
+- Width 100 does not follow the law and is left out of the fits. Do not say it never groks.
+- The reading that width enters only where the task forces the kernel to change shape is the group's own. Label it so, and cite Mohamadi et al. (2024) for the result it rests on.
+- The curvature learning-rate rule sets the memorisation step. State it rather than hide it. Whether the group accepts the rule is still open in the report.
+
 Every citation uses an entry from `ref.bib`, which copies the verified entries of the report unchanged. A new source has to be checked as the root `CLAUDE.md` asks before it goes into `ref.bib`.
 
 ## 10. Open decisions for the group
@@ -175,7 +184,7 @@ Every citation uses an entry from `ref.bib`, which copies the verified entries o
 - **Speakers.** Who presents which part, and how many of us speak.
 - **The title.** The report lists this as open: keep "Scale or Shape?" or change it to give the answer.
 - **"Rotation" or "shape".** The report keeps "rotation" for $R_t$ for now. The deck follows the report and says once that $R_t$ measures any change of shape. If the report switches, change the deck too.
-- **MNIST.** Present results if the sweep finishes in time, or present the setup and say the results are pending.
+- **MNIST.** Settled on 22 October 2026. The sweep finished on 19 October, so slide 18 presents the results.
 - **Optional slides.** Which of the eleven survive.
 - **Laptop or room computer.** The HTML deck plays clips but needs our own laptop and, for the formulas, a network connection. The PDF works anywhere but shows clips as stills. Bring both.
 - **The AI-use statement.** The closing slide has a draft. It should match the statement in the report.

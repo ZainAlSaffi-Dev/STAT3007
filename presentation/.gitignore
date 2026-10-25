@@ -7,6 +7,9 @@ slides_files/
 assets/video/*
 !assets/video/.gitkeep
 
+assets/stills/*
+!assets/stills/.gitkeep
+
 # PDF exports. Keep the final one outside git, or force-add it on purpose.
 exports/
 
