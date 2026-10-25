@@ -41,7 +41,7 @@ Each test in the main text answers one column of Table 1 of the report (`tab:pre
 |---|---|---|---|---|
 | `N_numbers.py` | Table 2; §3.4 | N1 compute; N3 checkpoint resolution; N4 test-loss floor | manifest, sweep timing, runs, checkpoints | 1 s |
 | `E01_baseline.py` | §4.1, Fig. 1 | Baseline dynamics; N5 event steps by α; N2 share of D² carried by scale | runs, checkpoints | 1 s |
-| `E03_placebo.py` | §4.2 (Tier 1), Table 3 | SD at grokking, at memorisation and placebo; tightening ratio; permutation p; N6, N7, N8 | runs, checkpoints | 1 s |
+| `E03_placebo.py` | §4.2 (Tier 1), Table 3 | SD at grokking, at memorisation and placebo; SD ratio; permutation p; N6, N7, N8 | runs, checkpoints | 1 s |
 | `E02_thresholds.py` | §4.2, Fig. 2 | S, R and A at the grokking step | runs, E03 | 1 s |
 | `E04_map.py` | §4.3 (Tier 2), Fig. 3 | Time and outcome map at α = 1 | runs, checkpoints | 1 s |
 | `E06_aft.py` | §4.3, Table 4 | Censored log-normal AFT fits of a, b and γ with cell bootstrap | runs | 9 min |

@@ -90,10 +90,6 @@ Zac Kienzle (s4803349) $\cdot$ Samuel Rieger (s4904959)}
 \begin{draftnote}
 \noindent\textbf{Notes for the group. Delete this block before submission.}
 \begin{itemize}
-  \item \TODO{Later, replace every mention of ``rotation'' with ``shape'',
-    including $R_t$'s name, the figure labels and the tier titles. The word
-    ``rotation'' is kept for now so that the text matches what the group
-    already uses.}
   \item Each experiment section opens with its main finding. Every number
     comes from the scripts in \file{report_v2/code/} through
     \file{numbers.tex}. No red planning values are left, since the E14
@@ -114,18 +110,18 @@ Zac Kienzle (s4803349) $\cdot$ Samuel Rieger (s4904959)}
 \begin{abstract}
   Grokking is delayed generalisation of a network, but what determines
   the delay is disputed. We decompose the movement of the neural tangent
-  kernel into its scale and rotation, measuring both on a two-layer network
+  kernel into its scale and its shape, measuring both on a two-layer network
   learning modular addition across laziness, width and weight decay. At a
-  fixed width, rotation is the statistic most tied to the grokking step, even
-  though some networks reach it without grokking. The grokking time grows
-  with width and falls with weight decay, which neither a rotation clock nor
-  a weight-decay clock predicts alone. Read early, rotation is the best
-  single predictor of the grokking time. We also measure the same statistics
-  on MNIST, where grokking is induced in a different way by scaling up the
-  initial weights. On this task the weight-decay clock holds and width drops
-  out. Weight decay therefore sets the time through the weight norm on both
-  tasks, and width enters only where the task forces the kernel to change
-  shape.
+  fixed width, the shape change is the statistic most tied to the grokking
+  step, even though some networks reach it without grokking. The grokking
+  time grows with width and falls with weight decay, which neither a shape
+  clock nor a weight-decay clock predicts alone. Read early, shape is the
+  best single predictor of the grokking time. We also measure the same
+  statistics on MNIST, where grokking is induced in a different way by
+  scaling up the initial weights. On this task the weight-decay clock holds
+  and width drops out. Weight decay therefore sets the time through the
+  weight norm on both tasks. In our reading, width enters only where the task
+  forces the kernel to change shape.
 \end{abstract}
 
 % =====================================================================
@@ -151,7 +147,7 @@ the empirical tangent kernel stays close to its initial value until the training
 data are fitted, and moves far from it afterwards
 \citep{mohamadiWhyYouGrok2024}. A distance does not say how the kernel changed.
 A kernel can grow in scale while its eigenvectors stay fixed. It can also
-rotate, so that its eigenvectors change.
+change its shape, so that its eigenvectors change.
 
 The difference matters for the accounts of the grokking time. Recent work times
 grokking by scale-like parameters: the weight norm \citep{khanhWeightNormSets2026}, the scale of the
@@ -160,20 +156,20 @@ logits \citep{khanhWhatDoesWeight2026}, or the weight-decay rate
 result that \citet{kumarGrokkingTransitionLazy2024} cite for weight decay forcing
 the kernel to change is that of \citet{lewkowyczTrainingDynamicsDeep2021}, in
 which the kernel only shrinks. None of these accounts measures whether the
-kernel rotates.
+kernel changes shape.
 
-Rotation is important for the lazy-to-rich account of grokking. A kernel that only grows keeps its eigenvectors, so a
+The shape matters for the lazy-to-rich account of grokking. A kernel that only grows keeps its eigenvectors, so a
 large distance does not by itself show that features were learned.
 
 We ask what sets the grokking time: the shape of the kernel, its scale, or the
-weight-decay rate. Our hypothesis is that rotation (change in shape) sets it. We measure three
+weight-decay rate. Our hypothesis is that the shape change sets it. We measure three
 statistics of the empirical tangent kernel along training: its scale $S_t$, its
-rotation $R_t$ and its alignment $A_t$ with the labels. We do so on a grid of
+shape $R_t$ and its alignment $A_t$ with the labels. We do so on a grid of
 720 runs that crosses laziness, width and weight decay. Our contributions are as
 follows.
 \begin{enumerate}[1.]
   \item We split the movement of the kernel into a change of scale and a
-    rotation, and use each one as a timing variable. On the baseline of
+    change of shape, and use each one as a timing variable. On the baseline of
     \citet{kumarGrokkingTransitionLazy2024}, the usual distance is mostly a
     change of scale: at $\alpha=1$ the scale accounts for \NtwoAOneGrok{} of $D_t^2$
     at grokking.
@@ -182,26 +178,23 @@ follows.
     so that a statistic that merely stays in a narrow band is not mistaken for
     a threshold.
   \item We fit a power law for how the grokking time scales
-    with model width and weight decay. The hypotheses that rotation sets the
-    grokking time and that weight decay sets it predict different exponents.
+    with model width and weight decay. The hypotheses that the shape change
+    sets the grokking time and that weight decay sets it predict different
+    exponents.
   \item We test whether the statistics can be used to predict grokking ahead of time.
   \item We repeat the first two tests on the MNIST dataset, a task on which
     \citet{liuOmnigrokGrokkingAlgorithmic2023} induce grokking through a different method,
     to test if the findings are generalisable.
 \end{enumerate}
-On modular addition, rotation is the most important single statistic,
-but it is not enough on its own: the grokking time depends on both width and
-weight decay. While on MNIST the time depends on weight decay alone, through the
-weight norm.
-
-The works we cite each follow one quantity: the distance the kernel moves
-\citep{mohamadiWhyYouGrok2024}, the weight norm \citep{khanhWeightNormSets2026},
-the logit scale \citep{khanhWhatDoesWeight2026}, or the weight-decay rate
-\citep{kimGrokkingWeightDecayClock2026,pracherSpectralTheoryGrokking2026}. This
-report separates the growth of the tangent kernel from its rotation, and
-compares on one grid the hypotheses that scale, rotation or the weight-decay
-rate sets the grokking time, and then asks the same question on a second
-task.
+The main finding is a mixed clock. On modular addition, shape is the most
+informative of the three statistics, but it is not enough on its own, and its
+value at grokking changes with width and $\alpha$. The grokking time depends
+on both width, which sets the shape change, and weight decay, which shrinks
+the scale at a fixed width, so neither our shape clock nor the published
+weight-decay clock holds alone. On MNIST weight decay alone sets the time,
+through the weight norm, and our own reading, which rests on
+\citet{mohamadiWhyYouGrok2024}, is that width enters only where the task forces
+the kernel to change shape.
 
 % =====================================================================
 \section{Related Work}\label{sec:related}
@@ -264,7 +257,7 @@ training inputs $x''$ and repeated parameter indices, and $\ell'$ is the
 derivative of the loss with respect to the output
 \citep[Eqs.~S5 and S6, arXiv v2]{lewkowyczTrainingDynamicsDeep2021}. The weight
 decay appears only in the first term, which rescales the kernel. Only $T_t$ can
-rotate it. At initialisation $T_0$ has expectation of order $1/N$ in the width
+change its shape. At initialisation $T_0$ has expectation of order $1/N$ in the width
 $N$, a result that \citet{lewkowyczTrainingDynamicsDeep2021} take from Dyer and
 Gur-Ari (2020). In the infinite-width limit the kernel therefore only decays,
 with fixed eigenvectors \citep[Thms.~1 and 2]{lewkowyczTrainingDynamicsDeep2021}.
@@ -273,15 +266,15 @@ source. Add it to ref.bib only after checking it on arXiv.}
 
 \paragraph{Predictions.}
 \Cref{tab:predictions} sets out what each account predicts for the three tests
-of this report, on either task. If rotation sets the grokking time and $T_t$ stays of order $1/N$ along
-training, a wider network rotates more slowly and groks later at a fixed weight
+of this report, on either task. If the shape change sets the grokking time and $T_t$ stays of order $1/N$ along
+training, a wider network changes shape more slowly and groks later at a fixed weight
 decay. The weight decay should then matter little. A weight-decay clock (meaning that weight decay sets the grokking time) predicts
 the opposite. Each account was tested on its own, so these predictions have not
 been set against each other on one grid. The weight-decay accounts also leave
 open what sets the time without weight decay. \Citet[p.~3, arXiv
 v1]{kimGrokkingWeightDecayClock2026} lists that case, and the creation of new
 directions by feature learning, among the things its mechanism does not
-explain. We believe that rotation of the tangent kernel measures one form of such feature
+explain. We believe that the shape change of the tangent kernel measures one form of such feature
 learning.
 
 \begin{table}[H]
@@ -297,7 +290,7 @@ learning.
     Account & Fixed at grokking (Tier 1) & Width exponent $a$ (Tier 2) &
     Decay exponent $b$ (Tier 2) & Early predictor (Tier 3) \\
     \midrule
-    Rotation clock (our hypothesis) & $R_t$ reaches a threshold &
+    Shape clock (our hypothesis) & $R_t$ reaches a threshold &
     $a>0$, since $T_t$ shrinks with width (ours) & $b\approx0$ & $R_t$ \\
     Weight-decay clock
     \citep{kimGrokkingWeightDecayClock2026,pracherSpectralTheoryGrokking2026,liuOmnigrokGrokkingAlgorithmic2023} &
@@ -353,14 +346,14 @@ gradient descent this is the same as $L_2$ regularisation
 Each axis of the grid tests one account. The output scale $\alpha$ sets how lazy
 the training is \citep{chizatLazyTrainingDifferentiable2020}. The width $N$ sets
 the size of $T_t$ in \eqref{eq:kernelflow}, and so how fast the kernel can
-rotate. The weight decay $\eta\lambda$ sets the clock of
+change shape. The weight decay $\eta\lambda$ sets the clock of
 \citet{kimGrokkingWeightDecayClock2026}. We call one combination of
 $(\alpha,N,\eta\lambda)$ a \emph{cell}. The five runs of a cell share every
 setting and differ only in their seed, which sets the split and the initial
 weights. The grid has $3\times6\times8=144$ cells and 720 runs, and every run
 finished.
 
-\subsection{Scale, rotation and alignment}\label{sec:statistics}
+\subsection{Scale, shape and alignment}\label{sec:statistics}
 
 We measure the tangent kernel of one scalar output, the sum of the logits
 divided by $\sqrt p$, $g(x;\theta)=p^{-1/2}\sum_{c}f_c(x;\theta)$. This is the
@@ -378,9 +371,9 @@ of the test pairs and $C=I-\frac1{53}\mathbf{1}\mathbf{1}^\top$, we record
   \label{eq:statistics}
 \end{equation}
 The scale $S_t$ is 1 at initialisation, and a value above 1 means the kernel
-grew. The rotation $R_t$ is the kernel distance of
-\citet{fortDeepLearningKernel2020}. It is 0 at initialisation and does not
-change when the kernel is rescaled. The alignment $A_t$ is the centred
+grew. The shape $R_t$ measures how far the kernel has changed shape, and it is
+the kernel distance of \citet{fortDeepLearningKernel2020}. It is 0 at
+initialisation and does not change when the kernel is rescaled. The alignment $A_t$ is the centred
 alignment of \citet{cortesAlgorithmsLearningKernels2024} with the label kernel
 $YY^\top$, and it also does not change when the kernel is rescaled.
 
@@ -393,7 +386,7 @@ is a function of the other two,
 \end{equation}
 (\cref{app:identity}). A kernel that only grows has $R_t=0$ and
 $D_t=\lvert S_t-1\rvert$. A large $D_t$ therefore does not show that the kernel
-rotated.
+changed shape.
 
 \TODO{Add a notation table here if the group wants one: $S_t$, $R_t$, $A_t$,
 $T$, $\tstar$, $a$, $b$, with the value of each at initialisation and how to read
@@ -421,7 +414,7 @@ grokking step of every run that groks, and measure the spread across runs by the
 standard deviation (SD). A statistic can have a small spread because it stays in
 a narrow band all through training, so we include a placebo test to separate the two cases.
 The placebo test reads each run at the grokking step of another run, drawn by a random
-permutation with no fixed points, and measures the SD again. The tightening
+permutation with no fixed points, and measures the SD again. The SD
 ratio is the median placebo SD over 2\,000 permutations divided by the SD at the
 true events, and $p$ is the share of permutations whose SD is no larger. A
 ratio near 1 means the statistic is not tied to the event. The SD carries the
@@ -446,7 +439,11 @@ misfit of the cells about the fitted plane.
 
 \paragraph{Prediction (Tier 3).} We read $S_t$, $\log R_t$ and $A_t$ at
 $\tstar=2\,430$, a saved step before any run reaches the grokking level, and
-ask how well they predict the grokking step. The five seeds of a cell are close
+ask how well they predict the grokking step. At $\tstar$, $R_t$ spans more than
+a decade across widths. We tried $R_t$ and $\log R_t$, along with other
+non-linear forms, and $\log R_t$ gave the best prediction of the forms of
+$R_t$. \TODO{Zain: confirm which forms were compared, and whether $\log S_t$
+was tried} The five seeds of a cell are close
 copies, so whole groups of runs are always held out. Two tests are used. The
 first holds out one cell at a time, which tests interpolation. Kernel ridge
 regression with a Gaussian kernel is fitted on each subset of the statistics,
@@ -467,13 +464,13 @@ settings of each model.
 
 \subsection{The second task}\label{sec:mnistsetup}
 
-In tier 4 we apply the same questions from Tiers 1 and 2 to the
-MNIST dataset using the same setup with which \citet{liuOmnigrokGrokkingAlgorithmic2023}
-induce grokking. The network is trained on a subset of $1000$ images and the initial weights
-are multiplied by a scale $s>1$ so the weight decay must shrink the norm before the network generalises.
-This differs from \cref{sec:setup} which subtracts $f(x;\theta_0)$ so that every run is centered
-and starts from the zero function. Centring eliminates grokking delay on MNIST and
-instead the train and test accuracies rise at relatively the same time which is why it cannot be used.
+In Tier 4 we ask the questions of Tiers 1 and 2 on MNIST, in the setup with
+which \citet{liuOmnigrokGrokkingAlgorithmic2023} induce grokking. The network is
+trained on 1\,000 images, and its initial weights are multiplied by a scale
+$s>1$, so weight decay must shrink the norm before the network generalises.
+\Cref{sec:setup} instead subtracts $f(x;\theta_0)$, so that every run starts
+from the zero function. On MNIST this centring removes the delay, since the
+training and test accuracies then rise together, so we do not use it.
 The architecture is a bias-free three-layer rectifier network of width $N$
 in the standard parameterisation, trained by minibatch gradient descent without momentum,
 with the learning rate reset from the curvature every $10000$ steps.
@@ -515,15 +512,15 @@ grokking steps and their order in $\alpha$ are close to those of
 Appendix~\ref{app:kumar} compares the settings and the event steps one by one.
 
 By \eqref{eq:identity} the squared variation splits into a scale part
-$(S_t-1)^2$ and a rotation part $2S_tR_t$. At $\alpha=1$ the scale part is
+$(S_t-1)^2$ and a shape part $2S_tR_t$. At $\alpha=1$ the scale part is
 \NtwoAOneGrok{} of $D_t^2$ at grokking. The distance $D_t$ thus mostly records
 the growth of the kernel, which is why we measure $S_t$ and $R_t$ separately.
 
 \subsection{Tier 1: is there a threshold?}\label{sec:tier1}
 \budget{1.6 pages}
 
-\textbf{Finding.} At a fixed width, rotation is the statistic most tied to the
-grokking step, but reaching that rotation does not make a network grok. The
+\textbf{Finding.} At a fixed width, shape is the statistic most tied to the
+grokking step, but reaching that shape change does not make a network grok. The
 alignment at grokking barely differs from its value at initialisation. Across
 widths, no statistic takes a fixed value at grokking.
 
@@ -533,7 +530,7 @@ widths, no statistic takes a fixed value at grokking.
   \caption{The kernel statistics at the grokking step of every run that groks.
     Top row: $N=100$, grouped by $\alpha$. Bottom row: $\alpha=1$, grouped by
     width. Colour is $\eta\lambda$, darker for larger, and bars are medians.
-    Each title gives the SD at grokking and the tightening ratio of the placebo
+    Each title gives the SD at grokking and the SD ratio of the placebo
     test (\cref{tab:thresholds}).}
   \label{fig:thresholds}
 \end{figure}
@@ -542,13 +539,13 @@ widths, no statistic takes a fixed value at grokking.
   \centering\small
   \caption{Spread of each statistic across runs that grok, as a standard
     deviation, at the grokking step, at the memorisation step and at another
-    run's grokking step (placebo, median over 2\,000 permutations). The ratio is
-    the placebo SD over the SD at grokking, and $p$ is the share of permutations
+    run's grokking step (placebo, median over 2\,000 permutations). The SD ratio
+    is the placebo SD over the SD at grokking, and $p$ is the share of permutations
     with an SD no larger than the true one.}
   \label{tab:thresholds}
   \begin{tabular}{llrrrrr}
     \toprule
-    Runs & Statistic & At grokking & At memorisation & Placebo & Ratio & $p$ \\
+    Runs & Statistic & At grokking & At memorisation & Placebo & SD ratio & $p$ \\
     \midrule
     $N=100$ (\EthreeNhundredRuns{} runs)
       & $S_t$ & \EthreeNhundredSSd & \EthreeNhundredSSdmem & \EthreeNhundredSSdplacebo & \EthreeNhundredSRatio & \EthreeNhundredSP \\
@@ -584,14 +581,15 @@ $S_t$ tightens \EthreeAllSRatio-fold ($p$ \EthreeAllSP). The grokking steps of
 that pool span nearly two decades while $S_t$ keeps growing, so this may reflect
 growth more than a threshold.
 
-Reaching the rotation at which runs grok is not enough to grok. There are
+Reaching the shape change at which runs grok is not enough to grok. There are
 \NeightNoGrokMemorised{} cells in which some seed memorises but no seed groks.
 In \NeightAboveRMedianMemorised{} of them, at least one seed reaches the median
 $R_t$ at grokking of its width before the budget runs out. One of them is the
 baseline cell at $\alpha=2$ (\cref{sec:baseline}).
 
-Wider networks grok with less rotation but take longer, which suggests that
-width sets the rate at which the kernel rotates. \Cref{sec:tier2} tests this.
+Wider networks grok with a smaller shape change but take longer, which suggests
+that width sets the rate at which the kernel changes shape. \Cref{sec:tier2}
+tests this.
 Our proposal expected the alignment to cross a threshold shared by every cell,
 and that does not hold. Other claims of a fixed value at grokking, such as the
 critical weight norm of \citet{khanhWeightNormSets2026}, can be given the same
@@ -601,9 +599,9 @@ placebo check.
 \budget{2.0 pages}
 
 \textbf{Finding.} The grokking time depends on both width and weight decay, so
-neither the rotation clock nor the weight-decay clock of
-\cref{tab:predictions} holds on its own. Width sets the rotation of the kernel.
-At a fixed width, weight decay shrinks its scale.
+neither the shape clock nor the weight-decay clock of
+\cref{tab:predictions} holds on its own. Width sets how much the kernel changes
+shape. At a fixed width, weight decay shrinks its scale.
 
 \begin{figure}[H]
   \centering
@@ -641,7 +639,7 @@ to read it.}
 %     $\alpha=1$. Points are seeds, and open markers at the budget are censored
 %     runs. Solid lines join the cell medians where at least 3 seeds grok. Dashed
 %     lines are the fitted plane of the main row of \cref{tab:scaling}. The two grey
-%     lines at the lower right show the slopes 0 (rotation clock) and $-1$
+%     lines at the lower right show the slopes 0 (shape clock) and $-1$
 %     (weight-decay clock).}
 %   \label{fig:scaling}
 % \end{figure}
@@ -659,7 +657,7 @@ to read it.}
     \toprule
     Fit & $a$ & $b$ & $\gamma$ & $\sigma$ \\
     \midrule
-    Rotation clock predicts & $>0$ & $\approx0$ & & \\
+    Shape clock predicts & $>0$ & $\approx0$ & & \\
     Weight-decay clock predicts & $\approx0$ & $\approx-1$ & & \\
     \midrule
     Main range, level 0.95 & \EsixMainA{} [\EsixMainALo, \EsixMainAHi] & \EsixMainB{} [\EsixMainBLo, \EsixMainBHi] & \EsixMainG{} [\EsixMainGLo, \EsixMainGHi] & \EsixMainS \\
@@ -675,7 +673,7 @@ to read it.}
 % point estimates of the main row equal those of tier2_consistency.json part C.
 
 Both exponents are nonzero, and both intervals exclude zero ($a=\EsixMainA$,
-$b=\EsixMainB$). A wider network groks later, as the rotation clock
+$b=\EsixMainB$). A wider network groks later, as the shape clock
 predicts, and more weight decay shortens the time, as the weight-decay clock
 predicts. Neither exponent takes the value its account predicts. Wider networks
 memorise sooner, so the width effect on grokking is not a delay in fitting the
@@ -689,33 +687,33 @@ therefore hold for the range in which every seed groks.
 \begin{figure}[H]
   \centering
   \includegraphics[width=\linewidth]{figures/E7_mechanism.pdf}
-  \caption{Width sets the rotation of the kernel, and weight decay shrinks its
-    scale. Medians over seeds at $\alpha=1$, read at $\tstar=2\,430$, before
+  \caption{Width sets the shape change of the kernel, and weight decay
+    shrinks its scale. Medians over seeds at $\alpha=1$, read at $\tstar=2\,430$, before
     any run groks: (a) $\log_{10}R_t$ and (b) $S_t$.}
   \label{fig:mechanism}
 \end{figure}
 
-Up to $\eta\lambda=3\times10^{-4}$, the rotation at $\tstar$ depends on width
-and hardly on weight decay (\cref{fig:mechanism}). Narrow networks rotate the
-most. The scale falls with weight decay at every width. Among the runs that
+Up to $\eta\lambda=3\times10^{-4}$, the shape change at $\tstar$ depends on
+width and hardly on weight decay (\cref{fig:mechanism}). Narrow networks change
+shape the most. The scale falls with weight decay at every width. Among the runs that
 grok, width alone explains \NnineLogRWidth{} of the spread of $\log R_t$, and
 weight decay \NnineLogRDecay. The spread of $S_t$ is shared: $\alpha$ explains
 \NnineSAlpha, width \NnineSWidth{} and weight decay \NnineSDecay. This links Tier 2
-back to Tier 1. Width sets the rotation, weight decay is one of the settings that
+back to Tier 1. Width sets the shape change, weight decay is one of the settings that
 set the scale, and the grokking time depends on both.
 
 \subsection{Tier 3: predicting the grokking time from the kernel}\label{sec:tier3}
 \budget{1.6 pages}
 
-\textbf{Finding.} Read before any run groks, rotation is the best single predictor
-of the grokking time on held-out cells. Scale adds information that rotation lacks, and alignment
+\textbf{Finding.} Read before any run groks, shape is the best single predictor
+of the grokking time on held-out cells. Scale adds information that shape lacks, and alignment
 adds little. On an unseen $\alpha$, the three statistics together rank runs
 better than any one of them alone. The settings $N$ and $\eta\lambda$ rank them
 better still, and better than either setting alone, which supports the mixed
 clock of \cref{sec:tier2}.
 
 Each account in \cref{tab:predictions} names a different early predictor:
-$R_t$ for the rotation clock, $S_t$ for the norm or scale clock, and
+$R_t$ for the shape clock, $S_t$ for the norm or scale clock, and
 $\eta\lambda$ alone for the weight-decay clock. This tier tests the first
 two, with $A_t$ beside them. It does not test $\eta\lambda$, which we set and
 know exactly, while a general network reports neither its effective
@@ -752,7 +750,7 @@ general network would report.
 
 Taken alone, $\log R_t$ explains the most of the grokking time on held-out
 cells (\cref{tab:subsets}). Adding $S_t$ to $\log R_t$ raises $R^2$ from \EtenRRsq{} to
-\EtenSRRsq, so rotation does not carry all of the information. Adding $A_t$ to
+\EtenSRRsq, so shape does not carry all of the information. Adding $A_t$ to
 both raises it only to \EtenSRARsq.
 Between \EtenBetweenLogT{} and \EtenBetweenLogR{} of the spread of $\log T$,
 $S_t$ and $\log R_t$ lies between cells (\cref{tab:subsets}). The statistics are
@@ -781,10 +779,10 @@ reach \EeightXgb{}, and the recurrent network that reads their history up to
 $\tstar$ reaches \EeightGru. The reference model given the settings reaches
 \EeightRef, more than any model of the kernel statistics. \Citet[p.~1, arXiv v3]{nandaProgressMeasuresGrokking2023} call a progress
 measure a metric that varies smoothly, precedes the phase transition and is
-causally linked to it. Rotation meets the first two conditions here. We have not
-tested a causal link, and reaching a rotation does not make a network grok
-(\cref{sec:tier1}). Rotation also gives no earlier or better warning than the
-settings themselves.
+causally linked to it. Shape meets the first two conditions here. We have not
+tested a causal link, and reaching a given shape change does not make a
+network grok (\cref{sec:tier1}). Shape also gives no earlier or better warning
+than the settings themselves.
 
 The settings reference combines width and weight decay. The same trees given
 $\log N$ alone reach \EeightWidthref{}, and given $\eta\lambda$ alone they reach
@@ -803,12 +801,15 @@ width and weight decay.
 % \EnineGamma, with a cell-bootstrap interval from \EnineGammalo{} to
 % \EnineGammahi." To restore the figure, remove the leading '% ' from the lines
 % below. Appendix D (the settings of the prediction models) then also needs its
-% sentence on the product fit back.
+% sentence on the product fit back. The quotes above keep the old word
+% "rotation"; since 25 October 2026 the report calls R_t "shape", so reword them
+% if they come back. The figure file was redrawn with the "shape" label on 25
+% October 2026.
 % \begin{figure}[H]
 %   \centering
 %   \includegraphics[width=0.6\linewidth]{figures/E9_surface.pdf}
 %   \caption{Growth of the kernel shortens the grokking time more when the kernel
-%     has also rotated more. The predicted grokking step over $S_t$ and $R_t$ at
+%     has also changed shape more. The predicted grokking step over $S_t$ and $R_t$ at
 %     $\tstar$ comes from kernel ridge on the \EtenRuns{} runs that grok, with
 %     $A_t$ at its median. Points are runs. The shaded region lies more than 0.25
 %     standard deviations from every run, so the surface there is an
@@ -858,11 +859,11 @@ norm is \EnineteenNc{} times the norm at $s=1$, with a standard deviation of
 \EnineteenNcSd{} (\EnineteenNcRel) over the \EnineteenNcRuns{} runs that
 reach the level, across every scale, width and decay (\cref{fig:mnist}b). As in \citet{liuOmnigrokGrokkingAlgorithmic2023} the
 norm follows pure decay and the time is given by the law $T=\ln(s/n_c)/(\eta\lambda)$
-(Appendix~\ref{app:mnist}). As the norm falls, the kernel shrinks too where at grokking,
+(Appendix~\ref{app:mnist}). As the norm falls, the kernel shrinks too, and at grokking
 it is between \EnineteenSWTwohundred{} and \EnineteenSWEighthundred{} of its initial value.
-As in modular addition the rotation decreases with width but in MNIST falls sharply
-going from \EnineteenRWTwohundred{} at $N=200$ to \EnineteenRWEighthundred{}
-at $N=800$ while $T$ remains approximately the same. The Tier 1 placebo test cannot
+As on modular addition, the shape change decreases with width. On MNIST it falls
+sharply, from \EnineteenRWTwohundred{} at $N=200$ to \EnineteenRWEighthundred{}
+at $N=800$, while $T$ remains approximately the same. The Tier 1 placebo test cannot
 distinguish these statistics here (Appendix~\ref{app:mnist}).
 
 The two tasks therefore grok by different routes. Grokking in MNIST is set by the
@@ -870,8 +871,8 @@ The two tasks therefore grok by different routes. Grokking in MNIST is set by th
 enlarged initial function must decay and the kernel need only shrink before generalisation occurs. On
 modular addition the delay happens because of the centring, and
 \citet{mohamadiWhyYouGrok2024} prove that a fixed permutation-equivariant
-kernel cannot learn the task from a constant fraction of the pairs. The
-kernel must change shape first and does so at a rate that depends on width.
+kernel cannot learn the task from a constant fraction of the pairs. In our
+reading, the kernel must change shape first, at a rate that depends on width.
 
 % TIER 4' COMMENTED OUT on 11 October 2026 at the user's request (Jasper Chong).
 % Tier 4' is the THEORY extension (options A to E: the rate-addition model, the
@@ -907,7 +908,7 @@ kernel must change shape first and does so at a rate that depends on width.
 %
 % \paragraph{Option B: test the premise behind \cref{tab:predictions}.} Two checks
 % with no free parameters, on existing data (item E17). The first asks whether the
-% early rate of rotation falls as $1/N$, as the order of $T_0$ suggests. The second
+% early rate of shape change falls as $1/N$, as the order of $T_0$ suggests. The second
 % uses the homogeneity of the network. Scaling every weight of \eqref{eq:network}
 % by $c$ scales its tangent kernel by $c^2$. Weight decay alone, with no gradient,
 % would therefore give $S_t=(1-\eta\lambda)^{2t}$ and $R_t=0$. This is our
@@ -919,17 +920,17 @@ kernel must change shape first and does so at a rate that depends on width.
 % checked source.
 % \emph{Risk:} low. It is a check, and it is not a new theory.
 %
-% \paragraph{Option C: can the rotated kernel alone generalise?} Freeze the
+% \paragraph{Option C: can the changed kernel alone generalise?} Freeze the
 % tangent kernel at step $t$ and use it for kernel ridge regression from the
 % training pairs to the test pairs, with a ridge proportional to the kernel's
 % trace (item E18). Rescaling the kernel then leaves the predictions unchanged, so
 % what the frozen kernel can learn depends only on its shape. Suppose the frozen
 % kernel starts to generalise near the step at which the network groks. Then
-% rotation sets what can be learned, and scale sets only how fast training gets
+% shape sets what can be learned, and scale sets only how fast training gets
 % there. That would give a mechanism for the mixed clock.
 % \emph{Cost:} medium. The kernels on all $p^2$ pairs must be rebuilt from the 48
 % saved weight steps, which lie up to 20\,000 steps apart late in training.
-% \emph{Value:} the highest of the options, since it ties rotation to
+% \emph{Value:} the highest of the options, since it ties the shape change to
 % generalisation directly.
 % \emph{Risk:} medium. A first check is that the frozen initial kernel does not
 % generalise. If it does, the lazy phase alone could generalise, which would
@@ -955,7 +956,7 @@ kernel must change shape first and does so at a rate that depends on width.
 %   \centering
 %   \placeholderfigure[4.0cm]{The figure of the chosen option: E11 for option A
 %     ($1/T$ against $\eta\lambda$ with the fitted lines of \eqref{eq:rates}), E17
-%     for option B (early rotation rate against $N$, and $S_t$ against the curve
+%     for option B (early rate of shape change against $N$, and $S_t$ against the curve
 %     of weight decay alone), or E18 for option C (test accuracy of the frozen
 %     kernel against step, with the network's grokking step marked).}
 %   \caption{\TODO{Caption for the chosen option.}}
@@ -986,31 +987,35 @@ method for inducing grokking, with the most impactful of these being the
 uncentred predictor. Our comparison assumes that none of these changes
 which clock applies. With only two tasks to compare we cannot tell which of them,
 if any, is responsible for the different result. Tier 4 tests which clock
-sets the time once a delay exists, not whether rotation can cause one.
+sets the time once a delay exists, not whether a shape change can cause one.
 
 % =====================================================================
 \section{Conclusion}\label{sec:conclusion}
 \budget{0.3 page}
 
 We asked what sets the grokking time: the shape of the tangent kernel, its
-scale, or the weight-decay rate. On modular addition, rotation matters
-most and is not enough on its own. At a fixed width it is the statistic most
-tied to the grokking step, yet networks can reach that rotation without
-grokking. The grokking time grows with width and falls with weight decay.
-Width sets the rotation, and at a fixed width weight decay shrinks the scale.
-Early rotation and scale together predict the grokking time better than either
-one alone, and width and weight decay together predict it better than either
-setting alone. On MNIST, \citet{liuOmnigrokGrokkingAlgorithmic2023} create
-a delay by increasing the initial function's scale. The weight-decay clock predicts
-the grokking time exactly using the law \(\ln(s/n_c)/(\eta\lambda)\), with no
-dependence on width. The kernel shrinks but rotates very little where width
-affects only the rotation. Weight decay therefore sets the grokking time through
-the weight norm on both tasks, and width enters only on modular addition,
-where a fixed kernel cannot solve the task and the kernel must change shape first.
-What is new is the split into scale and rotation, the placebo test, the crossed grid on two
-tasks, and prediction from quantities that any network exposes. A next step
-is to test whether the early rate of rotation falls as $1/N$, and
-whether a kernel frozen at each step can generalise on either task.
+scale, or the weight-decay rate. On modular addition the answer is a mixed
+clock. Shape is the most informative of the three statistics. At a fixed width
+it is the most tied to the grokking step, and read early it is the best single
+predictor of the time. It is not enough on its own, and it is not a fixed
+threshold. Networks can reach the shape change at which runs grok without
+grokking, its value at grokking changes with width and $\alpha$, and early
+scale adds information that shape lacks. The grokking time grows with width and falls with weight
+decay, so neither our shape clock nor the weight-decay clock holds alone. Width
+sets the shape change, and at a fixed width weight decay shrinks the scale.
+The two settings together also predict the time better than either one alone.
+On MNIST, \citet{liuOmnigrokGrokkingAlgorithmic2023} create the delay by
+enlarging the initial weights. There the time follows the law
+\(\ln(s/n_c)/(\eta\lambda)\) of the weight-decay clock, and width sets the
+shape change without setting the time. Weight decay therefore sets the
+grokking time through the weight norm on both tasks. On modular addition width
+sets it as well, while on MNIST only the weight-decay route acts. Our own
+reading, which rests on \citet{mohamadiWhyYouGrok2024}, is that width enters
+only where a fixed kernel cannot solve the task, so that the kernel must change
+shape first. What is new is the split into scale and shape, the placebo test,
+the crossed grid on two tasks, and prediction from quantities that any network
+exposes. A next step is to test whether the early rate of shape change falls as
+$1/N$, and whether a kernel frozen at each step can generalise on either task.
 
 \section*{Contribution}
 
@@ -1262,7 +1267,7 @@ function of the step and the grokking steps span more than a decade: the
 ratios are \EnineteenNtwohundredSRatio{} to \EnineteenNtwohundredARatio{} at
 $N=200$ and \EnineteenScalesevenRRatio{} to \EnineteenScalesevenSRatio{}
 across widths. Tier 3 is not repeated: with $\sigma$ of \EnineteenMainS{},
-an early read of the norm predicts the time and the rotation does not. The centred pilot of
+an early read of the norm predicts the time and the shape does not. The centred pilot of
 \cref{sec:mnistsetup} used the two-layer network of \cref{sec:setup} on
 MNIST with initial weights times 3, full-batch gradient descent,
 $\eta\lambda=10^{-5}$, one seed and 200\,000 steps, at
@@ -1377,8 +1382,9 @@ band we expect, and what would raise it. The bands are our own estimate.
   five figures and five tables, with one colour for each statistic in every
   figure. The clear typos of the abstract and the Introduction were fixed on 17
   October. & Good. & Write the Limitations as short prose; they are still a list
-  under a TODO. Explain the accelerated failure time model for our audience
-  (the TODO in \cref{sec:analysis}). Decide on the notation table. ``Rises
+  under a TODO. Check that the plain account of the accelerated failure time
+  model in \cref{sec:analysis} (added 25 October 2026) is enough for our
+  audience. Decide on the notation table. ``Rises
   significantly'' in the first paragraph of the Introduction may read as
   statistical significance. Check every figure at print size. Have a member who
   did not write a section read it for spelling and for the writing rules of
@@ -1435,7 +1441,7 @@ band we expect, and what would raise it. The bands are our own estimate.
   The question sets three recent accounts against each other, and
   \cref{tab:predictions} gives what each one predicts. Each tier answers one
   column of that table. The 720 runs cross laziness, width and weight decay. The
-  new parts are the split of the kernel's movement into scale and rotation
+  new parts are the split of the kernel's movement into scale and shape
   (\cref{eq:identity}), the placebo test for threshold claims, the crossed grid,
   and prediction from measurable quantities against a settings reference. Every
   claim is held to the limits in \file{report_v2/CLAUDE.md}. The Conclusion
@@ -1479,6 +1485,7 @@ submits a contribution statement.
   \item Each section gained a red draft contribution block that states, as if
     the preliminary findings hold, what is new and why it matters.
   \item The word ``rotation'' is kept for now and will become ``shape'' later.
+    (Done on 25 October 2026; see below.)
   \item In Tier 3 the model given the settings is a reference, since a general
     network does not report its laziness or its effective regularisation.
   \item The planning checks changed one claim. The alignment does not pass the
@@ -1720,6 +1727,68 @@ submits a contribution statement.
     the line width. Nothing in the table or the figures changed.
 \end{itemize}
 
+\paragraph{Changes made on 25 October 2026 (Jasper Chong's decisions).}
+\begin{itemize}
+  \item $R_t$ is now called ``shape'', or ``shape change'' where ``shape''
+    alone reads badly, in place of ``rotation''. The symbol $R_t$ stays.
+    Jasper Chong took this decision on 25 October 2026 once the group agreed,
+    and it replaces the rule of 5 October that the word ``rotation'' stays for
+    now. The abstract, every section, the captions, \cref{tab:predictions}
+    (``Shape clock''), \cref{tab:scaling}, the title of
+    \cref{sec:statistics} and the commented-out blocks were changed, and the
+    red TODO about the rename at the top of this file was removed. The
+    sentence that $R_t$ is the kernel distance of
+    \citet{fortDeepLearningKernel2020} stays. The quotes of earlier text in
+    this changelog and in the comment above the E9 figure keep the word
+    ``rotation''.
+  \item \file{code/common.py} now labels $R_t$ as ``shape $R_t$''. Figures E1,
+    E2, E7 and E9 were redrawn by rerunning their scripts on the extract in
+    \file{code/data/}, and copied to \file{figures/} as \file{make_all.py}
+    does. Their JSON outputs did not change. The panel titles of E2 now say
+    ``SD ratio'' in place of ``placebo ratio''. E9 is still commented out.
+  \item The ``tightening ratio'' of Tier 1 is renamed the ``SD ratio'' in
+    \cref{sec:analysis}, in the caption and the column head of
+    \cref{tab:thresholds}, and in the caption of \cref{fig:thresholds}. It is
+    the same quantity: the median placebo SD over 2\,000 permutations divided
+    by the SD at the true grokking steps. No number changed. The macros of
+    \file{numbers.tex} and the field \texttt{tightening} in \file{E03.json} keep
+    their names.
+  \item The Prediction paragraph of \cref{sec:analysis} now says why Tier 3
+    uses $\log R_t$. Zain Al-Saffi wrote to the group that $R_t$ and $\log R_t$
+    were both tried, with other non-linear forms, and that $\log R_t$
+    predicted best of the forms of $R_t$. The paragraph also says that $R_t$ at
+    $\tstar$ spans more than a decade across widths: over the runs with
+    $\eta\lambda\le10^{-3}$, its median falls from 0.031 at $N=50$ to 0.00037
+    at $N=1600$. A red TODO asks Zain to confirm which forms were compared and
+    whether $\log S_t$ was tried.
+  \item The Introduction now ends with the main finding, the mixed clock, and
+    the Conclusion was rewritten around it. On modular addition shape is the
+    most informative statistic, but it is not enough on its own and it is not
+    a fixed threshold. The time depends on both width and weight decay, so
+    neither the shape clock nor the weight-decay clock holds alone. On MNIST
+    weight decay alone sets the time. The closing claim that weight decay sets
+    the time through the weight norm on both tasks is kept. The reading that
+    width enters only where the task forces the kernel to change shape is now
+    labelled as ours in the abstract, the Introduction, \cref{sec:tier4mnist}
+    and the Conclusion.
+  \item To make room, the Introduction paragraph that listed the cited works
+    a second time was cut, since its third paragraph lists them. What it said
+    the report adds is in the contributions and the Conclusion. Its text is in
+    the git history of \file{main.tex} before this date.
+  \item The TODO after \eqref{eq:aft}, which asked for more explanation, was
+    answered with two sentences on how to read the model, and removed.
+  \item \cref{sec:mnistsetup} was reworded in shorter sentences with the same
+    content, and a broken sentence of \cref{sec:tier4mnist} (``the kernel
+    shrinks too where at grokking'') was mended.
+  \item Page check. Built with the red markup hidden, the Conclusion ends on
+    page 12, with the Contribution heading after it. The appendices run from a
+    third of the way down page 13 to most of the way down page 18, so they take
+    about 5.5 pages. With the red markup in, the Conclusion is on page 13 and
+    the appendices run from page 14 to page 19. Each of these facts is the same
+    as before the changes of this day, so the appendices were already about half
+    a page over their limit of 5 pages.
+\end{itemize}
+
 \paragraph{Cut from the golden report.} Each item can be restored from the
 golden report's source, \file{docs/report_golden.tex} (added in commit 7da1996),
 and its figure files in \file{docs/figures/}.
@@ -1778,10 +1847,18 @@ methods are ported, and their numbers are not used.
     MNIST runs (\cref{sec:mnistsetup}) as part of the setup. Every strong
     MNIST cell uses it. The only fixed-rate grokking in the exploration was
     weak, at $s=3$ (20 October 2026).
+\end{itemize}
+
+\paragraph{Settled decisions.}
+\begin{itemize}
   \item Whether to keep the reading that width enters only where the task
-    forces the kernel to change shape (\cref{sec:tier4mnist} and the
-    Conclusion). It rests on \citet{mohamadiWhyYouGrok2024} and is ours (20
-    October 2026).
+    forces the kernel to change shape (open since 20 October 2026). Settled
+    by Jasper Chong on 25 October 2026: keep it, labelled as the group's own
+    reading, which rests on \citet{mohamadiWhyYouGrok2024}. The abstract, the
+    Introduction, \cref{sec:tier4mnist} and the Conclusion label it so.
+  \item Whether to rename ``rotation'' to ``shape'' (a red TODO since 5
+    October 2026). Settled by Jasper Chong on 25 October 2026 once the group
+    agreed: $R_t$ is called ``shape''.
 \end{itemize}
 
 \subsection*{3. Reference checks}

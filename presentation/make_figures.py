@@ -1,4 +1,4 @@
-"""Slide versions of the report figures E2, E4, E5, E7, E8 and E19.
+"""Slide versions of the report figures E2, E4, E5, E7, E8 and E19, and the placebo boxes E3.
 
 The report figures come from the scripts in report_v2/code. They are drawn for an A4 page, so their
 type is too small on a projector. This script draws each one again for its place in slides.qmd.
@@ -9,9 +9,9 @@ report_v2/code/data and report_v2/code/out/numbers, and it takes its colours fro
 report_v2/code/common.py. A change to the report numbers therefore reaches the slides when this
 script runs again. It trains nothing and fits nothing.
 
-Run it from the repository root with the root environment:
+Run it from the repository root with Python 3.11 or later and the packages of pyproject.toml:
 
-    .venv/bin/python presentation/make_figures.py
+    python presentation/make_figures.py
 
 It writes presentation/assets/figures/E<k>_<name>.png.
 """
@@ -35,6 +35,10 @@ COLUMN = (10.56, 5.94)
 WIDE = (14.58, 8.2)
 
 NEUTRAL = '#8a8986'   # a bar that stands for no single statistic, as in the report figure E8
+BAND = '#f0efec'      # the shaded fit range of E5
+
+# The deck calls R_t "shape". The names are set here, so the slides do not depend on the report's labels.
+STAT_NAME = {'S': 'scale $S_t$', 'R': 'shape $R_t$', 'A': 'alignment $A_t$'}
 NO_GROK = '#f0efec'   # a cell with no data, as in the report figure E4
 
 # Tick labels of a log axis in the TeX font, as the other formulas. Matplotlib's own labels set the
@@ -79,11 +83,12 @@ def grid_ticks(ax):
 
 
 def e2():
-    """Slide 20: the statistics at the grokking step of every run that groks, after E02_thresholds.py.
+    """Slide 17: the statistics at the grokking step of every run that groks, after E02_thresholds.py.
 
-    Each dot is a run and each bar a median. The ratio on each panel is the tightening ratio of the
-    placebo test from E03. The report shades the dots by weight decay. The slide uses one hue per
-    statistic, since its message is the spread.
+    Each dot is a run and each bar a median. The ratio on each panel is the SD ratio of the placebo
+    test from E03, which the report called the tightening ratio. The report shades the dots by weight
+    decay. The slide uses one hue per statistic, since its message is the spread. The figure sits in
+    a column of 62%, so it is drawn smaller than WIDE to keep its type large.
     """
     runs = C.load_runs()
     grok = runs[~runs.censored_grok95]
@@ -91,7 +96,7 @@ def e2():
     rng = np.random.default_rng(0)
     rows = [('N100', grok[grok.width == 100], 'alpha', C.ALPHAS, r'width 100, by $\alpha$'),
             ('alpha1', grok[grok.alpha == 1.0], 'width', C.WIDTHS, r'$\alpha = 1$, by width')]
-    fig, axes = plt.subplots(2, 3, figsize=WIDE, layout='constrained')
+    fig, axes = plt.subplots(2, 3, figsize=(13.0, 7.6), layout='constrained')
     for r, (group, g, by, levels, label) in enumerate(rows):
         for c, stat in enumerate(C.STATS):
             ax = axes[r, c]
@@ -100,15 +105,70 @@ def e2():
                 ax.scatter(i + rng.uniform(-0.2, 0.2, len(v)), v, s=46, color=C.STAT_COLOUR[stat], lw=0.6,
                            edgecolors='white', zorder=3)
                 ax.hlines(v.median(), i - 0.34, i + 0.34, color=C.TEXT, lw=3, zorder=4)
-            ax.set_xticks(range(len(levels)), [f'{v:g}' for v in levels])
+            ax.set_xticks(range(len(levels)), [f'{v:g}' for v in levels], fontsize=21 if r == 0 else 18)
             ax.set_xlim(-0.6, len(levels) - 0.4)
             ax.grid(axis='x', visible=False)
-            ax.set_title(f"ratio {e3[group][stat]['sd']['tightening']:.2f}", loc='right', color=C.MUTED,
-                         fontsize=21)
+            # The ratio is a text above the panel, since the left and right titles of an axes share one pad.
+            ax.text(1.0, 1.02, f"SD ratio {e3[group][stat]['sd']['tightening']:.2f}", transform=ax.transAxes,
+                    ha='right', va='bottom', color=C.MUTED, fontsize=19)
             if r == 0:
-                ax.set_title(C.STAT_NAME[stat], loc='left', color=C.STAT_RAMP[stat][4], fontweight='bold')
+                ax.set_title(STAT_NAME[stat], loc='left', color=C.STAT_RAMP[stat][4], fontweight='bold', pad=40)
+            else:
+                ax.set_title(' ', pad=18)
         axes[r, 0].set_ylabel(label)
     save(fig, 'E2_thresholds')
+
+
+def p_label(p, n_perm):
+    """The permutation p as the slides print it: below 1 / n_perm when no permutation reached it."""
+    return f'$p < {1 / n_perm:g}$' if p == 0 else f'$p = {p:.3f}$'
+
+
+def e3():
+    """Slide 16: the placebo test at width 100 as box plots, after E03_placebo.py.
+
+    For each statistic, the left box holds its values at each run's own grokking step, and the right
+    box its values when each run is read at the grokking step of another run. The right box pools the
+    2,000 derangements of E03, drawn with the same seed in the same order, so the SD ratio printed on
+    each panel is recomputed here and checked against E03.json. Whiskers reach the furthest value
+    within 1.5 box heights, and values beyond them are not drawn.
+    """
+    import importlib
+    e03 = importlib.import_module('E03_placebo')
+    runs = C.load_runs()
+    grok = runs[~runs.censored_grok95]
+    group = grok[grok.width == 100]
+    ckpt = C.load_checkpoints(['run_id', 'step', 'S_sum', 'R_sum', 'A_sum'])
+    saved = C.read_json('E03')['groups']['N100']
+    # E03 draws the derangements of the width-100 group first, from a fresh generator.
+    rng = np.random.default_rng(e03.SEED)
+    ids = group.run_id.to_numpy()
+    t_grok = group.t_grok95.to_numpy()
+    perms = e03.derangements(len(ids), e03.N_PERM, rng)
+
+    fig, axes = plt.subplots(1, 3, figsize=(11.9, 6.7), layout='constrained')
+    for ax, stat in zip(axes, C.STATS):
+        wide = C.pivot(ckpt, C.CHECKPOINT_STATS[stat])
+        own = C.value_at_step(wide, ids, t_grok)
+        sub = wide.loc[ids]
+        col = np.searchsorted(sub.columns.to_numpy(), t_grok[perms], side='right') - 1
+        other = sub.to_numpy()[np.arange(len(ids))[None, :], col]
+        ratio = np.median(C.spread(other)) / C.spread(own)
+        assert np.isclose(ratio, saved[stat]['sd']['tightening'], rtol=1e-9), stat
+        ramp = C.STAT_RAMP[stat]
+        box = ax.boxplot([own, other.ravel()], positions=[0, 1], widths=0.55, whis=1.5, showfliers=False,
+                         patch_artist=True, medianprops={'color': C.TEXT, 'lw': 3},
+                         whiskerprops={'color': C.MUTED, 'lw': 1.6}, capprops={'color': C.MUTED, 'lw': 1.6})
+        for patch, face in zip(box['boxes'], (C.STAT_COLOUR[stat], ramp[0])):
+            patch.set(facecolor=face, edgecolor=C.STAT_COLOUR[stat], lw=1.6)
+        ax.set_xticks([0, 1], ['own\nstep', "another\nrun's step"])
+        ax.set_xlim(-0.55, 1.55)
+        ax.grid(axis='x', visible=False)
+        ax.tick_params(axis='x', length=0)
+        ax.set_title(STAT_NAME[stat], loc='left', color=ramp[4], fontweight='bold', pad=40)
+        ax.text(0, 1.025, f"SD ratio {ratio:.2f}, {p_label(saved[stat]['sd']['p'], e03.N_PERM)}",
+                transform=ax.transAxes, color=C.MUTED, fontsize=19, va='bottom')
+    save(fig, 'E3_placebo')
 
 
 def e4():
@@ -143,18 +203,20 @@ def e4():
 
 
 def e5():
-    """Slide 22: the grokking time against weight decay at each width, alpha = 1, after E05_scaling.py.
+    """Slide 18: the grokking time against weight decay at each width, alpha = 1, after E05_scaling.py.
 
-    Dots are seeds, open circles at the budget are runs that did not grok, solid lines join the cell
-    medians where at least 3 seeds grok, and dashed lines are the main fit of E06 over its range.
+    Dots are seeds, open circles at the budget are runs that did not grok, and solid lines join the
+    cell medians where at least 3 seeds grok. The grey band is the range of the main fit of E06, where
+    every seed groks. The fitted lines are left out, since the slide gives the fit in a table. Two
+    grey lines show the slope that each clock predicts.
     """
     runs = C.load_runs()
     a1 = runs[(runs.alpha == 1.0) & (runs.eta_kappa > 0)]
-    fit = C.read_json('E06')
-    est, cen = fit['rows']['main']['estimate'], fit['centre']
     colours = C.width_colours()
     rng = np.random.default_rng(0)
     fig, ax = plt.subplots(figsize=COLUMN, layout='constrained')
+    ax.axvspan(10 ** -5.15, 10 ** -3.85, color=BAND, lw=0, zorder=0)
+    ax.text(10 ** -4.5, 1.55e5, 'fit range', color=C.MUTED, ha='center', va='center', fontsize=19)
     for w in C.WIDTHS:
         g = a1[a1.width == w]
         jit = np.exp(rng.uniform(-0.06, 0.06, len(g)))
@@ -165,16 +227,14 @@ def e5():
         hit = g[ok]
         med = hit.groupby('eta_kappa').t_grok95.median().where(hit.groupby('eta_kappa').size() >= 3)
         ax.plot(med.index, med.values, color=colours[w], marker='o', ms=7, label=f'$N = {w}$', zorder=4)
-        d = np.geomspace(1e-5, 1e-4, 20)
-        x, y = np.log(w) - cen['x0_logN'], np.log(d) - cen['y0_log_decay']
-        ax.plot(d, np.exp(est['c'] + est['a'] * x + est['b'] * y + est['gamma'] * x * y), color=colours[w], ls='--',
-                lw=1.8, zorder=5)
-    # The two reference slopes, drawn from one point in the empty lower right corner.
-    x0, t0, x1 = 6e-4, 1.4e4, 2.4e-3
+    # The slope each clock predicts, drawn from one point in the empty lower right corner. Each label
+    # names the clock, so the lines say what they are for.
+    x0, t0, x1 = 4.5e-4, 1.6e4, 1.8e-3
     ax.plot([x0, x1], [t0, t0], color=C.MUTED, lw=2)
     ax.plot([x0, x1], [t0, t0 * x0 / x1], color=C.MUTED, lw=2)
-    ax.text(x1 * 1.12, t0, 'slope 0', color=C.MUTED, va='center')
-    ax.text(x1 * 1.12, t0 * x0 / x1, 'slope $-1$', color=C.MUTED, va='center')
+    ax.text(x1 * 1.12, t0, 'shape clock\nslope 0', color=C.MUTED, va='center', fontsize=18, linespacing=1.1)
+    ax.text(x1 * 1.12, t0 * x0 / x1, 'weight-decay\nclock\nslope $-1$', color=C.MUTED, va='center', fontsize=18,
+            linespacing=1.1)
     ax.axhline(C.BUDGET, color=C.MUTED, lw=1.2)
     ax.text(2.6e-6, C.BUDGET * 1.07, 'Open circles did not grok within 200,000 steps.', color=C.MUTED, va='bottom',
             fontsize=19)
@@ -193,10 +253,10 @@ def e5():
 
 
 def e7():
-    """Slide 25: median rotation and scale at t* over width and weight decay, alpha = 1, after E07_mechanism.py.
+    """Backup: median shape and scale at t* over width and weight decay, alpha = 1, after E07_mechanism.py.
 
     The medians come from E07.json. The slide drops the number in each cell, since its message is
-    the pattern: rotation changes along the widths and scale along the weight decays.
+    the pattern: the shape statistic changes along the widths and scale along the weight decays.
     """
     from matplotlib.colors import LogNorm, Normalize
     med = C.read_json('E07')['alpha1_medians']
@@ -207,7 +267,7 @@ def e7():
         im = ax.pcolormesh(grid, cmap=light_cmap(C.STAT_CMAP[stat], 0.12), norm=norm, edgecolors='white',
                            linewidth=2)
         grid_ticks(ax)
-        ax.set_title(C.STAT_NAME[stat], loc='left', color=C.STAT_RAMP[stat][4], fontweight='bold')
+        ax.set_title(STAT_NAME[stat], loc='left', color=C.STAT_RAMP[stat][4], fontweight='bold')
         cb = fig.colorbar(im, ax=ax, pad=0.02, aspect=8)
         cb.ax.minorticks_off()
         cb.outline.set_visible(False)
@@ -254,13 +314,14 @@ def e8():
 
 
 def e19():
-    """Slide 18: MNIST, after E19_mnist.py.
+    """Slide 20: MNIST, after E19_mnist.py.
 
     Two panels of the report figure, without its map of the grid. (a) The grokking step against
     weight decay, medians over 5 seeds, one colour per initial scale and one marker per width, with
     the law T = ln(s / n_c) / (eta lambda) drawn through them. (b) The weight norm at grokking in
     units of the norm at s = 1, one point per run, with its mean. Together they say that the time
-    follows weight decay alone and that what is fixed at grokking is the norm.
+    follows weight decay alone and that what is fixed at grokking is the norm. The key sits in one row
+    below both panels and every label sits where no data lie, so nothing covers a point.
     """
     import matplotlib
     scales = [3.0, 5.0, 7.0, 9.0]
@@ -292,7 +353,8 @@ def e19():
                     markerfacecolor=colours[s] if w == 400 else 'white', markeredgewidth=1.8, zorder=3)
         ax.plot(xs, np.log(s / n_c) / xs, color=colours[s], linewidth=2.0, alpha=0.85, zorder=2)
     ax.axhline(budget, color=C.MUTED, linewidth=1.4, linestyle=':')
-    ax.text(1.05e-6, budget * 1.1, 'budget', color=C.MUTED, va='bottom', fontsize=19)
+    # The label sits at the right end of the line, above the runs at large decay, which grok far sooner.
+    ax.text(3.8e-5, budget * 1.1, 'budget', color=C.MUTED, va='bottom', ha='right', fontsize=19)
     ax.set_xscale('log')
     ax.set_yscale('log')
     ax.yaxis.set_major_formatter(POW10)
@@ -303,8 +365,8 @@ def e19():
     h += [matplotlib.lines.Line2D([], [], color=C.MUTED, marker=markers[w], linestyle='none', markersize=10,
                                   markerfacecolor=C.MUTED if w == 400 else 'white', markeredgewidth=1.8,
                                   label=f'$N={w}$') for w in widths]
-    ax.legend(handles=h, ncol=2, loc='lower left', handlelength=1.4, columnspacing=1.0, borderaxespad=0.2,
-              fontsize=19)
+    fig.legend(handles=h, ncol=len(scales), loc='outside lower center', handlelength=1.4, columnspacing=1.2,
+               frameon=False, fontsize=19)
 
     ax = axes[1]
     rng = np.random.default_rng(1)
@@ -312,18 +374,20 @@ def e19():
         g = law[law.init_scale == s]
         jitter = g.width.map({200: -0.3, 400: 0.0, 800: 0.3}) + rng.normal(0, 0.06, len(g))
         ax.plot(s + jitter, g.n_c, linestyle='none', marker='.', markersize=9, color=colours[s], alpha=0.8)
-    ax.axhline(n_c, color=C.TEXT, linewidth=2)
-    ax.text(2.2, n_c + 0.012, f'mean {n_c:.2f}', color=C.TEXT, va='bottom', ha='left', fontsize=20)
+    ax.hlines(n_c, 2.0, 9.55, color=C.TEXT, linewidth=2)
+    # The mean is named to the right of the last group of points, where the panel is empty.
+    ax.text(9.75, n_c, f'mean\n{n_c:.2f}', color=C.TEXT, va='center', ha='left', fontsize=19, linespacing=1.1)
     ax.set_xticks(scales, [f'{s:g}' for s in scales])
-    ax.set_xlim(2.0, 9.8)
-    ax.set_ylim(1.7, 2.5)
+    ax.set_xlim(2.0, 11.2)
+    ax.set_ylim(1.75, 2.45)
+    ax.set_yticks([1.8, 2.0, 2.2, 2.4])
     ax.set_xlabel('initial scale $s$')
-    ax.set_ylabel(r'norm at $T$, $n_c$')
+    ax.set_ylabel('norm at $T$')
     ax.set_title('(b) the norm is fixed', loc='left')
     save(fig, 'E19_mnist')
 
 
 if __name__ == '__main__':
-    for draw in (e2, e4, e5, e7, e8, e19):
+    for draw in (e2, e3, e4, e5, e7, e8, e19):
         draw()
         print('drew', draw.__name__)

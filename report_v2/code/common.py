@@ -147,7 +147,7 @@ MUTED = '#52514e'
 GRID = '#e4e3df'
 VIOLET_CMAP = 'Purples'
 STAT_CMAP = {'S': 'Blues', 'R': 'Oranges', 'A': 'Greens'}
-STAT_NAME = {'S': 'scale $S_t$', 'R': 'rotation $R_t$', 'A': 'alignment $A_t$'}
+STAT_NAME = {'S': 'scale $S_t$', 'R': 'shape $R_t$', 'A': 'alignment $A_t$'}
 
 
 def ramp(stat, n):

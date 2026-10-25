@@ -1,18 +1,20 @@
 """The baseline run fits its training pairs long before it generalises.
 
-Slide 2 of the deck. Both curves are measurements of the run ntk_N100_a1_wd0_s0
+Slide 3 of the deck. Both curves are measurements of the run ntk_N100_a1_wd0_s0
 of the sweep of 3 October 2026: alpha 1, width 100, eta lambda 0 and seed 0,
 read from its committed seed 0 curve. Its two events come from report_runs.csv
 of the report extract. The run memorises at step 2,983, the first checkpoint
 with training accuracy at least 0.99. Its grokking step T is 15,395, the first
 checkpoint with test accuracy at least 0.95. The slide prints the medians over
 the 5 seeds, 2,983 and 23,000, so the clip marks the two events without
-printing their steps.
+printing their steps. Each event is named in the colour of its curve:
+"memorised" in the grey of training accuracy and "generalised" in the ink of
+test accuracy.
 
 Render from animations/:
 
-    uv run manim -qh slides/grokking_timeline.py GrokkingTimeline
-    uv run manim -qh -s slides/grokking_timeline.py GrokkingTimeline
+    python -m manim -qh slides/grokking_timeline.py GrokkingTimeline
+    python -m manim -qh -s slides/grokking_timeline.py GrokkingTimeline
 """
 
 import sys
@@ -64,7 +66,7 @@ class GrokkingTimeline(layout.QuickScene):
         mem_point = axes.c2p(x_mem, np.interp(x_mem, x, train))
         mem_drop = DashedLine(mem_point, axes.c2p(x_mem, 0), color=palette.TRAIN, stroke_width=3)
         mem_marker = layout.event_marker(mem_point, palette.TRAIN, filled=False)
-        mem_name = Text("memorised", font_size=SIZE, color=palette.INK).next_to(mem_point, UP, buff=0.3)
+        mem_name = Text("memorised", font_size=SIZE, color=palette.TRAIN).next_to(mem_point, UP, buff=0.3)
         self.play(Create(mem_drop), FadeIn(mem_marker), FadeIn(mem_name), run_time=1)
         self.wait(0.6)
 
@@ -74,7 +76,10 @@ class GrokkingTimeline(layout.QuickScene):
         grok_point = axes.c2p(x_grok, np.interp(x_grok, x, test))
         grok_drop = DashedLine(grok_point, axes.c2p(x_grok, 0), color=palette.TEST, stroke_width=3)
         grok_marker = layout.event_marker(grok_point, palette.TEST, filled=True)
-        self.play(Create(grok_drop), FadeIn(grok_marker), run_time=1)
+        # The label sits to the right of the steep rise, below the line at accuracy 1, where the plot is empty.
+        grok_name = Text("generalised", font_size=SIZE, color=palette.TEST)
+        grok_name.next_to(axes.c2p(x_grok, 0.78), RIGHT, buff=0.3)
+        self.play(Create(grok_drop), FadeIn(grok_marker), FadeIn(grok_name), run_time=1)
 
         self.play(cursor.animate.set_value(x[-1]), run_time=2, rate_func=linear)
 

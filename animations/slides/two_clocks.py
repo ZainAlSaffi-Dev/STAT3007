@@ -1,6 +1,6 @@
 """What the two clocks would look like: the predicted slopes of Tier 2 beside the fitted ones.
 
-Slide 23 of the deck. The fit is that of report_v2/code/E06_aft.py, row "main"
+A backup slide of the deck. The fit is that of report_v2/code/E06_aft.py, row "main"
 of E06.json, at alpha 1 over N from 50 to 1600 and eta lambda from 1e-5 to 1e-4:
 
     log T = c + a x + b y + gamma x y,   x = log N - x0,   y = log(eta lambda) - y0,
@@ -15,7 +15,7 @@ and the labels print the strings of the slide.
 The orange and grey lines are predictions, drawn through the same centre so
 that only their slopes differ. The weight-decay clock has b = -1, since its
 grokking time scales as 1 / (eta lambda) (Kim, 2026, as slide 4 cites), and
-a = 0, which is our reading. The rotation clock has a = 1 and b = 0, our
+a = 0, which is our reading. The shape clock has a = 1 and b = 0, our
 reading of slide 14: if T_t stays of order 1 / N, the time to rotate grows in
 proportion to N. The note on screen says that both are predictions.
 
@@ -25,8 +25,8 @@ the two slices instead.
 
 Render from animations/:
 
-    uv run manim -qh slides/two_clocks.py TwoClocks
-    uv run manim -qh -s slides/two_clocks.py TwoClocks
+    python -m manim -qh slides/two_clocks.py TwoClocks
+    python -m manim -qh -s slides/two_clocks.py TwoClocks
 """
 
 import sys
@@ -111,7 +111,7 @@ class TwoClocks(layout.QuickScene):
             return VGroup(Rectangle(width=0.5, height=0.28, stroke_width=0, fill_color=colour, fill_opacity=1),
                           Text(words, font_size=SIZE - 6, color=palette.INK)).arrange(RIGHT, buff=0.2)
 
-        keys = VGroup(key(palette.ROTATION, "rotation clock"), key(palette.GRAY, "weight-decay clock"),
+        keys = VGroup(key(palette.ROTATION, "shape clock"), key(palette.GRAY, "weight-decay clock"),
                       key(palette.INK, "our fit")).arrange(RIGHT, buff=0.45).to_edge(DOWN, buff=0.3)
         note = Text("Both clocks are predictions through the centre of the fit.", font_size=SIZE - 6,
                     color=palette.GRAY).to_edge(UP, buff=0.3)

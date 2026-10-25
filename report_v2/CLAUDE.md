@@ -24,13 +24,13 @@ The `overleaf/` folder must stay self-contained. Nothing in it may refer to a fi
 Every edit should serve this argument. If a change does not help a reader follow it, leave the change out.
 
 1. The research question is what sets the grokking time: the shape of the tangent kernel, its scale, or the weight-decay rate.
-2. The literature times grokking by a scale quantity (the weight norm or the logit scale) or by the weight-decay rate. In the kernel-flow equation of Lewkowycz and Gur-Ari, weight decay only rescales the kernel, and only a finite-width term can rotate it. Our hypothesis is that rotation sets the clock.
+2. The literature times grokking by a scale quantity (the weight norm or the logit scale) or by the weight-decay rate. In the kernel-flow equation of Lewkowycz and Gur-Ari, weight decay only rescales the kernel, and only a finite-width term can change its shape. Our hypothesis is that the shape change sets the clock.
 3. Table 1 of the report sets out what each account predicts. Each test answers one column of it.
    - Tier 1 asks whether grokking happens at a fixed value of a statistic.
    - Tier 2 asks how the grokking time scales with width and with weight decay.
    - Tier 3 asks which early statistic predicts the grokking time.
-4. On modular addition the three tests give the same answer. Rotation matters most but is not enough on its own, and the time is set by rotation and scale together. Width sets the rotation and weight decay sets the scale. This is the "mixed clock". Tier 4' is a stretch theory section. Its direction is not decided: the commented-out §4.5 of the report lists options A to E, with the costs and risks of each. Do not write the section until the group chooses.
-5. Tier 4 (added 20 October 2026) repeats the Tier 1 and Tier 2 questions on MNIST, in the setup of Liu, Michaud and Tegmark (2023). There the weight-decay clock holds exactly: the grokking time is ln(s / n_c) / (ηλ) with n_c a fixed weight norm, the width exponent is zero, and width sets the rotation without setting the time. The report's closing claim is therefore that weight decay sets the time through the weight norm on both tasks, and that width enters only on modular addition, where a fixed kernel cannot solve the task (Mohamadi et al. 2024) so the kernel must change shape first. The second half is the group's own reading and the text labels it so.
+4. On modular addition the three tests give the same answer, which the report calls the "mixed clock" (wording settled by Jasper Chong on 25 October 2026). Shape is the most informative statistic. It is the most tied to grokking at a fixed width (Tier 1) and the best single early predictor (Tier 3). It is not enough on its own, and it is not a fixed threshold, since its value at grokking changes with width and α. The grokking time depends on both width and weight decay (Tier 2: a > 0, the sign of the shape clock, and b < 0, the sign of the weight-decay clock), so neither the published accounts nor our hypothesis holds alone. Width sets the shape change and weight decay sets the scale. Tier 4' is a stretch theory section. Its direction is not decided: the commented-out §4.5 of the report lists options A to E, with the costs and risks of each. Do not write the section until the group chooses.
+5. Tier 4 (added 20 October 2026) repeats the Tier 1 and Tier 2 questions on MNIST, in the setup of Liu, Michaud and Tegmark (2023). There the weight-decay clock holds exactly: the grokking time is ln(s / n_c) / (ηλ) with n_c a fixed weight norm, the width exponent is zero, and width sets the shape change without setting the time. The report's closing claim is therefore that weight decay sets the time through the weight norm on both tasks, and that width enters only on modular addition, where a fixed kernel cannot solve the task (Mohamadi et al. 2024) so the kernel must change shape first. The second half is the group's own reading and the text labels it so. The two halves sit together in the mixed clock: on modular addition both width (with the shape change) and weight decay (with the scale) set the time, and on MNIST only the weight-decay route acts. The report must say plainly what the findings mean and what a reader should take away (Jasper Chong, 25 October 2026). The end of the Introduction and the Conclusion do this.
 
 ## Decisions that differ from the golden report
 
@@ -39,18 +39,18 @@ These were taken by Jasper Chong on 5 October 2026. They are recorded in the cha
 - All results come from `data/`. That is the sweep of 3 October 2026 with 720 runs, 5 seeds and 200,000 steps. The golden report used the grid-v0.1.0 databases on branch `feat/grid` (12 seeds, 100,000 steps). They appeared in Appendix D as a cross-check until that appendix was dropped on 17 October 2026.
 - The report uses three statistics on one kernel. The kernel is the tangent kernel of the sum of the logits divided by √p, on the 53 test pairs of each run.
   - S is the ratio of Frobenius norms to step 0.
-  - R is one minus the uncentred cosine to step 0. It is called "rotation" for now.
+  - R is one minus the uncentred cosine to step 0. It is called "shape" (decision of 25 October 2026, below).
   - A is the centred alignment with Y Yᵀ, which is `A_sum` in `data/`.
   - The golden report's A, which uses the tangent kernel of all p logits, is not used.
-- The variation D appears only through the identity D² = S² − 2S(1 − R) + 1, to show that it mixes scale and rotation.
+- The variation D appears only through the identity D² = S² − 2S(1 − R) + 1, to show that it mixes scale and shape.
 - The main text uses grokking level 0.95 only. Levels 0.80 and 0.90 go in Appendix E.
 - The following are cut from the main text: the spectral measures, Kaplan-Meier with Greenwood's interval, the Aalen model, the time-varying Cox model, the broken line, optimal design and the phase taxonomy. The changelog says where to find each one if the group wants it back.
 - In Tier 3, the model given the settings (width and weight decay) is a reference that knows more than any network would report. It is not a competitor. The reason is that a general network does not report its laziness or its effective regularisation, while its tangent kernel can be measured.
-- "Rotation" stays as the word for R until the group agrees to switch to "shape". A red TODO at the top of `main.tex` records this. Do not do the rename unless asked.
+- R is called "shape", or "shape change" in running prose where "shape" alone reads badly. The symbol R_t stays. Jasper Chong took this decision on 25 October 2026, once the group agreed. It replaces the rule of 5 October 2026 that "rotation" stays until the group agrees, and the red TODO for the rename is gone from `main.tex`. Words such as "rotate" for the T_t term of the kernel-flow equation become "change its shape". Keep "rotation" only in quotes of earlier text and in the changelog.
 
 These were taken by Jasper Chong on 11 October 2026.
 
-- Tier 1 measures the spread across runs by the standard deviation (ddof 1), not the CV. An SD carries the units of its statistic, so compare statistics only by the tightening ratio and the permutation p.
+- Tier 1 measures the spread across runs by the standard deviation (ddof 1), not the CV. An SD carries the units of its statistic, so compare statistics only by the SD ratio and the permutation p. The SD ratio (called the tightening ratio until 25 October 2026) is the median placebo SD over 2,000 permutations divided by the SD at the true grokking steps.
 - Tier 4' (Section 4.5) is commented out in `main.tex`, and E11, E17 and E18 are not run.
 
 This was taken by Jasper Chong on 12 October 2026.
@@ -62,7 +62,7 @@ These were taken by Jasper Chong on 17 October 2026.
 - Tier 3' is called Tier 3. The commented-out theory section keeps the name Tier 4'.
 - Each experiment section opens with "Finding." in place of "Claim.".
 - §4.1 states the reproduction briefly. The comparison with Kumar et al., including the faster memorisation, sits in Appendix B, and a TODO asks whether the report needs that appendix. If it goes, §4.1 must still say that our networks memorise sooner than theirs.
-- Figures E5 (scaling) and E9 (the surface), and the product coefficient γ_SR, are commented out of `main.tex`. With them went the claim that rotation and scale interact. Bring that claim back only together with E9.
+- Figures E5 (scaling) and E9 (the surface), and the product coefficient γ_SR, are commented out of `main.tex`. With them went the claim that shape and scale interact. Bring that claim back only together with E9.
 - Tier 3 runs two tests: held-out cells (Table 5) and an unseen α (Fig. E8). Fig. E8 shows each statistic alone, XGBoost on all three, the GRU on their history and the settings line.
 - Tier 3 does not test weight decay as a predictor, although Table 1 names ηλ alone as the early predictor of the weight-decay clock. Here ηλ is set by us and known exactly, while the effective regularisation of a general network cannot be measured, and the report looks for predictors that carry over to real models. The caption of Table 1, the Prediction paragraph of §3.5 and the opening of §4.4 each say so.
 - The settings reference is split into its parts on an unseen α: the trees on log N alone and on ηλ alone (E08). Each part ranks runs worse than the two together. The finding of Tier 3, the closing paragraph of §4.4 and the Conclusion use this as support for the mixed clock.
@@ -79,30 +79,37 @@ These were taken on 20 October 2026 (Samuel Rieger, with the user's approval of 
 - The edits of 20 October were marked in blue (`\rev`, `\revnote`) for the group's review. The group reviewed and reworded them the same day, and the markup and its macros were then removed. The changelog in the draft notes records what changed.
 - The MNIST text says how the delay arises there, following Liu et al. Secs. 2, 4 and 5: standard initialisation learns MNIST with no delay, so they train on 1,000 images and enlarge the initial weights; the uncentred predictor keeps that enlarged random function and weight decay must shrink it, whereas the centred predictor of §3.1 removes it. §3.6 cites the group's pilot of 12 October 2026 (`mnist/exploration/results/mnist_pilot/summary_kumar_b.json`, one seed): the centred two-layer network on MNIST had test accuracy 0.87 to 0.90 at memorisation at every α, so no delay. Whether a one-seed pilot may be cited in the main text is an open decision for the group.
 
+These were taken by Jasper Chong on 25 October 2026, while the group revised the seminar talk.
+
+- R is called "shape". The entry in the 5 October list above records it.
+- The Tier 1 "tightening ratio" is renamed the "SD ratio". It is the same quantity and no number changes. The macros in `numbers.tex` and the field `tightening` in `E03.json` keep their names.
+- The report ends its Introduction with what a reader should take away, the mixed clock of point 4 of the story, and the Conclusion states the contribution and the takeaway within the claim limits below. The MNIST reading (point 5 of the story) is kept and labelled as the group's own wherever it appears. This settles the open decision of 20 October 2026 on that reading.
+- Tier 3 uses log R_t because R_t and log R_t were both tried, with other non-linear forms, and log R_t predicted best of the forms of R_t (Zain Al-Saffi to the group). R_t at t* spans more than a decade across widths. Whether log S_t was tried is not yet confirmed, and a red TODO in the Prediction paragraph of §3.5 asks Zain.
+
 ## What the data allow the report to claim
 
 These limits come from checks on `data/`. A claim that goes past them is wrong, even if it reads better.
 
-- **Tier 1.** Rotation is the statistic most tied to the event, but only at a fixed width. Read at another run's grokking step, its SD at N = 100 widens 1.71 times, against 1.29 times for scale and 1.09 for alignment. Across widths no statistic passes at level 0.95. At level 0.80, scale and alignment tighten slightly across widths. At 0.90 only alignment does (p = 0.013; scale has p = 0.085). Rotation does not at any level.
-- **Rotation is not a sufficient threshold.** In 8 cells where some seed memorises but none groks, seeds still reach the median rotation at grokking of their width. Do not write that reaching a rotation makes a network grok.
-- **Alignment.** The median of A barely changes between step 0 (0.398) and grokking (0.406) over the runs that grok. Its placebo ratio at N = 100 is 1.09 with p = 0.03, so write that its ratio is close to 1. Do not write that alignment is a threshold or a clock.
+- **Tier 1.** Shape is the statistic most tied to the event, but only at a fixed width. Read at another run's grokking step, its SD at N = 100 widens 1.71 times, against 1.29 times for scale and 1.09 for alignment. Across widths no statistic passes at level 0.95. At level 0.80, scale and alignment tighten slightly across widths. At 0.90 only alignment does (p = 0.013; scale has p = 0.085). Shape does not at any level.
+- **Shape is not a sufficient threshold.** In 8 cells where some seed memorises but none groks, seeds still reach the median shape change at grokking of their width. Do not write that reaching a given shape change makes a network grok.
+- **Alignment.** The median of A barely changes between step 0 (0.398) and grokking (0.406) over the runs that grok. Its SD ratio at N = 100 is 1.09 with p = 0.03, so write that its ratio is close to 1. Do not write that alignment is a threshold or a clock.
 - **Tier 2 intervals.** With cells resampled, γ has an interval that includes zero. Do not claim its sign.
 - **Tier 2.** The exponents depend on which weight-decay cells enter the fit. Always report the main range (ηλ from 1e-5 to 1e-4) together with the check rows. If the intervals resample seeds only, say that they hold the cells fixed.
-- **Tier 3.** Rotation is the best single statistic, scale adds information that rotation lacks, and alignment adds little.
+- **Tier 3.** Shape is the best single statistic, scale adds information that shape lacks, and alignment adds little.
   - The statistics are almost fully set by the cell, and they carry no signal about which seed of a cell groks first.
   - The settings reference predicts better than any kernel model.
-  - On an unseen α the trees reach 0.67 on log N alone, 0.72 on ηλ alone and 0.79 on both. So ηλ alone ranks runs better than any statistic alone (at most 0.55) and about as well as the trees on all three (0.70). Do not write that rotation or the kernel beats weight decay.
+  - On an unseen α the trees reach 0.67 on log N alone, 0.72 on ηλ alone and 0.79 on both. So ηλ alone ranks runs better than any statistic alone (at most 0.55) and about as well as the trees on all three (0.70). Do not write that shape or the kernel beats weight decay.
   - Do not claim that the kernel gives an earlier warning than the settings do.
 - **Tier 4 (MNIST).** The limits come from `code/out/numbers/E19.json`.
   - The width exponent is zero and the decay exponent is minus one at every scale from 5 to 9, with a residual σ near 0.03. Do not write that width lengthens the time on MNIST.
   - The weight norm at grokking, in units of the default initialisation norm, is about 2.1 with a spread of about 3 percent over every scale, width and decay at N ≥ 200. The norm follows pure decay, so T = ln(s / n_c) / (ηλ). This is the law of Liu et al. (2023), Section 2, and the text cites it there. Do not present it as new.
-  - R at grokking falls about twenty-fold from N = 200 to N = 800 while T does not move. Write that width sets the rotation and the rotation plays no part in the time. Do not write that rotation is absent on MNIST.
+  - R at grokking falls about twenty-fold from N = 200 to N = 800 while T does not move. Write that width sets the shape change and the shape change plays no part in the time. Do not write that the kernel does not change shape on MNIST.
   - Width 100 reaches level 0.80 in 87 of its 120 runs with decay, but its test accuracy at memorisation is already 0.72, it is later than the wider networks at the same decay, and its norm at the level is lower and scattered, so it does not follow the law and is left out of the fits. Do not write that width 100 never groks. The text calls this a capacity limit at 1,000 images and labels that as a reading.
   - Tier 3 is not repeated on MNIST. Say why in one sentence (σ near 0.03 makes the time a function of the settings alone) and do not add MNIST prediction models unless asked.
   - The curvature learning-rate rule and the fixed per-step decay must be stated in Methods and Limitations. The rule sets the memorisation step. Do not hide it.
   - The reading that width enters only where the task forces the kernel to change shape rests on Mohamadi et al. (2024) and is the group's own. Label it so wherever it appears.
 - **Tier 4'.** Whatever option the group chooses, label as the group's own any model or derivation that no source gives. Option A, the rate-addition model 1/T = r0 N^(−q) + c·ηλ, is the clearest case. No source paper derives it.
-  - Two parts come from sources. The weight-decay term of the kernel-flow equation only rescales the kernel (Lewkowycz and Gur-Ari, Eq. S5). The term that rotates the kernel, T_t, is of order 1/N at initialisation, which they credit to Dyer and Gur-Ari. Kim's law makes the decay route's rate grow in proportion to ηλ.
+  - Two parts come from sources. The weight-decay term of the kernel-flow equation only rescales the kernel (Lewkowycz and Gur-Ari, Eq. S5). The term that changes the shape of the kernel, T_t, is of order 1/N at initialisation, which they credit to Dyer and Gur-Ari. Kim's law makes the decay route's rate grow in proportion to ηλ.
   - The rest is ours. That T_t stays of order 1/N during training, that the width route and the decay route act side by side so their rates add, and the form r0 N^(−q) are our assumptions.
   - So the text must present the model as a hypothesis that the data test. It must not cite it to Lewkowycz and Gur-Ari or to Kim, and it must not treat a good fit as proof of the mechanism.
 

@@ -33,8 +33,18 @@ IDENTITY = r"D_t^2 = S_t^2 - 2 S_t (1 - R_t) + 1"
 IDENTITY_SPLIT = r"D_t^2 = (S_t - 1)^2 + 2 S_t R_t"
 SCALE_PART = r"(S_t - 1)^2"
 ROTATION_PART = r"2 S_t R_t"
+# The deck calls R_t "shape" since 25 October 2026, so the second part is the
+# shape part. The string is the same.
+SHAPE_PART = ROTATION_PART
 PURE_SCALE_LIMIT = r"R_t = 0 \;\Rightarrow\; D_t = \lvert S_t - 1 \rvert"
 PURE_ROTATION_LIMIT = r"S_t = 1 \;\Rightarrow\; D_t^2 = 2 R_t"
+
+# The kernel flow of Lewkowycz and Gur-Ari (2020), Equation S5 of
+# arXiv:2006.08643v2, written with the deck's K_t for their Theta_t. The first
+# term only rescales the kernel. Only T_t, Equation S6, can change its shape.
+KERNEL_T = r"K_t"
+FLOW_SCALE = r"-2(k-1)\lambda\,K_t"
+FLOW_SHAPE = r"T_t"
 
 # The weight-decay rate, as the product the report writes. ntk_lib calls it
 # eta_kappa.

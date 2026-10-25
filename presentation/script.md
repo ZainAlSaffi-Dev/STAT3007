@@ -1,135 +1,506 @@
 # Script for the G2 seminar
 
-This is the spoken script of the talk. It is built from the speaker notes in `slides.qmd`, with every number filled in from `_variables.yml` as it stood on 25 October 2026. The deck remains the source. If a note or a number changes there, change it here as well.
+This script is written by `make_script.py` from the speaker notes in `slides.qmd`, on 25 October 2026. Do not edit it by hand. Change the notes in the deck and run the script again.
 
-The talk has 21 slides and five act slides, for 10:00 in all. The turns follow the possible split for five speakers in `PLAN.md`, section 5. The group has not yet decided who takes which turn. At about 150 words a minute, each turn's text fits its time.
+Each slide gives its number in the browser, its budget and the running total. "Say" is what to speak, at about 150 words a minute. "Point at" says how to read the figure. "If asked" holds detail for questions, which is not part of the timed talk. The answers to the questions we expect are at the end.
 
-Each slide gives its number, its budget and the running total. "Say" is the text to speak. "If asked" holds extra detail for questions, which is not part of the timed talk.
+| Turn | Slides | Time |
+|---|---|---|
+| 1 | 1 to 4 | 1:20 |
+| 2 | 5 to 9 | 2:15 |
+| 3 | 10 to 14 | 1:50 |
+| 4 | 15 to 18 | 2:00 |
+| 5 | 19 to 24 | 2:15 |
 
-## Turn 1. The title and grokking (1:40)
+## Turn 1 (1:20)
 
 ### Slide 1. Title: Scale or Shape? (0:15, total 0:15)
 
-Say: We are group G2, and our project is about grokking. Grokking is when a network generalises long after it fits the training data. We tracked the neural tangent kernel during training with three measurements. We wanted to see what predicts the delay between memorising the training data and generalising.
+*Message:* we study what sets the delay in grokking by watching the tangent kernel.
 
-### Act 1. Grokking (0:05, total 0:20)
+**Say**
 
-Say: A network fits its training data early. Why does it take so much longer to work on data it has not seen?
+- We are group G2, and our project is about grokking, where a network generalises long after it fits its training data.
+- We tracked the network's tangent kernel during training to find out what sets the length of that delay.
 
-### Slide 2. A network can fit its training data long before it generalises (0:35, total 0:55)
+### Act 2. Grokking (0:05, total 0:20)
 
-Say: This graph shows one of our baseline networks. Over five seeds, training accuracy reaches 0.99 by a median step of 2,983. Test accuracy only reaches 0.95 at a median step of 23,000. The delay between these two events is grokking. We call the step where test accuracy reaches 0.95 the grokking step T. The rest of our project is about trying to predict T.
+**Say**
 
-### Slide 3. The task is addition on a clock with 23 hours (0:25, total 1:20)
+- What sets this delay is disputed, and we test the published answers.
 
-Say: The task is modular addition with modulus 23, like a clock with 23 hours. Every one of the 529 pairs is in the dataset. Each run trains on 476 pairs and must fill in the other 53. The network is a two-layer perceptron, and this is the baseline that Kumar and coauthors used. It groks even without weight decay.
+### Slide 3. A network can fit its training data long before it generalises (0:35, total 0:55)
 
-### Slide 4. What sets the length of the delay is disputed (0:20, total 1:40)
+*Message:* grokking is a long gap between fitting the training data and generalising.
 
-Say: The literature disagrees about what sets this delay. The current candidates are the weight norm, the weight-decay rate, and a move from lazy to rich training, where the network's kernel starts to adapt. To decide between them we need to measure the kernel itself.
+**Say**
 
-## Turn 2. The kernel, lazy and rich, growth and shape, the three numbers (2:10)
+- This is one of our baseline networks learning modular addition.
+- Training accuracy, in grey, reaches 0.99 early, and we call that step memorisation.
+- Test accuracy, in black, stays near zero and climbs much later, and the step where it reaches 0.95 is the grokking step T.
+- Over five seeds, the median memorisation step is 2,983 and the median grokking step is 23,000.
+- That gap is grokking, and the rest of the talk asks what sets its length.
 
-### Act 2. The tangent kernel (0:05, total 1:45)
+**Point at**
 
-Say: What does it mean for a network to learn features, and how could we see it happen?
+- The hollow marker is memorisation and the filled marker is the grokking step.
 
-### Slide 5. The tangent kernel says how a step on one input moves the output on another (0:40, total 2:25)
+**If asked**
 
-Say: Suppose we take one gradient step to fix the output on one input, x. The weights move in the direction of the gradient at x. That also changes the output on every other input. For an input x-prime, the change is proportional to the inner product of the two gradients, which is the tangent kernel. If the kernel is large, the network treats the two inputs alike. Collecting these values over every pair of test inputs gives a matrix. It describes what the network currently thinks is similar.
+- We take the levels from Khanh and coauthors, who use 0.99 for memorisation and check their result at test accuracy 0.80, 0.90 and 0.95.
+- We report 0.95 and repeated every analysis at 0.80 and 0.90, and the signs of our scaling exponents hold at every level.
 
-### Slide 6. In the lazy regime the kernel stays fixed during training (0:25, total 2:50)
+### Slide 4. The task is modular addition, a standard test bed for grokking (0:25, total 1:20)
 
-Say: For an infinitely wide network the kernel does not change, so training is a fixed kernel method. That is the lazy regime. Multiplying the output by a factor alpha pushes a network towards it. When the kernel does change, the network learns new features, which is the rich regime. Kumar and coauthors propose that grokking is the switch from lazy to rich.
+*Message:* the task is small and standard, so we can measure the kernel exactly.
 
-### Slide 7. A kernel can grow, or it can change shape (0:25, total 3:15)
+**Say**
 
-Say: Think of the kernel as an ellipse. Its axes say which directions in the data the network cares about. The kernel can grow, so the ellipse gets bigger but points the same way. Or it can change shape, so the ellipse turns or stretches. Only the second one changes what the network treats as similar. Both can produce the same distance from the start.
+- Our task is modular addition with modulus 23.
+- The network sees two numbers and must output their sum mod 23, so 20 plus 5 gives 2.
+- Each run trains on 476 of the 529 pairs and must fill in the other 53, the outlined cells.
+- This task is a standard test bed in the theory of grokking, and our setup is the baseline of Kumar and coauthors.
 
-### Slide 8. Three numbers describe how the kernel moved (0:35, total 3:50)
+**If asked**
 
-Say: We measure three numbers on the kernel. Scale, in blue, is its size relative to the start. Rotation, in orange, is one minus the cosine between the kernel now and at the start. It ignores size and only sees shape. Alignment, in green, is how well the kernel lines up with the labels. These three colours stay the same in every figure for the rest of the talk.
+- We divide by the square root of N because this is the NTK parameterisation of Jacot and coauthors.
+- Those factors give the network and its kernel a limit as the width grows, so networks of different widths have kernels on the same scale.
+- The network has a ReLU and no biases, and its input is the one-hot vectors of a and b side by side, so D is 46.
+- It is trained on the squared error by full-batch gradient descent with learning rate 100.
 
-## Turn 3. The identity, the theory, the predictions and the grid (1:45)
+## Turn 2 (2:15)
 
-### Slide 9. The distance mixes growth and rotation (0:20, total 4:10)
+### Act 5. The tangent kernel (0:05, total 1:25)
 
-Say: Because all three numbers come from one matrix, the squared distance splits into a scale part and a rotation part. If the kernel only grows, the rotation part is zero and the distance is just the change in size. So a large distance does not prove that the network learned new features. That is why we track scale and rotation separately.
+**Say**
 
-### Slide 10. In theory, weight decay only rescales the kernel (0:25, total 4:35)
+- To answer that we need one tool, the tangent kernel.
 
-Say: Lewkowycz and Gur-Ari wrote down how the kernel changes under gradient flow with weight decay. The weight decay only enters a term that shrinks the kernel evenly. Any change of shape has to come from the second term, T, which starts out small for wide networks. So if rotation sets the clock, and T stays small during training, wider networks should grok later. The weight decay should then matter much less. That second step is our own reading.
+### Slide 6. The tangent kernel shows which inputs the network treats alike (0:35, total 2:00)
 
-### Act 3. The experiment (0:05, total 4:40)
+*Message:* the kernel is the network's own similarity between inputs, and it shows which features the network learns with.
 
-Say: How can one experiment tell the three clocks apart?
+**Say**
 
-### Slide 11. Each account predicts a different result (0:30, total 5:10)
+- Suppose we take one gradient step to fix the output on one input, x.
+- The weights move, so the output on every other input moves too.
+- For another input x-prime, that move is set by the inner product of the two gradients, which is the tangent kernel.
+- Near its start the network is a linear model on these gradient features, and if the kernel stays fixed, training ends at kernel regression with it.
+- So the kernel is a snapshot of the features the network learns with.
 
-Say: Each account makes different predictions. A rotation clock says grokking happens when rotation reaches a fixed value. It also says that wider networks grok later and that weight decay barely matters. A weight-decay clock says the time is proportional to one over the weight decay. A norm clock says the scale is fixed at grokking. We designed one test for each column of this table. In the last column we test only the kernel statistics. We set the weight decay ourselves, so we know it exactly. In a general network the effective regularisation cannot be measured directly, while the tangent kernel can.
+**If asked**
 
-### Slide 12. We trained 720 networks across laziness, width and weight decay (0:25, total 5:35)
+- Section 5 of Jacot and coauthors shows that in the infinite-width limit the trained network equals kernel ridge regression with the tangent kernel as the ridge goes to zero.
+- Their result has a second term that comes from the network at the start, and our centred network starts at zero, so that term vanishes.
+- The linear model is defined in Section 1.1 of Chizat, Oyallon and Bach.
 
-Say: We trained 720 networks. The output scale alpha controls laziness. The width controls how fast the kernel can rotate. And weight decay is the knob of the weight-decay clock. Every combination has five seeds. Runs that never grok are kept as censored data, so the slow cells are not thrown away.
+### Slide 7. Grokking may be the move from a fixed kernel to one that learns features (0:30, total 2:30)
 
-If asked: The grid has 144 cells of 5 seeds, and each run is 200,000 steps. The runs took 18.9 hours of compute in all.
+*Message:* alpha sets how long a network stays lazy, and the lazy to rich account says grokking happens when the kernel starts to move.
 
-## Turn 4. The baseline, Tier 1 and Tier 2 (2:20)
+**Say**
 
-### Act 4. Results (0:05, total 5:40)
+- In the lazy regime the kernel barely moves, so the network acts like kernel regression with the kernel it started with.
+- In the rich regime the kernel changes, so the network learns new features.
+- Kumar and coauthors propose that grokking is the move from lazy to rich.
+- Their knob is alpha, which scales the output, and a larger alpha lets the weights move less, so the network stays lazy for longer.
+- In our runs, the lazier the network, the later it groks.
 
-Say: Which clock does the grokking time follow?
+**Point at**
 
-### Slide 13. Baseline: the network memorises early, groks late, and its kernel mostly grows (0:30, total 6:10)
+- The plot shows test accuracy at three values of alpha, and at alpha 2 no seed groks within 200,000 steps.
 
-Say: These are the five baseline runs at alpha 1, with the median as the line. They memorise at a median step of 2,983 and grok at a median step of 23,000. Look at the kernel. By the end the scale is 4.5 times its starting value, while the rotation is only 0.074. At grokking, 90% of the squared distance is growth. As Kumar and coauthors found, lazier networks grok later. At alpha 2 no seed groks within 200,000 steps.
+**If asked**
 
-### Slide 14. Tier 1: at a fixed width, rotation is the statistic most tied to grokking (0:45, total 6:55)
+- The centred predictor and the learning rate divided by alpha squared are from Kumar and coauthors, Appendix 8.1.
+- Chizat, Oyallon and Bach show in Section 1.2 that scaling the output by a large factor makes training lazy.
 
-Say: Suppose grokking happens when a statistic reaches a threshold. Then that statistic should take nearly the same value at every run's grokking step. But a statistic that barely moves would pass that check too. So we also read each run at somebody else's grokking step. A real threshold gets much looser when we do that. Rotation tightens the most, by a factor of 1.71. Alignment barely tightens at all.
+### Slide 8. A kernel can grow or change shape, and a distance cannot tell which (0:35, total 3:05)
 
-If asked: The test uses the 78 runs of width 100 that grok, with 2,000 shuffles. The ratio is 1.71 for rotation, 1.29 for scale and 1.09 for alignment. No shuffle gave rotation or scale a spread as small as the true one.
+*Message:* a large kernel distance can come from growth alone, so we split it.
 
-### Slide 15. Reaching that rotation is not enough to grok (0:20, total 7:15)
+**Say**
 
-Say: The tie only holds within one width. Wider networks grok with less rotation but take longer. This suggests that width sets how fast the kernel rotates. And some networks reach the usual rotation without ever grokking, so rotation alone does not make a network grok.
+- The usual evidence that the kernel changed is its distance from where it started.
+- Think of the kernel as an ellipse whose axes are the directions the network cares about.
+- It can grow and point the same way, or it can turn, and both give the same distance.
+- The squared distance splits exactly into a scale part and a shape part, and in our baseline 90% of it at grokking is scale.
+- So a large distance alone does not show that the network learned new features.
 
-If asked: At grokking, rotation falls from 0.108 at width 50 to 0.019 at width 1600. Of the 34 cells in which a seed memorises but none groks, 8 have a seed that still reaches the median rotation at grokking of its width. The alignment barely moves. Its median is 0.398 at the start and 0.406 at grokking.
+**If asked**
 
-### Slide 16. Tier 2: the grokking time depends on both width and weight decay (0:40, total 7:55)
+- The split comes from expanding the squared norm of the difference, and the backup slides give the steps.
 
-Say: We fit how the grokking time scales with width and with weight decay. A rotation clock predicts a positive width exponent and no decay effect. A weight-decay clock predicts no width effect and an exponent of minus one. We find both. The width exponent a is plus 0.24 and the decay exponent b is minus 0.63. Both intervals exclude zero, and neither value is what its account predicts on its own. This holds for the range of weight decay where every seed groks.
+### Slide 9. Three numbers say how the kernel moved (0:30, total 3:35)
 
-If asked, or if there is time, read the figure: Each coloured line is one width, and each point on it is the median grokking step at one weight decay. Faint dots are single seeds, and open circles at the top are runs that never grokked. The dashed lines are our fit. The two grey lines at the lower right show the slope each clock predicts. A rotation clock gives a flat line, and a weight-decay clock gives a slope of minus one. Between ten to the minus five and ten to the minus four, where every seed groks, our lines fall, but on average less steeply than minus one. At ten to the minus five the wider networks sit higher. Adding the next decay level, three times ten to the minus four, moves b towards zero. The fit uses the 90 runs at alpha 1 in that range.
+*Message:* one number for size, one for shape and one for agreement with the labels, and only the first sees the size.
 
-## Turn 5. Tier 3, MNIST, the limitations and the conclusion (2:05)
+**Say**
 
-### Slide 17. Tier 3: rotation is the best single predictor, and scale adds what rotation lacks (0:40, total 8:35)
+- Scale, in blue, is the size of the kernel relative to the start.
+- Shape, in orange, flattens each kernel into one long vector and takes one minus the cosine between now and the start.
+- Alignment, in green, asks whether the kernel treats inputs as alike when they share an answer.
+- Shape and alignment ignore the size, so a kernel that only grows moves scale alone.
+- These colours stay the same for the rest of the talk.
 
-Say: Now we ask which statistic, measured early, tells us when a run will grok. We use only the kernel statistics here, because they can be measured in any network. We read the three numbers at step 2,430, before any run has grokked. Then we predict the grokking step of cells the model has never seen. Each bar appears on a click. Alignment alone explains almost nothing. Scale explains more, and rotation explains the most. Adding scale to rotation raises the held-out R squared from 0.35 to 0.51. Adding alignment on top only takes it to 0.55.
+**If asked**
 
-If asked: The model is kernel ridge regression on 355 runs that grok, with each of the 74 cells held out in turn.
+- We measure the kernel of the summed logits divided by the square root of p, on the 53 test pairs of each run.
+- Mohamadi and coauthors show that this sum of logits kernel converges to the full kernel at initialisation, and it is far cheaper to compute.
+- The cosine is exact for matrices: the Frobenius inner product is the dot product of the flattened matrices, so Cauchy-Schwarz holds.
+- Both kernels are positive semidefinite, so their inner product is not negative and shape lies between 0 and 1.
+- Shape is zero only when the kernel is a positive multiple of the start, and any other change raises it, including a change in the proportions of the eigenvalues.
+- The shape statistic is the kernel distance of Fort and coauthors.
+- The alignment is the centred alignment of Cortes, Mohri and Rostamizadeh, who show that a kernel with high alignment to the labels admits a good predictor.
 
-### Slide 18. Tier 4: on MNIST the time is set by weight decay alone (0:30, total 9:05)
+## Turn 3 (1:50)
 
-Say: We asked the same two questions on MNIST, in the setup of Omnigrok, and got a cleaner answer. The grokking time is one over the weight decay: the decay exponent is minus 1.00, and the width exponent is minus 0.02, so width does not enter. When a network groks, its weight norm always falls to the same value, 2.11 times its starting value, within 3% across every scale, width and decay. Weight decay shrinks the norm at a fixed rate, so the time is how long that takes. We did not derive that law. It comes from Liu and coauthors. Rotation falls with width, from 0.045 at width 200 to 0.002 at width 800, but the time does not move.
+### Act 10. What sets the clock? (0:05, total 3:40)
 
-If asked: The grid is 560 runs: 4 initial scales, 4 widths, 7 weight decays and 5 seeds, each run 500,000 steps. It uses 1,000 training images and all 10,000 test images. The network is a three-layer rectifier network without biases on the squared error. The grokking level is 0.80, because no run reaches 0.95 within the budget. The fit uses initial scale 7 at widths 200 to 800, where every seed groks, and the exponents are the same at scales 5 and 9. Width 100 is left out, because its test accuracy at memorisation is already 0.72, so there is little delay to time. We read that as a limit of capacity at 1,000 images. Without weight decay no run reaches the level. The learning rate is reset from the curvature every 10,000 steps, which sets the memorisation step. The placebo test cannot separate the statistics here, because each is a function of the step and the grokking times span more than a decade. We did not repeat Tier 3, because a residual of 0.03 makes the time a function of the settings alone. Why the two tasks differ is our own reading. On modular addition a fixed kernel cannot solve the task, as Mohamadi and coauthors show, so the kernel has to change shape first.
+**Say**
 
-### Act 5. What we found (0:05, total 9:10)
+- Now we can ask which kind of kernel movement sets the grokking time.
 
-Say: So what sets the grokking time?
+### Slide 11. Every published clock is scale-like (0:25, total 4:05)
 
-### Slide 19. Limitations (0:15, total 9:25)
+*Message:* the published clocks are all scale-like, and none measures shape.
 
-Say: We used one task and one network family for the main grid, so we cannot claim the picture holds in general. The exponents depend on the range of weight decays. The kernel statistics are not a better forecast than the settings themselves. And MNIST changes three things at once. So it tells us which clock sets the time once a delay exists, and not whether rotation can cause one.
+**Say**
 
-If asked: Each cell has 5 seeds, and each event is known only to the nearest checkpoint. The kernel-flow result assumes a homogeneous network, which the centred predictor is not. On MNIST the learning rate is reset from the curvature every 10,000 steps, which sets the memorisation step. Whether the group accepts that rule is still open. Width 100 does not follow the MNIST law and is left out of the fits. The alignment uses the kernel of the summed logits, and the kernel of all p logits may behave differently.
+- By a clock we mean the quantity that sets when a network groks.
+- One account says the network groks once weight decay has shrunk the weight norm enough.
+- Another says doubling the weight decay halves the time.
+- The third rests on the kernel distance, which mostly records growth.
+- So every account is scale-like, and none measures the shape of the kernel.
 
-### Slide 20. Weight decay sets the time, through the weight norm (0:30, total 9:55)
+**If asked**
 
-Say: The usual kernel distance mostly records growth, so split it before you read it as feature learning. On modular addition, at a fixed width, rotation is the statistic most tied to grokking, and read early it is the best single predictor. Reaching that rotation does not make a network grok, and scale adds what rotation lacks. Across both tasks, the thing that sets the time is weight decay, acting through the weight norm. Width enters only on modular addition. Our reading of why is that a fixed kernel cannot solve that task, so the kernel has to change shape first.
+- Under cross-entropy, Khanh and coauthors find that the weight norm acts through the scale of the logits.
 
-### Slide 21. Thank you (0:05, total 10:00)
+### Slide 12. In theory, weight decay rescales and width slows the change of shape (0:30, total 4:35)
 
-Say: Thank you. We are happy to take questions.
+*Message:* the theory gives the two clocks different predictions for width and weight decay, which we test with the exponents a and b.
+
+**Say**
+
+- Lewkowycz and Gur-Ari wrote down how the kernel changes under weight decay.
+- Weight decay appears only in the first term, which changes the scale and never the shape.
+- Only the second term, T, changes the shape, and it starts out of order one over the width.
+- So if scale sets the clock, b is minus one.
+- If shape sets the clock, wider networks grok later and weight decay matters little, which is our own prediction.
+
+**Point at**
+
+- On the left, weight decay shrinks the kernel and keeps its axes.
+- On the right, the shape term turns it, and at width 1600 the turn is a sixteenth of the turn at width 100.
+
+**If asked**
+
+- Here k is the degree to which the output scales when every weight is scaled, and our network has k equal to 2 before the centring.
+- The centred network is not homogeneous, so the equation is a guide for us and not a theorem.
+- Lewkowycz and Gur-Ari credit the order one over N of T at the start to Dyer and Gur-Ari.
+
+### Slide 13. Our hypothesis: the shape of the kernel sets the grokking time (0:30, total 5:05)
+
+*Message:* our hypothesis is that shape sets the clock, and each test can tell the accounts apart.
+
+**Say**
+
+- Our hypothesis is that the shape of the kernel sets the grokking time.
+- Each test separates the accounts in a different way.
+- Tier 1 asks whether one statistic takes the same value at every grokking step, and we expect shape.
+- Tier 2 asks how the time scales, and we expect wider networks to grok later and weight decay to matter little.
+- Tier 3 asks which statistic, read early, predicts the time best, and we expect shape.
+
+**If asked**
+
+- In Tier 3 we test only quantities measured on the network.
+- We set the weight decay ourselves, so we know it exactly, but a general network does not report its effective regularisation, while its tangent kernel can be measured.
+- The cells marked "our prediction" give a prediction the source does not state, which we derived from it.
+- For example, the weight-decay papers give one over the weight decay but say nothing about width, so "width does not matter" is ours.
+
+### Slide 14. We trained 720 networks across laziness, width and weight decay (0:20, total 5:25)
+
+*Message:* one grid crosses all three knobs, and slow runs are kept as censored data.
+
+**Say**
+
+- We trained 720 networks across alpha, width and weight decay, with five seeds per cell.
+- Runs that never grok within 200,000 steps are kept as censored times, where we only know the step is later.
+- At the baseline we reproduce the grokking steps of Kumar and coauthors.
+
+**If asked**
+
+- Dropping the runs that never grok would keep only the fast runs, so survival models use them through the likelihood instead.
+- The fixed settings are p of 23, 90 percent of the pairs for training, full-batch gradient descent with learning rate 100 and the squared error.
+- Each seed has its own split, and the runs took 18.9 hours of compute in all.
+
+## Turn 4 (2:00)
+
+### Act 15. Results (0:05, total 5:30)
+
+**Say**
+
+- Which clock does the grokking time follow?
+
+### Slide 16. Tier 1: at a fixed width, shape is the statistic most tied to grokking (0:45, total 6:15)
+
+*Message:* at a fixed width, the shape statistic marks the grokking step most closely.
+
+**Say**
+
+- If grokking happens when a statistic reaches a threshold, the statistic should take nearly the same value at every run's grokking step.
+- A statistic that barely moves would pass that check too.
+- So we read each run twice, at its own grokking step and at the grokking step of another run, and the second reading is a placebo.
+- A real threshold spreads out at the wrong step, and the SD ratio says by how much.
+- Shape spreads the most, by 1.71, and scale by 1.29, and no shuffle gave either a spread as small as the true one.
+- Alignment spreads by only 1.09, which is close to one.
+
+**Point at**
+
+- In each panel the left box is the true grokking step and the right box is the placebo.
+
+**If asked**
+
+- The p values are <0.0005 for shape, <0.0005 for scale and 0.029 for alignment.
+- Alignment is tied to grokking a little, but its ratio is close to one, so we do not call it a threshold.
+- A standard deviation carries the units of its statistic, so we compare statistics only through the ratio and p.
+- The placebo SD is the median over 2,000 shuffles in which no run keeps its own step.
+
+### Slide 17. No statistic is a fixed threshold, so shape is not the whole clock (0:25, total 6:40)
+
+*Message:* the tie between shape and grokking holds only within one width, so shape is not a universal threshold.
+
+**Say**
+
+- That tie only holds at a fixed width.
+- Each dot is one run at its grokking step, with width 100 on top and alpha 1 across widths below.
+- Across widths no statistic takes the same value at grokking, and wider networks grok with much less change of shape, yet later.
+- So shape matters more than scale, but shape alone does not set the time.
+
+**If asked**
+
+- At grokking, R falls from 0.108 at width 50 to 0.019 at width 1600.
+- In 8 of the 34 cells where a seed memorises but none groks, a seed still reaches the median shape change at grokking of its width, so reaching that shape is not enough to grok.
+- Alignment barely moves: its median is 0.398 at the start and 0.406 at grokking.
+
+### Slide 18. Tier 2: the grokking time follows both width and weight decay (0:45, total 7:25)
+
+*Message:* both width and weight decay set the time, so neither single clock holds.
+
+**Say**
+
+- Next, how does the time scale with width and weight decay?
+- Each clock predicts a power law, a straight line on log axes, so we fit log T as a plane in log width and log weight decay.
+- The shape clock predicts a positive a and b near zero, and the weight-decay clock predicts a near zero and b of minus one.
+- We find a = +0.24 and b = -0.63, and both intervals exclude zero.
+- So the fit takes the sign of a from the shape clock and the sign of b from the weight-decay clock, which is a mixed clock.
+- Gamma's interval includes zero, so we do not claim an interaction.
+
+**If asked**
+
+- The backup slide shows the grokking time at each width, with the slope each clock predicts.
+- Sigma, 0.34, is the spread of log T between runs that the plane does not explain.
+- The fit uses the range where every seed groks, and adding the next weight decay, three times ten to the minus four, moves b to -0.21, so the exponents depend on the range.
+- Both logarithms are centred at the middle of the grid, so a and b are the slopes there.
+- Wider networks memorise sooner, so the width effect is not a delay in fitting the training data.
+
+## Turn 5 (2:15)
+
+### Slide 19. Tier 3: shape is the best single predictor, and scale adds what shape lacks (0:40, total 8:05)
+
+*Message:* shape carries the most information about when a network will grok, scale adds to it, and alignment adds little.
+
+**Say**
+
+- Last, which statistic, read early, tells us when a run will grok?
+- We read the statistics at step 2,430, before any run groks, and predict the grokking time on cells the model has never seen.
+- Alignment explains almost nothing, and shape explains the most.
+- Adding scale raises R squared from 0.35 to 0.51, so the clock is mixed.
+- In our grid we set the width, alpha and weight decay ourselves, so we know them exactly.
+- In a real model they are not clean measurements, since weight decay is only part of the regularisation, while the kernel can be measured in any network.
+
+**If asked**
+
+- We use the log of R because we tried R and log R, among other non-linear forms, and log R predicted best, and R also spans more than a decade across widths.
+- **TODO:** confirm the log R answer with Zain before the talk.
+- The settings predict better than any kernel model: on an unseen alpha, trees on the width and weight decay reach a concordance of 0.79, and weight decay alone 0.72.
+- On that test, boosted trees on all three statistics reach 0.70 and a recurrent network on their history 0.76, so we do not claim that the kernel beats the weight decay.
+- The kernel ridge regression uses a Gaussian kernel, and whole cells are held out because the seeds of a cell are close copies.
+- We do not claim that shape and scale interact, because that analysis was cut from the report.
+
+### Slide 20. Tier 4: on MNIST, weight decay alone sets the time (0:35, total 8:40)
+
+*Message:* on a second task, weight decay alone sets the time through the weight norm, and shape plays no part.
+
+**Say**
+
+- To see whether this carries over, we repeated Tiers 1 and 2 on MNIST, in the setup of Omnigrok.
+- Here the initial weights are scaled up, and weight decay must shrink them before the network generalises.
+- The time is one over the weight decay, width drops out, and at grokking the weight norm is the same within 3%.
+- Our reading is that MNIST never forces the kernel to change shape, while on modular addition a fixed kernel cannot solve the task.
+
+**If asked**
+
+- The fit gives b = -1.00 and a = -0.02, with a residual of only 0.03.
+- The weight norm at grokking is 2.11 times the default initial norm over 314 runs, which is the law of Liu and coauthors, Section 2.
+- Width still sets the shape change, since R at grokking falls from 0.045 to 0.002 between widths 200 and 800, while the time does not move.
+- Width 100 is left out of the fits because its test accuracy at memorisation is already 0.72, which we read as a limit of capacity at 1,000 images.
+- The grokking level is 0.80 because no run reaches 0.95 within the budget, and without weight decay no run reaches the level.
+- The learning rate is reset from the curvature every 10,000 steps, which sets the memorisation step.
+- We did not repeat Tier 3, because with a residual of 0.03 the time is a function of the settings alone.
+- The placebo test cannot separate the statistics here, because each is a function of the step and the grokking times span more than a decade.
+
+### Act 21. What we found (0:05, total 8:45)
+
+**Say**
+
+- So what sets the grokking time?
+
+### Slide 22. Limitations (0:20, total 9:05)
+
+*Message:* the claims hold for this task and parameterisation, on the runs that grok.
+
+**Say**
+
+- We used one task and the NTK parameterisation, where wider networks stay lazier, so the width effect may belong to this setup.
+- In 70 of the 144 cells no seed groks, and the exponents depend on the cells fitted.
+- The settings predict better than the kernel, and MNIST changes three things at once.
+
+**If asked**
+
+- Jacot and coauthors note that the NTK factors reduce the influence of each weight when the width is large, which is why wider networks stay lazier here.
+- Another parameterisation could change the width exponent, so we do not claim a value of a beyond this setup.
+- Each cell has 5 seeds, and each event is known only to the nearest saved step.
+- MNIST shows which clock sets the time once a delay exists, and not whether shape can cause one.
+- The alignment uses the kernel of the summed logits, and the kernel of all p logits may behave differently.
+
+### Slide 23. Grokking runs on a mixed clock, and shape is its best single reading (0:30, total 9:35)
+
+*Message:* grokking runs on a mixed clock, in which shape is the most informative statistic and scale also matters.
+
+**Say**
+
+- First, the usual kernel distance mostly records growth, so split it before reading it as feature learning.
+- Second, on modular addition shape is the most informative statistic, but it is not enough alone and it is not a fixed threshold.
+- Third, no account holds alone, ours included, because width, through shape, and weight decay, through scale, both set the time.
+- On MNIST, where shape is not needed, weight decay alone sets it.
+
+**If asked**
+
+- What is new is the split into scale and shape, the placebo test, the crossed grid on two tasks, and prediction from quantities that any network exposes.
+- A next step is to test whether the early rate of shape change falls as one over the width.
+
+### Slide 24. Thank you (0:05, total 9:40)
+
+**Say**
+
+- Thank you, and we are happy to take questions.
+
+## Answers to the questions we expect
+
+These are the answers we prepared for questions after the talk. `make_script.py` appends them to `script.md` and fills in every number from `_variables.yml`. Each answer is a short list of full sentences, so that any of us can give it.
+
+**What do you mean by a clock?**
+
+- A clock is the quantity that sets when a network groks.
+- The term comes from the title of Kim's paper on the weight-decay clock.
+- We compare three: the shape of the kernel, its scale or the weight norm, and the weight-decay rate.
+
+**Why 0.99 for memorisation but 0.95 for grokking?**
+
+- We take the levels from Khanh and coauthors, who use 0.99 for memorisation and check their result at test accuracy 0.80, 0.90 and 0.95.
+- We report 0.95 and repeated every analysis at 0.80 and 0.90.
+- The signs of the scaling exponents a and b hold at every level.
+
+**Why do you divide by the square root of the width?**
+
+- The factors one over root N and one over root D are the NTK parameterisation of Jacot and coauthors.
+- They give the network and its kernel a limit as the width grows, so the kernels of networks of different widths are on the same scale and can be compared.
+
+**Why is the NTK parameterisation a limitation?**
+
+- Jacot and coauthors note that these factors reduce the influence of each weight when the width is large, so wider networks stay closer to the lazy regime.
+- The width effect we measure therefore belongs to this parameterisation.
+- Another parameterisation scales the updates differently with width, so the width exponent a could change.
+
+**Why do you use the logarithm of R?**
+
+- We tried R and log R, among other non-linear forms, and log R predicted best of the forms of R.
+- R also spans more than a decade across widths, so its logarithm puts the widths on one scale.
+- **TODO:** confirm with Zain which forms were compared, and whether log S was tried.
+
+**Is the kernel on 53 test pairs really the network's kernel?**
+
+- We use the kernel of the summed logits, divided by the square root of p, on the 53 test pairs of each run.
+- Mohamadi and coauthors show that this sum of logits kernel converges to the full kernel at initialisation, and it is far cheaper to compute.
+- The kernel of all p logits may behave differently, which is one of our limitations.
+
+**What does censored mean, and why keep those runs?**
+
+- A run that has not grokked by step 200,000 is kept, and we record only that its grokking step is later than 200,000.
+- Dropping those runs would keep only the fast runs and bias the fits.
+- Survival models use censored runs through the likelihood, following Kalbfleisch and Prentice.
+- In 70 of the 144 cells no seed groks within the budget.
+
+**Alignment has p = 0.029. Is it not significant?**
+
+- Alignment is tied to grokking a little, since its p is below 0.05.
+- Its SD ratio is only 1.09, close to one, so its spread hardly changes at the wrong step.
+- Its median barely moves, from 0.398 at the start to 0.406 at grokking, so we do not call it a threshold or a clock.
+
+**Does the network grok once it reaches a certain shape change?**
+
+- No, reaching it is not enough.
+- In 8 of the 34 cells where a seed memorises but none groks, a seed still reaches the median shape change at grokking of its width.
+- The shape change at grokking also falls with width, from 0.108 at width 50 to 0.019 at width 1600.
+
+**What does gamma tell you?**
+
+- Gamma lets width and weight decay interact on the log scale.
+- Our estimate is -0.16, with an interval from -0.37 to +0.05.
+- The interval includes zero, so we do not claim its sign.
+
+**Do the exponents depend on which runs you fit?**
+
+- Yes, so we fit the range where every seed groks, weight decay from ten to the minus five to ten to the minus four.
+- Adding the next weight decay, three times ten to the minus four, moves b to -0.21.
+- So we quote a and b for that range only.
+
+**Could a better model predict the grokking time from the kernel?**
+
+- On an unseen alpha, boosted trees on all three statistics reach a concordance of 0.70, and a recurrent network on their history reaches 0.76, where 0.5 is chance.
+- Trees given the width and the weight decay reach 0.79, and the weight decay alone reaches 0.72.
+- So the settings predict better than any kernel model, and we do not claim that the kernel beats the weight decay.
+- The kernel is useful because it can be measured in any network, while the effective regularisation of a real network cannot.
+
+**Do shape and scale interact?**
+
+- We do not claim that they do.
+- That analysis was cut from the report, so the talk does not use it.
+
+**Why does MNIST give a different answer?**
+
+- On MNIST the delay comes from scaling up the initial weights, and weight decay has to shrink them to a fixed norm before the network generalises, following Liu and coauthors.
+- So the time is one over the weight decay, the norm at grokking is 2.11 within 3%, and width drops out.
+- Our reading is that a fixed kernel cannot solve modular addition, as Mohamadi and coauthors prove, so there the kernel must change shape first and width enters.
+- MNIST also changes the network and how the delay is made, so we cannot say which change gives the different answer.
+
+**Why the squared error and not cross-entropy?**
+
+- The baseline of Kumar and coauthors uses the squared error, and we reproduce it.
+- Our proposal planned a cross-entropy arm, which we did not run.
+- Under cross-entropy, Khanh and coauthors find that the weight norm acts through the scale of the logits, and we have not tested that setting.
+
+**Why is the statistic called R if it measures shape?**
+
+- R is one minus the cosine between the kernel now and at the start, which is the kernel distance of Fort and coauthors.
+- Our earlier drafts called it rotation, and a rotation is one kind of change of shape.
+- It is zero when the kernel has only been rescaled.
+
+**What is new in this work?**
+
+- We split the movement of the kernel into scale and shape and measure both.
+- We add a placebo test that separates a real threshold from a statistic that barely moves.
+- We cross laziness, width and weight decay in one grid, on two tasks.
+- We predict the grokking time from quantities that any network exposes.

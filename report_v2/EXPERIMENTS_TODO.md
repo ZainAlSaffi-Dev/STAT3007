@@ -13,6 +13,7 @@ The scripts in `report_v2/code/` were built and run on 11 October 2026 with `mak
 - **Not run:** E14. It needs the grid-v0.1.0 databases and the R scripts of branch `feat/grid`. Its appendix was dropped on 17 Oct 2026.
 - **Changed by the user on 11 October 2026:** Tier 1 (E2, E3 and E16) measures the spread by the standard deviation, not the CV. The CV planning values in E3 are kept for the record, but they are superseded.
 - **Added on 20 October 2026:** E19, the MNIST tier (§4.5, Fig. 6 and Appendix F), built by `E19_mnist.py` from the MNIST sweep of 19 October 2026 in `mnist/sweep/`. It is the one item that does not read `data/`.
+- **Changed on 25 October 2026:** R is now called "shape" (Jasper Chong's decision), and the tightening ratio is now the SD ratio. `common.py` labels R as "shape $R_t$". E1, E2, E7 and E9 were redrawn by rerunning `E01_baseline.py`, `E02_thresholds.py`, `E07_mechanism.py` and `E09_surface.py` on the extract in `code/data/`, and their PDFs were copied to `overleaf/figures/`. Their JSON outputs are byte for byte the same as before. E2's panel titles now say "SD ratio". No other script was rerun.
 
 ## Ground rules
 
@@ -41,7 +42,7 @@ The scripts in `report_v2/code/` were built and run on 11 October 2026 with `mak
 Status words: **carry over** means the number exists and only needs a clean script; **port** means the method exists in an old notebook and must be rerun on `data/`; **new** means nothing exists yet.
 
 ### E1. Baseline dynamics (Fig. 1, §4.1)
-- **Question.** Does the baseline grok, does a lazier network grok later, and does the kernel grow more than it rotates?
+- **Question.** Does the baseline grok, does a lazier network grok later, and does the kernel grow more than it changes shape?
 - **Setup.** N = 100, ηλ = 0, α ∈ {0.5, 1, 2}, 5 seeds each.
 - **Data.** `checkpoints.parquet`: `step`, `train_acc`, `test_acc`, `S_sum`, `R_sum`, `A_sum`. Events come from `report_runs.csv`.
 - **Method.** There are four panels against log step: accuracies, S, R and A. Each shows the median over seeds with the range shaded. Mark memorisation with a hollow marker and grokking at 0.95 with a filled one.
@@ -51,7 +52,7 @@ Status words: **carry over** means the number exists and only needs a clean scri
 ### E2. Statistics at the grokking step (Fig. 2, §4.2)
 - **Setup.** All runs that grok at 0.95. Left block: N = 100, grouped by α and coloured by ηλ. Right block: α = 1, grouped by N.
 - **Data.** `report_runs.csv`: `S_t_at_grok95`, `R_t_at_grok95`, `A_t_at_grok95`.
-- **Method.** One panel per statistic, labelled with the SD and the tightening ratio from E3.
+- **Method.** One panel per statistic, labelled with the SD and the SD ratio from E3.
 - **Output.** `E2_thresholds.pdf`. **Status:** done 11 Oct 2026 (`E02_thresholds.py`).
 
 ### E3. Threshold table with placebo (Table 3, §4.2)
@@ -60,7 +61,7 @@ Status words: **carry over** means the number exists and only needs a clean scri
 - **Method.**
   - Compute the standard deviation (SD, ddof 1) at grokking, at memorisation and at the placebo step. This was the CV until the user changed it on 11 October 2026. `SPREAD = 'cv'` in `E03_placebo.py` restores the CV.
   - The placebo uses 2,000 random permutations with no fixed points.
-  - Report the tightening ratio (median placebo SD over the true SD) and the permutation p (the share of permutations at least as tight).
+  - Report the SD ratio (median placebo SD over the true SD; called the tightening ratio until 25 October 2026) and the permutation p (the share of permutations at least as tight).
   - Also run the test across all grokked runs.
 - **Planning values** (CV, 100 permutations; superseded by the SD, kept for the record):
 
@@ -106,7 +107,7 @@ Status words: **carry over** means the number exists and only needs a clean scri
 - **Port from.** `repoduced-code/tier2_consistency.py` part C.
 - **Output.** A table, plus macros. **Status:** done 11 Oct 2026 (`E06_aft.py`). The point estimates of the main row equal the planning values. The cell bootstrap widens the intervals: a is [+0.08, +0.40], b is [−0.92, −0.46] and γ is [−0.37, +0.05]. σ = 0.34.
 
-### E7. Width sets rotation, weight decay sets scale (Fig. 4, §4.3)
+### E7. Width sets the shape change, weight decay sets scale (Fig. 4, §4.3)
 - **Setup.** α = 1, all N × ηλ, read at t* = 2,430.
 - **Data.** `report_kernel.parquet` at `step == 2430`.
 - **Method.** Two heatmaps: the median log R and the median S per cell. Also compute N9.
@@ -187,12 +188,12 @@ Status words: **carry over** means the number exists and only needs a clean scri
 ### E16. Sensitivity to the grokking level (Appendix E)
 - Repeat E3 (with the SD) and E6 at levels 0.80 and 0.90. **Status:** done 11 Oct 2026 (`E16_levels.py`). At 0.80, S and A tighten slightly across widths (p 0.024 and 0.001). At 0.90 only A does (p 0.013; S has p 0.085). R does not at any level. (Corrected 12 Oct 2026: the earlier note said S also tightened at 0.90.)
 
-### E17. Test the premise of the rotation clock (§4.5, option B)
-- **Question.** Does the early rate of rotation fall with width as 1/N, as the order of T_0 in Lewkowycz and Gur-Ari suggests? How much of the change of scale does weight decay alone account for?
+### E17. Test the premise of the shape clock (§4.5, option B)
+- **Question.** Does the early rate of shape change fall with width as 1/N, as the order of T_0 in Lewkowycz and Gur-Ari suggests? How much of the change of scale does weight decay alone account for?
 - **Setup.** All α and N. For the first part, ηλ = 0; for the second, every ηλ > 0. All 5 seeds.
 - **Data.** `checkpoints.parquet`: `step`, `S_sum`, `R_sum`. Use `report_runs.csv` for `t_mem`.
 - **Method.**
-  - Rotation rate. Take the slope of log R_t against log t over a window before memorisation, or R_t at a fixed early step. Fit log rate = c − q log N for each α and compare q with 1. Wide networks memorise within the first hundred steps, so choose the window before looking at the result and say how it was chosen.
+  - Rate of shape change. Take the slope of log R_t against log t over a window before memorisation, or R_t at a fixed early step. Fit log rate = c − q log N for each α and compare q with 1. Wide networks memorise within the first hundred steps, so choose the window before looking at the result and say how it was chosen.
   - Scale under weight decay alone. The network is 2-homogeneous, so scaling every weight by c scales its tangent kernel by c². Weight decay with no gradient would therefore give S_t = (1 − ηλ)^(2t) and R_t = 0. This is the group's own derivation; it matches the term −2(k − 1)λΘ_t of the kernel-flow equation with k = 2. Plot the measured S_t against this curve, and report the ratio at memorisation and at grokking.
 - **Output.** `E17_premise.pdf`. **Status:** not run (Tier 4' commented out, 11 Oct 2026). Run it first if the group keeps any theory section.
 

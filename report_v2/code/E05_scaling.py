@@ -4,7 +4,7 @@ At alpha = 1 and eta lambda > 0, the figure plots the grokking step at level 0.9
 on log axes, one colour per width. Each seed is a point. A censored run is an open marker at the
 budget of 200,000. The line joins the median over seeds of each cell in which at least 3 seeds grok.
 The dashed lines are the fitted plane of E6 (main row) over the main range 1e-5 to 1e-4. The grey
-lines are reference slopes of 0 (rotation clock) and -1 (weight-decay clock).
+lines are reference slopes of 0 (shape clock) and -1 (weight-decay clock).
 """
 import numpy as np
 

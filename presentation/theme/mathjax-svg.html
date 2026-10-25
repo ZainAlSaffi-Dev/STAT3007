@@ -1,0 +1,15 @@
+<script>
+  // Quarto's reveal.js template loads MathJax 2 with its HTML-CSS output. That
+  // output builds a stretched brace from pieces of a font, and the pieces come
+  // apart when reveal.js scales the slide. The SVG output draws each brace and
+  // symbol as one shape, so the braces under the formulas stay smooth.
+  // MathJax reads this object before it starts, and the hook switches the
+  // renderer once the output modules have loaded.
+  window.MathJax = {
+    AuthorInit: function () {
+      MathJax.Hub.Register.StartupHook("End Jax", function () {
+        return MathJax.Hub.setRenderer("SVG");
+      });
+    }
+  };
+</script>

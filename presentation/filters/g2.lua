@@ -139,9 +139,27 @@ end
 
 local bar_chart
 
+-- A div with the class g2-steprows shows the body rows of each table inside it
+-- one per click, so a table of predictions can be built up row by row.
+local function step_rows(el)
+  return el:walk({
+    Table = function(tbl)
+      for _, body in ipairs(tbl.bodies) do
+        for _, row in ipairs(body.body) do
+          row.attr.classes:insert("fragment")
+        end
+      end
+      return tbl
+    end,
+  })
+end
+
 local function anim_or_figure(el)
   if el.classes:includes("g2-bars") then
     return bar_chart(el)
+  end
+  if el.classes:includes("g2-steprows") then
+    return step_rows(el)
   end
   if el.classes:includes("anim") then
     local scene = el.attributes["scene"] or "Unnamed"
@@ -149,7 +167,10 @@ local function anim_or_figure(el)
     local video = find_video(clip)
     local still = find_still(clip)
     table.insert(found.anims, { name = clip, video = video, still = still })
-    if video then
+    -- still="true" shows the last frame of a clip in place of the clip, so a
+    -- slide can keep a picture without playing it.
+    local still_only = el.attributes["still"] == "true"
+    if video and not (still_only and still) then
       local poster = still and (' poster="' .. still .. '"') or ""
       local loop = (el.attributes["loop"] == "true") and " loop" or ""
       return pandoc.RawBlock("html", string.format(
@@ -509,7 +530,40 @@ local function structure(doc)
   return doc
 end
 
+-- Every TODO chip, listed in the render log with the slide it sits on, so an
+-- open task is hard to miss before the final export. Slides are counted as the
+-- browser counts them: the title, every act slide and every slide.
+local function list_todos(doc)
+  local slide, backup, title = 0, false, ""
+  local found = {}
+  for _, block in ipairs(doc.blocks) do
+    if block.t == "Header" and block.level <= 2 then
+      if block.level == 1 and block.classes:includes("backup") then
+        backup = true
+      end
+      slide = slide + 1
+      title = pandoc.utils.stringify(block.content)
+    else
+      block:walk({
+        Span = function(span)
+          if span.classes:includes("g2-todo-chip") then
+            local where = backup and ('backup slide "' .. title .. '"') or ("slide " .. slide)
+            table.insert(found, "[g2] TODO on " .. where .. ": " .. pandoc.utils.stringify(span.content))
+          end
+        end,
+      })
+    end
+  end
+  if #found > 0 then
+    io.stderr:write(table.concat(found, "\n") .. "\n")
+  else
+    io.stderr:write("[g2] No TODO chips.\n")
+  end
+  return nil
+end
+
 return {
   { Div = anim_or_figure },
+  { Pandoc = list_todos },
   { Pandoc = structure },
 }

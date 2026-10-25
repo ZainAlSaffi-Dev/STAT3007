@@ -37,6 +37,8 @@ format:
       side: left
     preview-links: false
     footer: "Scale or Shape? · Group G2 · STAT3007"
+    # MathJax draws with its SVG output, so braces and symbols stay smooth.
+    include-in-header: theme/mathjax-svg.html
     pdf-separate-fragments: false
     # Set this to true to pack the deck into one HTML file. It makes the file
     # large once the clips exist, and the formulas still need a network.

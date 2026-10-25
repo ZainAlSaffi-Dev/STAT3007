@@ -3,7 +3,8 @@
 Every run that groks at level 0.95 is a point. The top row holds the runs at N = 100, grouped by
 alpha. The bottom row holds the runs at alpha = 1, grouped by width. Points are coloured by eta
 lambda, light to dark in the hue of the statistic. Each panel is labelled with the spread (standard
-deviation) at grokking and the tightening ratio of the placebo test, both from E03.
+deviation) at grokking and the SD ratio of the placebo test, both from E03. The SD ratio is the
+median placebo SD over the SD at grokking (the key 'tightening' in E03.json).
 """
 import numpy as np
 
@@ -39,7 +40,7 @@ def main():
             ax.set_xlabel(xlabel)
             ax.grid(axis='x', visible=False)
             res = e3[gname][stat]['sd']
-            ax.set_title(f'{C.STAT_NAME[stat]}: SD {res["at_grok"]:.2g}, placebo ratio {res["tightening"]:.2f}',
+            ax.set_title(f'{C.STAT_NAME[stat]}: SD {res["at_grok"]:.2g}, SD ratio {res["tightening"]:.2f}',
                          loc='left', fontsize=7.5)
             if stat == 'S':
                 ax.set_ylabel(title)

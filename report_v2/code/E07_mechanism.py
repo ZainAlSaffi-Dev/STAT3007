@@ -1,4 +1,4 @@
-"""E7. Width sets the rotation of the kernel and weight decay sets its scale (Fig. 5, Section 4.3),
+"""E7. Width sets the shape change of the kernel and weight decay sets its scale (Fig. 5, Section 4.3),
 with number N9.
 
 Figure: two maps over N and eta lambda at alpha = 1, read at t* = 2,430, a saved step before any run
