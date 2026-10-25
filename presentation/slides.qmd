@@ -83,7 +83,7 @@ Speaker: TBD. Introduce the group and the question in one sentence each.
 Say: We are group G2 and our project revolves around grokking, the phenomenon
 where a network generalises long after it fits the training data. Specifically,
 we analysed the neural tangent kernel as the network trained via three measurements
-to see what predicts the delay between the memorising the trainig data and generalising. 
+to see what predicts the delay between the memorising the training data and generalising. 
 :::
 
 # Grokking {.act time="0:05"}
@@ -113,8 +113,8 @@ on data it has not seen?
 0.95.
 
 ::: {.g2-result}
-In our baseline, memorisation comes at step {{< var NfiveAOneMemMedian >}} and
-grokking at step {{< var NfiveAOneGrokMedian >}}, as medians over 5 seeds.
+Memorisation at step {{< var NfiveAOneMemMedian >}} and
+grokking at step {{< var NfiveAOneGrokMedian >}} (median over 5 seeds).
 :::
 
 ::: {.g2-source}
@@ -143,7 +143,7 @@ revolves around trying to predict T.
 ::: {.column width="50%" .g2-compact}
 - Each input is a pair $(a, b)$ with $a, b \in \{0, \dots, 22\}$. The target
   is $(a + b) \bmod 23$.
-- All 529 pairs exist. Each seed trains on 476 of them and tests on the other 53.
+- All 529 pairs. Train on 476, test on the other 53.
 - The network has one hidden layer of width $N$, a ReLU and no biases. It is
   trained on the squared error by full-batch gradient descent.
 
@@ -396,7 +396,7 @@ Speaker: TBD.
 Message: we use one number for growth, one for change of shape and one for
 agreement with the labels.
 
-Say: We measure three numbers on the kernel. Scale, in blue, is its size
+Say: We measure the kernel with three measurements. Scale, in blue, is its size
 relative to the start. Rotation, in orange, is one minus the cosine between the
 kernel now and at the start, so it ignores size and only sees shape. Alignment,
 in green, is how well the kernel lines up with the labels. These three colours
@@ -436,8 +436,8 @@ Message: a big distance can come from growth alone.
 Say: Because all three numbers come from one matrix, the squared distance
 splits into a scale part and a rotation part. If
 the kernel only grows, the rotation part is zero and the distance is just the
-change in size. So a large distance does not prove that the network learned new
-features. That is why we track scale and rotation separately.
+change in size. This means a large distance does not prove that the network learned new
+features, which is precistly why we track scale and rotation separately.
 :::
 
 ## In theory, weight decay only rescales the kernel {time="0:25"}
@@ -599,13 +599,13 @@ Speaker: TBD.
 
 Message: on the baseline, the distance is mostly growth.
 
-Say: These are the five baseline runs at alpha 1, with the median as the
-line. They memorise at a median step of {{< var NfiveAOneMemMedian >}} and
-grok at a median step of {{< var NfiveAOneGrokMedian >}}. Look at the kernel.
-By the end the scale is {{< var NtwoAOneSfinal >}} times its starting value,
+Say: These are the five baseline runs at alpha 1, with the line depicting
+the median. They memorise at a median step of {{< var NfiveAOneMemMedian >}} and
+grok at a median step of {{< var NfiveAOneGrokMedian >}}.
+By the end the scale of the kernel is {{< var NtwoAOneSfinal >}} times its starting value,
 while the rotation is only {{< var NtwoAOneRfinal >}}. At grokking,
 {{< var NtwoAOneGrok >}} of the squared distance is growth. As Kumar and
-coauthors found, lazier networks grok later, and at alpha 2 no seed groks
+coauthors found, lazier networks grok later, and at alpha 2 not even a single seed groks
 within 200,000 steps.
 :::
 
@@ -646,10 +646,10 @@ Speaker: TBD.
 Message: the placebo test separates a real threshold from a statistic that
 barely moves.
 
-Say: If grokking happens when a statistic reaches a threshold, then that
-statistic should take nearly the same value at every run's grokking step. But a
-statistic that barely moves would pass that check too. So we also read each run
-at somebody else's grokking step. A real threshold gets much looser when we do
+Say: If grokking happens when a statistic reaches a threshold, then we should expect that
+statistic to take nearly the same value at every run's grokking step. However, a
+statistic that barely moves would also pass that chek. So we also read each run
+at another run's grokking step. A real threshold gets much looser when we do
 that. Rotation tightens the most, by a factor of
 {{< var EthreeNhundredRRatio >}}. Alignment barely tightens at all.
 :::
@@ -677,7 +677,7 @@ universal threshold and it is not sufficient.
 
 Say: The tie only holds within one width. Wider networks grok with less
 rotation but take longer, which suggests that width sets how fast the kernel
-rotates. And some networks reach the usual rotation without ever grokking, so
+rotates. Some networks alseo reach the usual rotation but never grok, which indicates that
 rotation alone does not make a network grok.
 :::
 
@@ -767,8 +767,8 @@ Speaker: TBD.
 Message: of the three statistics, rotation carries the most information about
 when a network will grok, scale adds to it, and alignment adds little.
 
-Say: Now we ask which statistic, measured early, tells us when a run will grok.
-We use only the kernel statistics here, because they can be measured in any
+Say: This poses the question: which statistic, when measured early, tells us when a run will grok?
+We make sure to only use the kernel statistics because they can be measured in any
 network. We read the three numbers at step 2,430, before any run has grokked,
 and predict the grokking step of cells the model has never seen. Each bar appears
 on a click. Alignment alone explains almost nothing. Scale explains more, and
@@ -803,7 +803,7 @@ Speaker: TBD.
 Message: on a second task the time follows weight decay alone, through the
 weight norm, and the rotation plays no part in it.
 
-Say: We ran the same two questions on MNIST, in the setup of Omnigrok and got a
+Say: We ran the same two questions on MNIST, following the setup of Omnigrok and got a
 cleaner answer here. The grokking time is one over the weight decay, and
 width does not enter. When a network groks, its weight norm
 consistently falls to the same value, within three percent across every scale,
@@ -848,7 +848,7 @@ So what sets the grokking time?
 Speaker: TBD.
 
 Say: We used one task and one network family for the main grid, so we cannot
-claim the picture holds in general. The exponents depend on the range of weight
+claim our findings will hold in general. The exponents depend on the range of weight
 decays. The kernel statistics are not a better forecast than the settings
 themselves. And MNIST changes three things at once, so it tells us which clock
 sets the time once a delay exists, and not whether rotation can cause one.
@@ -898,14 +898,14 @@ step is to test whether the early rate of rotation falls as $1/N$.
 ::: {.notes}
 Speaker: TBD.
 
-Say: The usual kernel distance mostly records growth, so split it before you
+Say: The usual kernel distance mostly records growth, so it must be split before you
 read it as feature learning. On modular addition, at a fixed width, rotation is
-the statistic most tied to grokking, and read early it is the best single
+the statistic most tied to grokking, and, read early, it is the best single
 predictor. Reaching that rotation does not make a network grok, and scale adds
 what rotation lacks. Across both tasks the thing that sets the time is weight
 decay, acting through the weight norm. Width enters only on modular addition,
-and our reading of why is that a fixed kernel cannot solve that task, so the
-kernel has to change shape first.
+and our understanding of why is that a fixed kernel cannot solve that task, so the
+kernel must change shape first.
 :::
 
 ## Thank you {time="0:05"}
