@@ -2,17 +2,17 @@
  "item": "E10",
  "seeds": {},
  "versions": {
-  "python": "3.11.4",
-  "platform": "macOS-26.7.1-arm64-arm-64bit",
-  "numpy": "2.4.6",
-  "pandas": "2.3.3",
-  "pyarrow": "23.0.1",
-  "scipy": "1.17.1",
-  "matplotlib": "3.10.8",
+  "python": "3.14.4",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "numpy": "2.5.3",
+  "pandas": "3.0.6",
+  "pyarrow": "25.0.1",
+  "scipy": "1.18.1",
+  "matplotlib": "3.11.2",
   "lifelines": "0.30.0",
   "scikit-learn": "1.9.1",
-  "xgboost": "3.2.0",
-  "torch": "2.10.0"
+  "xgboost": "3.4.1",
+  "torch": "2.14.0"
  },
  "results": {
   "subsets": {
@@ -43,6 +43,30 @@
    "S + log R + A": {
     "R2": 0.5501972681007132,
     "concordance": 0.7758891171095406
+   }
+  },
+  "raw_R": {
+   "linear R": {
+    "R2": 0.28696233546313676,
+    "concordance": 0.6907376558684155
+   },
+   "linear log R": {
+    "R2": 0.3686698920893047,
+    "concordance": 0.71580598728793
+   },
+   "kernel ridge R": {
+    "R2": 0.34333494133792175,
+    "concordance": 0.6991638498487813
+   },
+   "kernel ridge S + R + A": {
+    "R2": 0.4656178623254552,
+    "concordance": 0.7567886658795749
+   },
+   "R_t": {
+    "min": 6.0705144127370936e-05,
+    "median": 0.013822818650355062,
+    "max": 0.125985353753446,
+    "share_below_0.01": 0.4647887323943662
    }
   },
   "between_cells": {

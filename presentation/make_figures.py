@@ -1,4 +1,4 @@
-"""Slide versions of the report figures E2, E4, E5, E7, E8 and E19, and the placebo boxes E3.
+"""Slide versions of the report figures E2, E4, E5, E7, E8 and E19, the placebo boxes E3, and R_t on two scales.
 
 The report figures come from the scripts in report_v2/code. They are drawn for an A4 page, so their
 type is too small on a projector. This script draws each one again for its place in slides.qmd.
@@ -313,6 +313,30 @@ def e8():
 
 
 
+def e10_log_r():
+    """Backup slide on log R_t: the runs of E10 against R_t at t*, on its own scale and on a log scale.
+
+    The runs are the 355 that grok at level 0.95 with eta lambda at most 1e-3, as in E10_subsets.py.
+    On its own scale most runs bunch near zero and the fall of T is a curve. On a log scale the runs
+    spread out and the fall is close to a straight line.
+    """
+    runs = C.at_tstar(C.load_runs())
+    grok = runs[(runs.eta_kappa <= 1e-3) & ~runs.censored_grok95]
+    assert len(grok) == 355
+    fig, axes = plt.subplots(1, 2, figsize=COLUMN, layout='constrained', sharey=True)
+    for ax, scale, title in zip(axes, ('linear', 'log'), ('(a) $R_t$ as it is', r'(b) $\log R_t$')):
+        ax.plot(grok.R_t, grok.t_grok95, linestyle='none', marker='.', markersize=9, alpha=0.6,
+                color=C.STAT_COLOUR['R'])
+        ax.set_xscale(scale)
+        ax.set_yscale('log')
+        ax.set_xlabel(r'shape $R_t$ at $t^*$')
+        ax.set_title(title, loc='left')
+    axes[1].xaxis.set_major_formatter(POW10)
+    axes[0].yaxis.set_major_formatter(POW10)
+    axes[0].set_ylabel('grokking step $T$')
+    save(fig, 'E10_log_r')
+
+
 def e19():
     """Slide 20: MNIST, after E19_mnist.py.
 
@@ -388,6 +412,6 @@ def e19():
 
 
 if __name__ == '__main__':
-    for draw in (e2, e3, e4, e5, e7, e8, e19):
+    for draw in (e2, e3, e4, e5, e7, e8, e10_log_r, e19):
         draw()
         print('drew', draw.__name__)

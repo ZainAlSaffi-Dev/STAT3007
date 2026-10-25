@@ -254,6 +254,14 @@ EtenBetweenLogR: "0.99"  # E10.json between_cells.logR_t
 EtenBetweenA: "0.56"  # E10.json between_cells.A_t
 EtenRuns: "355"  # E10.json n_runs
 EtenCells: "74"  # E10.json n_cells
+EtenRawLinRRsq: "0.29"  # E10.json raw_R.linear R.R2
+EtenRawLinLogRRsq: "0.37"  # E10.json raw_R.linear log R.R2
+EtenRawKrrRRsq: "0.34"  # E10.json raw_R.kernel ridge R.R2
+EtenRawKrrSRARsq: "0.47"  # E10.json raw_R.kernel ridge S + R + A.R2
+EtenRawRMin: "$6\\times10^{-5}$"  # E10.json raw_R.R_t.min
+EtenRawRMedian: "0.014"  # E10.json raw_R.R_t.median
+EtenRawRMax: "0.13"  # E10.json raw_R.R_t.max
+EtenRawRSmall: "46%"  # E10.json raw_R.R_t.share_below_0.01
 EthirteenAHalfAllGrok: "35"  # E13.json by_alpha.0.5.cells_all_grok
 EthirteenAHalfNoneGrok: "12"  # E13.json by_alpha.0.5.cells_none_grok
 EthirteenAOneAllGrok: "26"  # E13.json by_alpha.1.cells_all_grok

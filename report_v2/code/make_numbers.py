@@ -5,6 +5,7 @@ for the tightening ratio of R_t in the N = 100 group of E3. LaTeX macro names ho
 digits are spelt out. A comment beside each macro gives the JSON file and the key it came from.
 main.tex reads the file with \\input{numbers}, so no number in the report is typed by hand.
 """
+import math
 import re
 
 import common as C
@@ -40,6 +41,12 @@ def signed(x, d=2):
 def pval(p, n=2000):
     """A permutation p; 0 of n permutations is written as below 1/n."""
     return f'\\ensuremath{{<{1 / n:.4f}}}' if p == 0 else f'{p:.3f}'
+
+
+def power(x):
+    """A small number as one digit times a power of ten, such as 6 x 10^-5."""
+    e = math.floor(math.log10(x))
+    return f'\\ensuremath{{{x / 10 ** e:.0f}\\times10^{{{e}}}}}'
 
 
 def sig(x, n=2):
@@ -152,6 +159,15 @@ def main():
         M.add(name('Eten', 'Between', qn), f'{e10["between_cells"][q]:.2f}', f'E10.json between_cells.{q}')
     M.add('EtenRuns', e10['n_runs'], 'E10.json n_runs')
     M.add('EtenCells', e10['n_cells'], 'E10.json n_cells')
+    raw = e10['raw_R']
+    for k, kn in (('linear R', 'LinR'), ('linear log R', 'LinLogR'), ('kernel ridge R', 'KrrR'),
+                  ('kernel ridge S + R + A', 'KrrSRA')):
+        M.add(name('Eten', 'Raw', kn, 'Rsq'), f'{raw[k]["R2"]:.2f}', f'E10.json raw_R.{k}.R2')
+    r = raw['R_t']
+    M.add('EtenRawRMin', power(r['min']), 'E10.json raw_R.R_t.min')
+    M.add('EtenRawRMedian', f'{r["median"]:.3f}', 'E10.json raw_R.R_t.median')
+    M.add('EtenRawRMax', f'{r["max"]:.2f}', 'E10.json raw_R.R_t.max')
+    M.add('EtenRawRSmall', f'{100 * r["share_below_0.01"]:.0f}\\%', 'E10.json raw_R.R_t.share_below_0.01')
 
     e13 = C.read_json('E13')['by_alpha']
     for al, v in e13.items():

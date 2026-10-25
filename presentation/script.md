@@ -317,13 +317,20 @@ Each slide gives its number in the browser, its budget and the running total. "S
 - We read the statistics at step 2,430, before any run groks, and predict the grokking time on cells the model has never seen.
 - Alignment explains almost nothing, and shape explains the most.
 - Adding scale raises R squared from 0.35 to 0.51, so the clock is mixed.
+- We use the log of R, since with R as it is all three reach only 0.47.
 - In our grid we set the width, alpha and weight decay ourselves, so we know them exactly.
 - In a real model they are not clean measurements, since weight decay is only part of the regularisation, while the kernel can be measured in any network.
 
 **If asked**
 
-- We use the log of R because we tried R and log R, among other non-linear forms, and log R predicted best, and R also spans more than a decade across widths.
-- **TODO:** confirm the log R answer with Zain before the talk.
+- We tried R as it is and log R, and log R predicted better in every model on held-out cells, and the backup slide shows why.
+- At step 2,430, 46% of the runs that grok have R below 0.01, while the largest R is 0.13.
+- On its own scale those runs bunch near zero, so a model can hardly tell them apart, while on a log scale they spread out and the grokking time falls close to a straight line.
+- A straight line in R alone explains 0.29 of log T, and a straight line in log R explains 0.37.
+- Kernel ridge on R alone can bend to follow the curve, so it reaches 0.34 against 0.35 with log R, and the gap is small.
+- The gap is large once the statistics are combined: all three reach 0.47 with R as it is and 0.55 with log R.
+- With R as it is, the interaction of scale and shape also does not show, so which pairs of statistics seem to interact depends on the scale of R.
+- On an unseen alpha the gain is smaller: a straight line in the three statistics ranks runs a little better with R as it is, and log R helps once scale can bend as well.
 - The settings predict better than any kernel model: on an unseen alpha, trees on the width and weight decay reach a concordance of 0.79, and weight decay alone 0.72.
 - On that test, boosted trees on all three statistics reach 0.70 and a recurrent network on their history 0.76, so we do not claim that the kernel beats the weight decay.
 - The kernel ridge regression uses a Gaussian kernel, and whole cells are held out because the seeds of a cell are close copies.

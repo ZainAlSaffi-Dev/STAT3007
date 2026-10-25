@@ -831,7 +831,8 @@ Shape alone predicts best, and adding scale raises $R^2$ from
 
 ::: {.g2-small}
 Kernel statistics can be measured in any network. The settings predict better.
-[check that $\log R_t$ predicted better than $R_t$ (Zain)]{.g2-todo-chip}
+We use $\log R_t$, since with $R_t$ as it is all three reach only
+{{< var EtenRawKrrSRARsq >}}.
 :::
 :::
 ::::
@@ -848,13 +849,20 @@ Say:
 - We read the statistics at step 2,430, before any run groks, and predict the grokking time on cells the model has never seen.
 - Alignment explains almost nothing, and shape explains the most.
 - Adding scale raises R squared from {{< var EtenRRsq >}} to {{< var EtenSRRsq >}}, so the clock is mixed.
+- We use the log of R, since with R as it is all three reach only {{< var EtenRawKrrSRARsq >}}.
 - In our grid we set the width, alpha and weight decay ourselves, so we know them exactly.
 - In a real model they are not clean measurements, since weight decay is only part of the regularisation, while the kernel can be measured in any network.
 
 If asked:
 
-- We use the log of R because we tried R and log R, among other non-linear forms, and log R predicted best, and R also spans more than a decade across widths.
-- TODO: confirm the log R answer with Zain before the talk.
+- We tried R as it is and log R, and log R predicted better in every model on held-out cells, and the backup slide shows why.
+- At step 2,430, {{< var EtenRawRSmall >}} of the runs that grok have R below 0.01, while the largest R is {{< var EtenRawRMax >}}.
+- On its own scale those runs bunch near zero, so a model can hardly tell them apart, while on a log scale they spread out and the grokking time falls close to a straight line.
+- A straight line in R alone explains {{< var EtenRawLinRRsq >}} of log T, and a straight line in log R explains {{< var EtenRawLinLogRRsq >}}.
+- Kernel ridge on R alone can bend to follow the curve, so it reaches {{< var EtenRawKrrRRsq >}} against {{< var EtenRRsq >}} with log R, and the gap is small.
+- The gap is large once the statistics are combined: all three reach {{< var EtenRawKrrSRARsq >}} with R as it is and {{< var EtenSRARsq >}} with log R.
+- With R as it is, the interaction of scale and shape also does not show, so which pairs of statistics seem to interact depends on the scale of R.
+- On an unseen alpha the gain is smaller: a straight line in the three statistics ranks runs a little better with R as it is, and log R helps once scale can bend as well.
 - The settings predict better than any kernel model: on an unseen alpha, trees on the width and weight decay reach a concordance of {{< var EeightRef >}}, and weight decay alone {{< var EeightDecayref >}}.
 - On that test, boosted trees on all three statistics reach {{< var EeightXgb >}} and a recurrent network on their history {{< var EeightGru >}}, so we do not claim that the kernel beats the weight decay.
 - The kernel ridge regression uses a Gaussian kernel, and whole cells are held out because the seeds of a cell are close copies.
@@ -1413,6 +1421,55 @@ delay in fitting the training data.
 The share of the spread that lies between cells is {{< var EtenBetweenLogT >}}
 for $\log T$, {{< var EtenBetweenS >}} for $S_t$, {{< var EtenBetweenLogR >}} for
 $\log R_t$ and {{< var EtenBetweenA >}} for $A_t$.
+:::
+
+## Shape enters on a log scale, because $R_t$ bunches near zero
+
+:::: {.columns}
+::: {.column width="55%"}
+![](assets/figures/E10_log_r.png){.g2-fig}
+:::
+::: {.column width="45%" .g2-compact}
+At $t^*$, $R_t$ runs from {{< var EtenRawRMin >}} to {{< var EtenRawRMax >}}.
+{{< var EtenRawRSmall >}} of the runs that grok have $R_t$ below 0.01.
+
+| Held-out $R^2$ of $\log T$ | $R_t$ | $\log R_t$ |
+|:---|:---|:---|
+| Straight line in shape alone | {{< var EtenRawLinRRsq >}} | {{< var EtenRawLinLogRRsq >}} |
+| Kernel ridge on shape alone | {{< var EtenRawKrrRRsq >}} | {{< var EtenRRsq >}} |
+| Kernel ridge on all three | {{< var EtenRawKrrSRARsq >}} | {{< var EtenSRARsq >}} |
+
+::: {.g2-result}
+On a log scale the runs spread out and $T$ falls close to a straight line.
+The log matters most when the statistics are combined.
+:::
+
+::: {.g2-small}
+The runs and the held-out cells are those of Tier 3. A flexible model can bend
+to follow $R_t$ alone, so the gap is small there.
+:::
+:::
+::::
+
+::: {.notes}
+Speaker: TBD.
+
+Message: we use the log of R because R bunches near zero, and every model on
+held-out cells predicts better with the log.
+
+Say: At step 2,430, {{< var EtenRawRSmall >}} of the runs that grok have R
+below 0.01, while the largest R is {{< var EtenRawRMax >}}. On the left, on its own scale, those runs sit in a thin strip
+near zero, and the grokking time falls along a curve. On the right, on a log
+scale, the runs spread out and the fall is close to a straight line. A straight
+line in R explains {{< var EtenRawLinRRsq >}} of log T, and a straight line in
+log R explains {{< var EtenRawLinLogRRsq >}}. Kernel ridge can bend to follow R
+alone, so there the gap is small. Once scale and alignment are added, the gap
+is large: {{< var EtenRawKrrSRARsq >}} with R as it is, and
+{{< var EtenSRARsq >}} with log R. Kernel ridge compares runs by their
+distance, and with R as it is, the runs below 0.01 look almost the same in
+shape. With R as it is, the interaction of scale and shape also does not
+show. On an unseen alpha the gain is smaller, and a straight line in the three
+statistics ranks runs a little better with R as it is.
 :::
 
 ## Tier 3 on an unseen $\alpha$ in numbers
