@@ -1,0 +1,34 @@
+# Settings of the concept animations, keyed by the name of each scene.
+animations:
+  Eigenvectors:
+    # Radmehr (2024), PRIMUS, doi:10.1080/10511970.2024.2327330, pp. 10-11,
+    # transcribes the matrix of the 3Blue1Brown video "Eigenvectors and
+    # eigenvalues": i-hat lands on (3, 0) and j-hat on (1, 2).
+    matrix: &shear [[3, 1], [0, 2]]
+    # Its eigenvectors, (1, 0) for eigenvalue 3 (p. 11) and (-1, 1) for
+    # eigenvalue 2 (p. 13). Their sum is j-hat, which the matrix knocks off
+    # its span: Beltran-Meneu et al. (2016), doi:10.1093/teamat/hrw018,
+    # question 1.b, asks why such a sum is not an eigenvector.
+    eigenvectors: &eigenvectors [[1, 0], [-1, 1]]
+  Rotation:
+    # Axler (2024), Linear Algebra Done Right, Example 5.9(a): T(w, z) = (-z, w)
+    # rotates by 90 degrees and has no real eigenvalues.
+    matrix: [[0, -1], [1, 0]]
+  Eigenbasis:
+    # Radmehr (2024, p. 14) transcribes the change to the eigenbasis, whose
+    # change-of-basis matrix has the eigenvectors above as its columns.
+    matrix: *shear
+    eigenvectors: *eigenvectors
+  Ellipse:
+    # Beltran-Meneu et al. (2016), Figure 2: the symmetric inertia matrix that
+    # maps the unit circle onto an ellipse whose axes are its eigenvectors.
+    matrix: [["16/3", "-4"], ["-4", "16/3"]]
+  SpectralBias:
+    # Basri et al. (2019), arXiv 1906.00425v2. The convergence-time figure for
+    # the circle without bias trains on 1001 points at learning rate 0.01 and
+    # declares convergence at 5% fitting error.
+    points: 1001
+    learning_rate: 0.01
+    tolerance: 0.05
+    # The two-sines figure fits a superposition of these frequencies.
+    frequencies: [4, 14]

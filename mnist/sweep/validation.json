@@ -1,0 +1,109 @@
+{
+ "closed_form": {
+  "runs": 560,
+  "largest": 1.7282211277863541e-13,
+  "limit": 0.0001,
+  "passed": true
+ },
+ "identities": {
+  "A against the aim identity": 6.661338147750939e-16,
+  "A against the history field A_t": 5.1160246491877004e-05,
+  "D^2 against exp2S_term + 1 - cross_term": 8.881784197001252e-16,
+  "R against the history field R_c": 8.107366395460058e-05,
+  "S against the history field S_c": 0.0002913900589867069,
+  "share_k0 against R / 2": 4.440892098500626e-16,
+  "the three shares against a sum of one": 1.1102230246251565e-16
+ },
+ "reproduction": {
+  "runs_compared": 17,
+  "exact_in_training_fields": 0,
+  "mismatches": [
+   {
+    "run_id": "mnist_w100_s7_ek3e-06_seed0",
+    "against": "exploration/results/mnist_optionB/optB_b4_curv_s7_ek3e-06_w100_seed0.json",
+    "largest": 0.2021808624267578
+   },
+   {
+    "run_id": "mnist_w200_s3_ek1e-05_seed0",
+    "against": "exploration/results/mnist_optionB/optB_b3_curv_s3_ek1e-05_seed0.json",
+    "largest": 0.008878231048583984
+   },
+   {
+    "run_id": "mnist_w200_s3_ek2e-05_seed0",
+    "against": "exploration/results/mnist_optionB/optB_b3_curv_s3_ek2e-05_seed0.json",
+    "largest": 0.005266666412353516
+   },
+   {
+    "run_id": "mnist_w200_s3_ek3e-06_seed0",
+    "against": "exploration/results/mnist_optionB/optB_b3_curv_s3_ek3e-06_seed0.json",
+    "largest": 0.004400014877319336
+   },
+   {
+    "run_id": "mnist_w200_s5_ek1e-05_seed0",
+    "against": "exploration/results/mnist_optionB/optB_b3_curv_s5_ek1e-05_seed0.json",
+    "largest": 0.01513671875
+   },
+   {
+    "run_id": "mnist_w200_s5_ek2e-05_seed0",
+    "against": "exploration/results/mnist_optionB/optB_b3_curv_s5_ek2e-05_seed0.json",
+    "largest": 0.01513671875
+   },
+   {
+    "run_id": "mnist_w200_s5_ek3e-06_seed0",
+    "against": "exploration/results/mnist_optionB/optB_b3_curv_s5_ek3e-06_seed0.json",
+    "largest": 0.01513671875
+   },
+   {
+    "run_id": "mnist_w200_s7_ek1e-05_seed0",
+    "against": "exploration/results/mnist_optionB/optB_b3_curv_s7_ek1e-05_seed0.json",
+    "largest": 0.6826171875
+   },
+   {
+    "run_id": "mnist_w200_s7_ek2e-05_seed0",
+    "against": "exploration/results/mnist_optionB/optB_b3_curv_s7_ek2e-05_seed0.json",
+    "largest": 0.6826171875
+   },
+   {
+    "run_id": "mnist_w200_s7_ek3e-06_seed0",
+    "against": "exploration/results/mnist_optionB/optB_b3_curv_s7_ek3e-06_seed0.json",
+    "largest": 0.6826171875
+   },
+   {
+    "run_id": "mnist_w200_s9_ek1e-05_seed0",
+    "against": "exploration/results/mnist_optionB/optB_b2_curv_s9_ek1e-05_seed0.json",
+    "largest": 1.1044921875
+   },
+   {
+    "run_id": "mnist_w200_s9_ek2e-05_seed0",
+    "against": "exploration/results/mnist_optionB/optB_b3_curv_s9_ek2e-05_seed0.json",
+    "largest": 1.1044921875
+   },
+   {
+    "run_id": "mnist_w200_s9_ek3e-06_seed0",
+    "against": "exploration/results/mnist_optionB/optB_b3_curv_s9_ek3e-06_seed0.json",
+    "largest": 1.1044921875
+   },
+   {
+    "run_id": "mnist_w400_s7_ek3e-06_seed0",
+    "against": "exploration/results/mnist_grid/grid_w400_s7_ek3e-06_seed0.json",
+    "largest": 0.22967529296875
+   },
+   {
+    "run_id": "mnist_w400_s7_ek3e-06_seed1",
+    "against": "exploration/results/mnist_grid/grid_w400_s7_ek3e-06_seed1.json",
+    "largest": 0.08514404296875
+   },
+   {
+    "run_id": "mnist_w800_s7_ek3e-06_seed0",
+    "against": "exploration/results/mnist_grid/grid_w800_s7_ek3e-06_seed0.json",
+    "largest": 0.20623779296875
+   },
+   {
+    "run_id": "mnist_w800_s7_ek3e-06_seed1",
+    "against": "exploration/results/mnist_grid/grid_w800_s7_ek3e-06_seed1.json",
+    "largest": 0.4981689453125
+   }
+  ],
+  "note": "Exploration runs with the same width, scale, decay, seed and data seed must agree exactly in the training fields at the shared checkpoints, if they were trained with the same number of torch threads. The sweep uses one. The runs of exploration/results/mnist_grid used two, which changes the order of floating point sums, so they differ at rounding level and drift apart."
+ }
+}

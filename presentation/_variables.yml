@@ -1,0 +1,428 @@
+# Written by presentation/make_numbers.py from report_v2/overleaf/numbers.tex.
+# Do not edit by hand. Run the script again after report_v2/code/make_all.py.
+# Each name is the macro name in numbers.tex, and the comment gives its source.
+NfiveAHalfMemMedian: "1,455"  # E01.json N5.0.5.mem_median
+NfiveAHalfMemMin: "1,313"  # E01.json N5.0.5.mem_min
+NfiveAHalfMemMax: "1,612"  # E01.json N5.0.5.mem_max
+NfiveAHalfGrokMedian: "4,981"  # E01.json N5.0.5.grok95_median
+NfiveAHalfGrokMin: "3,662"  # E01.json N5.0.5.grok95_min
+NfiveAHalfGrokMax: "6,776"  # E01.json N5.0.5.grok95_max
+NfiveAHalfGrokked: "5"  # E01.json N5.0.5.grokked
+NfiveAOneMemMedian: "2,983"  # E01.json N5.1.mem_median
+NfiveAOneMemMin: "2,692"  # E01.json N5.1.mem_min
+NfiveAOneMemMax: "2,983"  # E01.json N5.1.mem_max
+NfiveAOneGrokMedian: "23,000"  # E01.json N5.1.grok95_median
+NfiveAOneGrokMin: "15,395"  # E01.json N5.1.grok95_min
+NfiveAOneGrokMax: "34,000"  # E01.json N5.1.grok95_max
+NfiveAOneGrokked: "5"  # E01.json N5.1.grokked
+NfiveATwoMemMedian: "5,520"  # E01.json N5.2.mem_median
+NfiveATwoMemMin: "4,496"  # E01.json N5.2.mem_min
+NfiveATwoMemMax: "6,000"  # E01.json N5.2.mem_max
+NfiveATwoGrokked: "0"  # E01.json N5.2.grokked
+NtwoAHalfMem: "85%"  # E01.json N2.0.5.mem
+NtwoAHalfGrok: "94%"  # E01.json N2.0.5.grok95
+NtwoAHalfFinal: "98%"  # E01.json N2.0.5.final
+NtwoAHalfSfinal: "8.6"  # E01.json N2.0.5.S_final_median
+NtwoAHalfRfinal: "0.070"  # E01.json N2.0.5.R_final_median
+NtwoAOneMem: "76%"  # E01.json N2.1.mem
+NtwoAOneGrok: "90%"  # E01.json N2.1.grok95
+NtwoAOneFinal: "95%"  # E01.json N2.1.final
+NtwoAOneSfinal: "4.5"  # E01.json N2.1.S_final_median
+NtwoAOneRfinal: "0.074"  # E01.json N2.1.R_final_median
+NtwoATwoMem: "48%"  # E01.json N2.2.mem
+NtwoATwoFinal: "90%"  # E01.json N2.2.final
+NtwoATwoSfinal: "2.8"  # E01.json N2.2.S_final_median
+NtwoATwoRfinal: "0.065"  # E01.json N2.2.R_final_median
+EthreeNhundredRuns: "78"  # E03.json groups.N100.n_runs
+EthreeNhundredSSd: "1.2"  # E03.json groups.N100.S.sd.at_grok
+EthreeNhundredSSdmem: "0.42"  # E03.json groups.N100.S.sd.at_mem
+EthreeNhundredSSdplacebo: "1.6"  # E03.json groups.N100.S.sd.placebo_median
+EthreeNhundredSRatio: "1.29"  # E03.json groups.N100.S.sd.tightening
+EthreeNhundredSP: "$<0.0005$"  # E03.json groups.N100.S.sd.p
+EthreeNhundredSCvratio: "1.29"  # E03.json groups.N100.S.cv.tightening (audit only)
+EthreeNhundredRSd: "0.012"  # E03.json groups.N100.R.sd.at_grok
+EthreeNhundredRSdmem: "0.0094"  # E03.json groups.N100.R.sd.at_mem
+EthreeNhundredRSdplacebo: "0.02"  # E03.json groups.N100.R.sd.placebo_median
+EthreeNhundredRRatio: "1.71"  # E03.json groups.N100.R.sd.tightening
+EthreeNhundredRP: "$<0.0005$"  # E03.json groups.N100.R.sd.p
+EthreeNhundredRCvratio: "1.93"  # E03.json groups.N100.R.cv.tightening (audit only)
+EthreeNhundredASd: "0.031"  # E03.json groups.N100.A.sd.at_grok
+EthreeNhundredASdmem: "0.02"  # E03.json groups.N100.A.sd.at_mem
+EthreeNhundredASdplacebo: "0.034"  # E03.json groups.N100.A.sd.placebo_median
+EthreeNhundredARatio: "1.09"  # E03.json groups.N100.A.sd.tightening
+EthreeNhundredAP: "0.029"  # E03.json groups.N100.A.sd.p
+EthreeNhundredACvratio: "1.07"  # E03.json groups.N100.A.cv.tightening (audit only)
+EthreeAoneRuns: "130"  # E03.json groups.alpha1.n_runs
+EthreeAoneSSd: "1.3"  # E03.json groups.alpha1.S.sd.at_grok
+EthreeAoneSSdmem: "0.46"  # E03.json groups.alpha1.S.sd.at_mem
+EthreeAoneSSdplacebo: "1.4"  # E03.json groups.alpha1.S.sd.placebo_median
+EthreeAoneSRatio: "1.08"  # E03.json groups.alpha1.S.sd.tightening
+EthreeAoneSP: "0.258"  # E03.json groups.alpha1.S.sd.p
+EthreeAoneSCvratio: "1.07"  # E03.json groups.alpha1.S.cv.tightening (audit only)
+EthreeAoneRSd: "0.041"  # E03.json groups.alpha1.R.sd.at_grok
+EthreeAoneRSdmem: "0.035"  # E03.json groups.alpha1.R.sd.at_mem
+EthreeAoneRSdplacebo: "0.041"  # E03.json groups.alpha1.R.sd.placebo_median
+EthreeAoneRRatio: "1.01"  # E03.json groups.alpha1.R.sd.tightening
+EthreeAoneRP: "0.423"  # E03.json groups.alpha1.R.sd.p
+EthreeAoneRCvratio: "1.03"  # E03.json groups.alpha1.R.cv.tightening (audit only)
+EthreeAoneASd: "0.05"  # E03.json groups.alpha1.A.sd.at_grok
+EthreeAoneASdmem: "0.033"  # E03.json groups.alpha1.A.sd.at_mem
+EthreeAoneASdplacebo: "0.052"  # E03.json groups.alpha1.A.sd.placebo_median
+EthreeAoneARatio: "1.03"  # E03.json groups.alpha1.A.sd.tightening
+EthreeAoneAP: "0.079"  # E03.json groups.alpha1.A.sd.p
+EthreeAoneACvratio: "1.02"  # E03.json groups.alpha1.A.cv.tightening (audit only)
+EthreeAllRuns: "355"  # E03.json groups.all.n_runs
+EthreeAllSSd: "1.6"  # E03.json groups.all.S.sd.at_grok
+EthreeAllSSdmem: "0.64"  # E03.json groups.all.S.sd.at_mem
+EthreeAllSSdplacebo: "2.7"  # E03.json groups.all.S.sd.placebo_median
+EthreeAllSRatio: "1.69"  # E03.json groups.all.S.sd.tightening
+EthreeAllSP: "$<0.0005$"  # E03.json groups.all.S.sd.p
+EthreeAllSCvratio: "1.48"  # E03.json groups.all.S.cv.tightening (audit only)
+EthreeAllRSd: "0.04"  # E03.json groups.all.R.sd.at_grok
+EthreeAllRSdmem: "0.035"  # E03.json groups.all.R.sd.at_mem
+EthreeAllRSdplacebo: "0.042"  # E03.json groups.all.R.sd.placebo_median
+EthreeAllRRatio: "1.06"  # E03.json groups.all.R.sd.tightening
+EthreeAllRP: "0.007"  # E03.json groups.all.R.sd.p
+EthreeAllRCvratio: "1.14"  # E03.json groups.all.R.cv.tightening (audit only)
+EthreeAllASd: "0.045"  # E03.json groups.all.A.sd.at_grok
+EthreeAllASdmem: "0.032"  # E03.json groups.all.A.sd.at_mem
+EthreeAllASdplacebo: "0.052"  # E03.json groups.all.A.sd.placebo_median
+EthreeAllARatio: "1.15"  # E03.json groups.all.A.sd.tightening
+EthreeAllAP: "$<0.0005$"  # E03.json groups.all.A.sd.p
+EthreeAllACvratio: "1.14"  # E03.json groups.all.A.cv.tightening (audit only)
+NsixAzero: "0.398"  # E03.json N6.A_step0_median
+NsixAgrok: "0.406"  # E03.json N6.A_grok_median
+NsixAfinal: "0.433"  # E03.json N6.A_final_median
+NsevenRWFifty: "0.108"  # E03.json N7.50.R_median
+NsevenSWFifty: "4.11"  # E03.json N7.50.S_median
+NsevenRWHundred: "0.063"  # E03.json N7.100.R_median
+NsevenSWHundred: "2.52"  # E03.json N7.100.S_median
+NsevenRWTwohundred: "0.042"  # E03.json N7.200.R_median
+NsevenSWTwohundred: "1.53"  # E03.json N7.200.S_median
+NsevenRWFourhundred: "0.027"  # E03.json N7.400.R_median
+NsevenSWFourhundred: "1.06"  # E03.json N7.400.S_median
+NsevenRWEighthundred: "0.022"  # E03.json N7.800.R_median
+NsevenSWEighthundred: "0.87"  # E03.json N7.800.S_median
+NsevenRWSixteenhundred: "0.019"  # E03.json N7.1600.R_median
+NsevenSWSixteenhundred: "0.58"  # E03.json N7.1600.S_median
+NeightNoGrok: "70"  # E03.json N8.n_cells_no_grok
+NeightR: "64"  # E03.json N8.n_cells_R
+NeightNoGrokMemorised: "34"  # E03.json N8.n_cells_no_grok_memorised
+NeightRMemorised: "29"  # E03.json N8.n_cells_R_memorised
+NeightAboveRMedianMemorised: "8"  # E03.json N8.n_cells_above_R_median_memorised
+EfourEdgeWFifty: "$3\\times10^{-4}$"  # E04.json largest_decay_all_grok.50
+EfourEdgeWHundred: "$3\\times10^{-4}$"  # E04.json largest_decay_all_grok.100
+EfourEdgeWTwohundred: "$3\\times10^{-4}$"  # E04.json largest_decay_all_grok.200
+EfourEdgeWFourhundred: "$3\\times10^{-4}$"  # E04.json largest_decay_all_grok.400
+EfourEdgeWEighthundred: "$10^{-4}$"  # E04.json largest_decay_all_grok.800
+EfourEdgeWSixteenhundred: "$10^{-4}$"  # E04.json largest_decay_all_grok.1600
+EsixMainA: "$+0.24$"  # E06.json rows.main.estimate.a
+EsixMainALo: "$+0.08$"  # E06.json rows.main.ci_cells.a
+EsixMainAHi: "$+0.40$"  # E06.json rows.main.ci_cells.a
+EsixMainB: "$-0.63$"  # E06.json rows.main.estimate.b
+EsixMainBLo: "$-0.92$"  # E06.json rows.main.ci_cells.b
+EsixMainBHi: "$-0.46$"  # E06.json rows.main.ci_cells.b
+EsixMainG: "$-0.16$"  # E06.json rows.main.estimate.gamma
+EsixMainGLo: "$-0.37$"  # E06.json rows.main.ci_cells.gamma
+EsixMainGHi: "$+0.05$"  # E06.json rows.main.ci_cells.gamma
+EsixMainS: "0.34"  # E06.json rows.main.estimate.sigma
+EsixMainWithin: "0.11"  # E06.json rows.main.within_cell_sd_median
+EsixMainMisfit: "0.32"  # E06.json rows.main.cell_misfit_sd
+EsixMainRuns: "90"  # E06.json rows.main.n_runs
+EsixMainCens: "0"  # E06.json rows.main.n_censored
+EsixWideA: "$+0.36$"  # E06.json rows.with3e-4.estimate.a
+EsixWideALo: "$+0.03$"  # E06.json rows.with3e-4.ci_cells.a
+EsixWideAHi: "$+0.62$"  # E06.json rows.with3e-4.ci_cells.a
+EsixWideB: "$-0.21$"  # E06.json rows.with3e-4.estimate.b
+EsixWideBLo: "$-0.60$"  # E06.json rows.with3e-4.ci_cells.b
+EsixWideBHi: "$+0.14$"  # E06.json rows.with3e-4.ci_cells.b
+EsixWideG: "$+0.14$"  # E06.json rows.with3e-4.estimate.gamma
+EsixWideGLo: "$-0.24$"  # E06.json rows.with3e-4.ci_cells.gamma
+EsixWideGHi: "$+0.48$"  # E06.json rows.with3e-4.ci_cells.gamma
+EsixWideS: "0.80"  # E06.json rows.with3e-4.estimate.sigma
+EsixWideWithin: "0.11"  # E06.json rows.with3e-4.within_cell_sd_median
+EsixWideMisfit: "0.64"  # E06.json rows.with3e-4.cell_misfit_sd
+EsixWideRuns: "120"  # E06.json rows.with3e-4.n_runs
+EsixWideCens: "10"  # E06.json rows.with3e-4.n_censored
+EsixLeightyA: "$+0.30$"  # E06.json rows.level80.estimate.a
+EsixLeightyALo: "$+0.17$"  # E06.json rows.level80.ci_cells.a
+EsixLeightyAHi: "$+0.45$"  # E06.json rows.level80.ci_cells.a
+EsixLeightyB: "$-0.55$"  # E06.json rows.level80.estimate.b
+EsixLeightyBLo: "$-0.74$"  # E06.json rows.level80.ci_cells.b
+EsixLeightyBHi: "$-0.39$"  # E06.json rows.level80.ci_cells.b
+EsixLeightyG: "$-0.17$"  # E06.json rows.level80.estimate.gamma
+EsixLeightyGLo: "$-0.36$"  # E06.json rows.level80.ci_cells.gamma
+EsixLeightyGHi: "$-0.02$"  # E06.json rows.level80.ci_cells.gamma
+EsixLeightyS: "0.29"  # E06.json rows.level80.estimate.sigma
+EsixLeightyWithin: "0.11"  # E06.json rows.level80.within_cell_sd_median
+EsixLeightyMisfit: "0.27"  # E06.json rows.level80.cell_misfit_sd
+EsixLeightyRuns: "90"  # E06.json rows.level80.n_runs
+EsixLeightyCens: "0"  # E06.json rows.level80.n_censored
+EsixLninetyA: "$+0.27$"  # E06.json rows.level90.estimate.a
+EsixLninetyALo: "$+0.13$"  # E06.json rows.level90.ci_cells.a
+EsixLninetyAHi: "$+0.41$"  # E06.json rows.level90.ci_cells.a
+EsixLninetyB: "$-0.60$"  # E06.json rows.level90.estimate.b
+EsixLninetyBLo: "$-0.84$"  # E06.json rows.level90.ci_cells.b
+EsixLninetyBHi: "$-0.42$"  # E06.json rows.level90.ci_cells.b
+EsixLninetyG: "$-0.16$"  # E06.json rows.level90.estimate.gamma
+EsixLninetyGLo: "$-0.37$"  # E06.json rows.level90.ci_cells.gamma
+EsixLninetyGHi: "$+0.03$"  # E06.json rows.level90.ci_cells.gamma
+EsixLninetyS: "0.31"  # E06.json rows.level90.estimate.sigma
+EsixLninetyWithin: "0.11"  # E06.json rows.level90.within_cell_sd_median
+EsixLninetyMisfit: "0.30"  # E06.json rows.level90.cell_misfit_sd
+EsixLninetyRuns: "90"  # E06.json rows.level90.n_runs
+EsixLninetyCens: "0"  # E06.json rows.level90.n_censored
+EsixMemA: "$-1.53$"  # E06.json rows.mem.estimate.a
+EsixMemALo: "$-1.80$"  # E06.json rows.mem.ci_cells.a
+EsixMemAHi: "$-1.32$"  # E06.json rows.mem.ci_cells.a
+EsixMemB: "$+0.07$"  # E06.json rows.mem.estimate.b
+EsixMemBLo: "$-0.13$"  # E06.json rows.mem.ci_cells.b
+EsixMemBHi: "$+0.31$"  # E06.json rows.mem.ci_cells.b
+EsixMemG: "$+0.05$"  # E06.json rows.mem.estimate.gamma
+EsixMemGLo: "$-0.23$"  # E06.json rows.mem.ci_cells.gamma
+EsixMemGHi: "$+0.29$"  # E06.json rows.mem.ci_cells.gamma
+EsixMemS: "0.38"  # E06.json rows.mem.estimate.sigma
+EsixMemWithin: "0.12"  # E06.json rows.mem.within_cell_sd_median
+EsixMemMisfit: "0.37"  # E06.json rows.mem.cell_misfit_sd
+EsixMemRuns: "90"  # E06.json rows.mem.n_runs
+EsixMemCens: "0"  # E06.json rows.mem.n_censored
+EsixMainASeedlo: "$+0.21$"  # E06.json rows.main.ci_seeds.a
+EsixMainASeedhi: "$+0.26$"  # E06.json rows.main.ci_seeds.a
+EsixMainBSeedlo: "$-0.67$"  # E06.json rows.main.ci_seeds.b
+EsixMainBSeedhi: "$-0.60$"  # E06.json rows.main.ci_seeds.b
+EsixMainGSeedlo: "$-0.19$"  # E06.json rows.main.ci_seeds.gamma
+EsixMainGSeedhi: "$-0.13$"  # E06.json rows.main.ci_seeds.gamma
+NnineLogRAlpha: "0.30"  # E07.json N9_grokked.logR_t.alpha
+NnineAllLogRAlpha: "0.26"  # E07.json N9_all.logR_t.alpha
+NnineLogRWidth: "0.66"  # E07.json N9_grokked.logR_t.width
+NnineAllLogRWidth: "0.48"  # E07.json N9_all.logR_t.width
+NnineLogRDecay: "0.18"  # E07.json N9_grokked.logR_t.eta_kappa
+NnineAllLogRDecay: "0.13"  # E07.json N9_all.logR_t.eta_kappa
+NnineSAlpha: "0.28"  # E07.json N9_grokked.S_t.alpha
+NnineAllSAlpha: "0.29"  # E07.json N9_all.S_t.alpha
+NnineSWidth: "0.22"  # E07.json N9_grokked.S_t.width
+NnineAllSWidth: "0.16"  # E07.json N9_all.S_t.width
+NnineSDecay: "0.26"  # E07.json N9_grokked.S_t.eta_kappa
+NnineAllSDecay: "0.36"  # E07.json N9_all.S_t.eta_kappa
+NnineAAlpha: "0.01"  # E07.json N9_grokked.A_t.alpha
+NnineAllAAlpha: "0.01"  # E07.json N9_all.A_t.alpha
+NnineAWidth: "0.43"  # E07.json N9_grokked.A_t.width
+NnineAllAWidth: "0.27"  # E07.json N9_all.A_t.width
+NnineADecay: "0.07"  # E07.json N9_grokked.A_t.eta_kappa
+NnineAllADecay: "0.01"  # E07.json N9_all.A_t.eta_kappa
+EeightAonly: "0.52"  # E08.json ladder.A only.mean
+EeightSonly: "0.54"  # E08.json ladder.S only.mean
+EeightRonly: "0.55"  # E08.json ladder.log R only.mean
+EeightLinear: "0.59"  # E08.json ladder.linear AFT.mean
+EeightInter: "0.62"  # E08.json ladder.AFT with interactions.mean
+EeightKrr: "0.57"  # E08.json ladder.kernel ridge.mean
+EeightXgb: "0.70"  # E08.json ladder.XGBoost.mean
+EeightXgbLo: "0.69"  # E08.json ladder.XGBoost.seed_range
+EeightXgbHi: "0.70"  # E08.json ladder.XGBoost.seed_range
+EeightGru: "0.76"  # E08.json ladder.GRU on history.mean
+EeightGruLo: "0.75"  # E08.json ladder.GRU on history.seed_range
+EeightGruHi: "0.78"  # E08.json ladder.GRU on history.seed_range
+EeightRef: "0.79"  # E08.json ladder.settings reference.mean
+EeightRefLo: "0.77"  # E08.json ladder.settings reference.seed_range
+EeightRefHi: "0.80"  # E08.json ladder.settings reference.seed_range
+EeightWidthref: "0.67"  # E08.json ladder.width reference.mean
+EeightWidthrefLo: "0.67"  # E08.json ladder.width reference.seed_range
+EeightWidthrefHi: "0.67"  # E08.json ladder.width reference.seed_range
+EeightDecayref: "0.72"  # E08.json ladder.decay reference.mean
+EeightDecayrefLo: "0.71"  # E08.json ladder.decay reference.seed_range
+EeightDecayrefHi: "0.73"  # E08.json ladder.decay reference.seed_range
+EnineGamma: "$-0.62$"  # E09.json gamma_SR.estimate
+EnineGammalo: "$-1.39$"  # E09.json gamma_SR.ci
+EnineGammahi: "$-0.09$"  # E09.json gamma_SR.ci
+EtenSRsq: "0.27"  # E10.json subsets.S.R2
+EtenSC: "0.67"  # E10.json subsets.S.concordance
+EtenRRsq: "0.35"  # E10.json subsets.log R.R2
+EtenRC: "0.70"  # E10.json subsets.log R.concordance
+EtenARsq: "0.05"  # E10.json subsets.A.R2
+EtenAC: "0.55"  # E10.json subsets.A.concordance
+EtenSRRsq: "0.51"  # E10.json subsets.S + log R.R2
+EtenSRC: "0.76"  # E10.json subsets.S + log R.concordance
+EtenSARsq: "0.23"  # E10.json subsets.S + A.R2
+EtenSAC: "0.65"  # E10.json subsets.S + A.concordance
+EtenRARsq: "0.39"  # E10.json subsets.log R + A.R2
+EtenRAC: "0.72"  # E10.json subsets.log R + A.concordance
+EtenSRARsq: "0.55"  # E10.json subsets.S + log R + A.R2
+EtenSRAC: "0.78"  # E10.json subsets.S + log R + A.concordance
+EtenBetweenLogT: "0.96"  # E10.json between_cells.logT
+EtenBetweenS: "0.99"  # E10.json between_cells.S_t
+EtenBetweenLogR: "0.99"  # E10.json between_cells.logR_t
+EtenBetweenA: "0.56"  # E10.json between_cells.A_t
+EtenRuns: "355"  # E10.json n_runs
+EtenCells: "74"  # E10.json n_cells
+EthirteenAHalfAllGrok: "35"  # E13.json by_alpha.0.5.cells_all_grok
+EthirteenAHalfNoneGrok: "12"  # E13.json by_alpha.0.5.cells_none_grok
+EthirteenAOneAllGrok: "26"  # E13.json by_alpha.1.cells_all_grok
+EthirteenAOneNoneGrok: "22"  # E13.json by_alpha.1.cells_none_grok
+EthirteenATwoAllGrok: "8"  # E13.json by_alpha.2.cells_all_grok
+EthirteenATwoNoneGrok: "36"  # E13.json by_alpha.2.cells_none_grok
+EfifteenGruEpochsMin: "70"  # E15.json gru_epochs (min)
+EfifteenGruEpochsMax: "350"  # E15.json gru_epochs (max)
+EsixteenEightyNhundredRuns: "86"  # E16.json grok80.N100.n_runs
+EsixteenEightyNhundredSRatio: "1.45"  # E16.json grok80.N100.S.sd.tightening
+EsixteenEightyNhundredSP: "$<0.0005$"  # E16.json grok80.N100.S.sd.p
+EsixteenEightyNhundredRRatio: "1.83"  # E16.json grok80.N100.R.sd.tightening
+EsixteenEightyNhundredRP: "$<0.0005$"  # E16.json grok80.N100.R.sd.p
+EsixteenEightyNhundredARatio: "1.13"  # E16.json grok80.N100.A.sd.tightening
+EsixteenEightyNhundredAP: "0.002"  # E16.json grok80.N100.A.sd.p
+EsixteenEightyAoneRuns: "136"  # E16.json grok80.alpha1.n_runs
+EsixteenEightyAoneSRatio: "1.25"  # E16.json grok80.alpha1.S.sd.tightening
+EsixteenEightyAoneSP: "0.024"  # E16.json grok80.alpha1.S.sd.p
+EsixteenEightyAoneRRatio: "1.04"  # E16.json grok80.alpha1.R.sd.tightening
+EsixteenEightyAoneRP: "0.131"  # E16.json grok80.alpha1.R.sd.p
+EsixteenEightyAoneARatio: "1.08"  # E16.json grok80.alpha1.A.sd.tightening
+EsixteenEightyAoneAP: "0.001"  # E16.json grok80.alpha1.A.sd.p
+EsixteenNinetyNhundredRuns: "79"  # E16.json grok90.N100.n_runs
+EsixteenNinetyNhundredSRatio: "1.34"  # E16.json grok90.N100.S.sd.tightening
+EsixteenNinetyNhundredSP: "$<0.0005$"  # E16.json grok90.N100.S.sd.p
+EsixteenNinetyNhundredRRatio: "1.79"  # E16.json grok90.N100.R.sd.tightening
+EsixteenNinetyNhundredRP: "$<0.0005$"  # E16.json grok90.N100.R.sd.p
+EsixteenNinetyNhundredARatio: "1.09"  # E16.json grok90.N100.A.sd.tightening
+EsixteenNinetyNhundredAP: "0.029"  # E16.json grok90.N100.A.sd.p
+EsixteenNinetyAoneRuns: "134"  # E16.json grok90.alpha1.n_runs
+EsixteenNinetyAoneSRatio: "1.17"  # E16.json grok90.alpha1.S.sd.tightening
+EsixteenNinetyAoneSP: "0.085"  # E16.json grok90.alpha1.S.sd.p
+EsixteenNinetyAoneRRatio: "1.03"  # E16.json grok90.alpha1.R.sd.tightening
+EsixteenNinetyAoneRP: "0.195"  # E16.json grok90.alpha1.R.sd.p
+EsixteenNinetyAoneARatio: "1.06"  # E16.json grok90.alpha1.A.sd.tightening
+EsixteenNinetyAoneAP: "0.013"  # E16.json grok90.alpha1.A.sd.p
+EnineteenMainA: "$-0.02$"  # E19.json rows.main.estimate.a
+EnineteenMainALo: "$-0.07$"  # E19.json rows.main.ci_cells.a
+EnineteenMainAHi: "$+0.02$"  # E19.json rows.main.ci_cells.a
+EnineteenMainB: "$-1.00$"  # E19.json rows.main.estimate.b
+EnineteenMainBLo: "$-1.05$"  # E19.json rows.main.ci_cells.b
+EnineteenMainBHi: "$-0.96$"  # E19.json rows.main.ci_cells.b
+EnineteenMainG: "$+0.01$"  # E19.json rows.main.estimate.gamma
+EnineteenMainGLo: "$-0.07$"  # E19.json rows.main.ci_cells.gamma
+EnineteenMainGHi: "$+0.10$"  # E19.json rows.main.ci_cells.gamma
+EnineteenMainS: "0.03"  # E19.json rows.main.estimate.sigma
+EnineteenMainRuns: "45"  # E19.json rows.main.n_runs
+EnineteenMainCens: "0"  # E19.json rows.main.n_censored
+EnineteenScalefiveA: "$-0.02$"  # E19.json rows.scale5.estimate.a
+EnineteenScalefiveALo: "$-0.06$"  # E19.json rows.scale5.ci_cells.a
+EnineteenScalefiveAHi: "$+0.03$"  # E19.json rows.scale5.ci_cells.a
+EnineteenScalefiveB: "$-1.00$"  # E19.json rows.scale5.estimate.b
+EnineteenScalefiveBLo: "$-1.04$"  # E19.json rows.scale5.ci_cells.b
+EnineteenScalefiveBHi: "$-0.96$"  # E19.json rows.scale5.ci_cells.b
+EnineteenScalefiveG: "$+0.01$"  # E19.json rows.scale5.estimate.gamma
+EnineteenScalefiveGLo: "$-0.07$"  # E19.json rows.scale5.ci_cells.gamma
+EnineteenScalefiveGHi: "$+0.09$"  # E19.json rows.scale5.ci_cells.gamma
+EnineteenScalefiveS: "0.03"  # E19.json rows.scale5.estimate.sigma
+EnineteenScalefiveRuns: "45"  # E19.json rows.scale5.n_runs
+EnineteenScalefiveCens: "0"  # E19.json rows.scale5.n_censored
+EnineteenScalenineA: "$-0.02$"  # E19.json rows.scale9.estimate.a
+EnineteenScalenineALo: "$-0.05$"  # E19.json rows.scale9.ci_cells.a
+EnineteenScalenineAHi: "$+0.02$"  # E19.json rows.scale9.ci_cells.a
+EnineteenScalenineB: "$-1.00$"  # E19.json rows.scale9.estimate.b
+EnineteenScalenineBLo: "$-1.02$"  # E19.json rows.scale9.ci_cells.b
+EnineteenScalenineBHi: "$-0.97$"  # E19.json rows.scale9.ci_cells.b
+EnineteenScalenineG: "$+0.00$"  # E19.json rows.scale9.estimate.gamma
+EnineteenScalenineGLo: "$-0.06$"  # E19.json rows.scale9.ci_cells.gamma
+EnineteenScalenineGHi: "$+0.06$"  # E19.json rows.scale9.ci_cells.gamma
+EnineteenScalenineS: "0.02"  # E19.json rows.scale9.estimate.sigma
+EnineteenScalenineRuns: "45"  # E19.json rows.scale9.n_runs
+EnineteenScalenineCens: "1"  # E19.json rows.scale9.n_censored
+EnineteenWideA: "$-0.02$"  # E19.json rows.wide.estimate.a
+EnineteenWideALo: "$-0.06$"  # E19.json rows.wide.ci_cells.a
+EnineteenWideAHi: "$+0.01$"  # E19.json rows.wide.ci_cells.a
+EnineteenWideB: "$-1.00$"  # E19.json rows.wide.estimate.b
+EnineteenWideBLo: "$-1.01$"  # E19.json rows.wide.ci_cells.b
+EnineteenWideBHi: "$-0.99$"  # E19.json rows.wide.ci_cells.b
+EnineteenWideG: "$+0.03$"  # E19.json rows.wide.estimate.gamma
+EnineteenWideGLo: "$-0.00$"  # E19.json rows.wide.ci_cells.gamma
+EnineteenWideGHi: "$+0.06$"  # E19.json rows.wide.ci_cells.gamma
+EnineteenWideS: "0.03"  # E19.json rows.wide.estimate.sigma
+EnineteenWideRuns: "75"  # E19.json rows.wide.n_runs
+EnineteenWideCens: "0"  # E19.json rows.wide.n_censored
+EnineteenLeightyfiveA: "$-0.08$"  # E19.json rows.level85.estimate.a
+EnineteenLeightyfiveALo: "$-0.15$"  # E19.json rows.level85.ci_cells.a
+EnineteenLeightyfiveAHi: "$-0.02$"  # E19.json rows.level85.ci_cells.a
+EnineteenLeightyfiveB: "$-1.00$"  # E19.json rows.level85.estimate.b
+EnineteenLeightyfiveBLo: "$-1.06$"  # E19.json rows.level85.ci_cells.b
+EnineteenLeightyfiveBHi: "$-0.94$"  # E19.json rows.level85.ci_cells.b
+EnineteenLeightyfiveG: "$+0.00$"  # E19.json rows.level85.estimate.gamma
+EnineteenLeightyfiveGLo: "$-0.11$"  # E19.json rows.level85.ci_cells.gamma
+EnineteenLeightyfiveGHi: "$+0.15$"  # E19.json rows.level85.ci_cells.gamma
+EnineteenLeightyfiveS: "0.03"  # E19.json rows.level85.estimate.sigma
+EnineteenLeightyfiveRuns: "45"  # E19.json rows.level85.n_runs
+EnineteenLeightyfiveCens: "1"  # E19.json rows.level85.n_censored
+EnineteenMemA: "$+0.08$"  # E19.json rows.mem.estimate.a
+EnineteenMemALo: "$-0.02$"  # E19.json rows.mem.ci_cells.a
+EnineteenMemAHi: "$+0.15$"  # E19.json rows.mem.ci_cells.a
+EnineteenMemB: "$-0.12$"  # E19.json rows.mem.estimate.b
+EnineteenMemBLo: "$-0.25$"  # E19.json rows.mem.ci_cells.b
+EnineteenMemBHi: "$-0.04$"  # E19.json rows.mem.ci_cells.b
+EnineteenMemG: "$+0.00$"  # E19.json rows.mem.estimate.gamma
+EnineteenMemGLo: "$-0.21$"  # E19.json rows.mem.ci_cells.gamma
+EnineteenMemGHi: "$+0.23$"  # E19.json rows.mem.ci_cells.gamma
+EnineteenMemS: "0.09"  # E19.json rows.mem.estimate.sigma
+EnineteenMemRuns: "45"  # E19.json rows.mem.n_runs
+EnineteenMemCens: "0"  # E19.json rows.mem.n_censored
+EnineteenNc: "2.11"  # E19.json law.n_c_mean
+EnineteenNcSd: "0.07"  # E19.json law.n_c_sd
+EnineteenNcRel: "3%"  # E19.json law.n_c_sd_over_mean
+EnineteenNcRuns: "314"  # E19.json law.n_runs
+EnineteenNcMin: "1.89"  # E19.json law.n_c_min
+EnineteenNcMax: "2.36"  # E19.json law.n_c_max
+EnineteenCorr: "0.9963"  # E19.json law.corr_predicted_measured
+EnineteenPureGap: "0.008"  # E19.json law.pure_decay_max_abs_gap
+EnineteenNormMemRel: "35%"  # E19.json law.norm_at_mem_sd_over_mean
+EnineteenDecayTSThree: "0.35"  # E19.json law.decay_T_by_scale.3
+EnineteenDecayTSFive: "0.86"  # E19.json law.decay_T_by_scale.5
+EnineteenDecayTSSeven: "1.20"  # E19.json law.decay_T_by_scale.7
+EnineteenDecayTSNine: "1.45"  # E19.json law.decay_T_by_scale.9
+EnineteenRWTwohundred: "0.045"  # E19.json at_grok_by_width.200.R
+EnineteenSWTwohundred: "0.0012"  # E19.json at_grok_by_width.200.S
+EnineteenTWTwohundred: "204,000"  # E19.json at_grok_by_width.200.T_median
+EnineteenRWFourhundred: "0.008"  # E19.json at_grok_by_width.400.R
+EnineteenSWFourhundred: "0.0031"  # E19.json at_grok_by_width.400.S
+EnineteenTWFourhundred: "198,000"  # E19.json at_grok_by_width.400.T_median
+EnineteenRWEighthundred: "0.002"  # E19.json at_grok_by_width.800.R
+EnineteenSWEighthundred: "0.0050"  # E19.json at_grok_by_width.800.S
+EnineteenTWEighthundred: "200,000"  # E19.json at_grok_by_width.800.T_median
+EnineteenAzero: "0.421"  # E19.json A.A0_median
+EnineteenAgrok: "0.396"  # E19.json A.A_grok_median
+EnineteenAmem: "0.382"  # E19.json A.A_mem_median
+EnineteenNtwohundredRuns: "104"  # E19.json placebo.N200.n_runs
+EnineteenNtwohundredSRatio: "1.29"  # E19.json placebo.N200.S.tightening
+EnineteenNtwohundredSP: "$<0.0005$"  # E19.json placebo.N200.S.p
+EnineteenNtwohundredRRatio: "1.85"  # E19.json placebo.N200.R.tightening
+EnineteenNtwohundredRP: "$<0.0005$"  # E19.json placebo.N200.R.p
+EnineteenNtwohundredARatio: "8.06"  # E19.json placebo.N200.A.tightening
+EnineteenNtwohundredAP: "$<0.0005$"  # E19.json placebo.N200.A.p
+EnineteenScalesevenRuns: "75"  # E19.json placebo.scale7.n_runs
+EnineteenScalesevenSRatio: "47.54"  # E19.json placebo.scale7.S.tightening
+EnineteenScalesevenSP: "$<0.0005$"  # E19.json placebo.scale7.S.p
+EnineteenScalesevenRRatio: "1.30"  # E19.json placebo.scale7.R.tightening
+EnineteenScalesevenRP: "0.004"  # E19.json placebo.scale7.R.p
+EnineteenScalesevenARatio: "6.00"  # E19.json placebo.scale7.A.tightening
+EnineteenScalesevenAP: "$<0.0005$"  # E19.json placebo.scale7.A.p
+EnineteenAllRuns: "314"  # E19.json placebo.all.n_runs
+EnineteenAllSRatio: "2.28"  # E19.json placebo.all.S.tightening
+EnineteenAllSP: "$<0.0005$"  # E19.json placebo.all.S.p
+EnineteenAllRRatio: "1.25"  # E19.json placebo.all.R.tightening
+EnineteenAllRP: "$<0.0005$"  # E19.json placebo.all.R.p
+EnineteenAllARatio: "6.07"  # E19.json placebo.all.A.tightening
+EnineteenAllAP: "$<0.0005$"  # E19.json placebo.all.A.p
+EnineteenWhundredStrong: "0"  # E19.json width100.n_strong
+EnineteenWhundredReached: "87"  # E19.json width100.n_reached
+EnineteenWhundredAccmem: "0.72"  # E19.json width100.test_acc_at_mem_median
+EnineteenSthreeAccmem: "0.52"  # E19.json scale3.test_acc_at_mem_median
+EnineteenSsevenAccmem: "0.15"  # E19.json scale7.test_acc_at_mem_median
+EnineteenVerdictStrong: "129"  # E19.json verdicts.strong
+EnineteenVerdictWeak: "98"  # E19.json verdicts.weak
+EnineteenVerdictNone: "333"  # E19.json verdicts.none
+EnineteenNoDecayReached: "0"  # E19.json no_decay.n_reached
+EnineteenHours: "134"  # E19.json compute.summed_hours
+NoneSummedHours: "18.9"  # N.json N1.summed_run_hours
+NoneSummedSeconds: "68,056"  # N.json N1.summed_run_seconds
+NoneElapsedHours: "2.7"  # N.json N1.elapsed_hours
+NoneWorkers: "12"  # N.json N1.workers
+NthreeMem: "10.9%"  # N.json N3.mem.max
+NthreeGrok: "9.7%"  # N.json N3.grok95.max
+NfourMin: "0.014"  # N.json N4.min
+NfourMax: "0.027"  # N.json N4.max

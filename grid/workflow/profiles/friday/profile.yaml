@@ -1,0 +1,43 @@
+# The workflow profile for UQ's Friday cluster, read after the global profile friday with
+# snakemake --profile friday --workflow-profile workflow/profiles/friday. It holds this workflow's
+# resources and paths, which the --workflow-profile documentation assigns to workflow profiles, and
+# overrides the global profile key by key.
+#
+# A profile that starts with this key is a YTE template ("Use templating in profiles"). The global
+# profile's README has each workflow render the presets beside it with YTE's Python API and name a
+# preset for each rule, so no figure of the cluster is typed here.
+__use_yte__: true
+__definitions__:
+  - from pathlib import Path
+  - from snakemake.common import get_appdirs
+  - from yte import process_yaml
+  - |
+    presets = process_yaml(
+        (Path(get_appdirs().user_config_dir) / "friday" / "presets.yaml").read_text()
+    )
+# Every CPU job's seconds go uncompared, so it runs on any node the plugin selects. Snakemake
+# exports the tmpdir resource as TMPDIR to each job, and the Friday user guide runs jobs "from /data
+# using /scratch for runtime data". Snakemake expands $USER in a profile value.
+default-resources:
+  ?for key, value in presets["cpu_untimed"].items():
+    ?key: ?value
+  tmpdir: /scratch/$USER
+set-resources:
+  # Training runs on the H100s, by the user's choice on 2026-09-30, on the one device
+  # torch.accelerator.current_accelerator gives train.py.
+  train: &train
+    ?for key, value in presets["gpu_h100"].items():
+      ?key: ?value
+    gpu: 1
+  scan_train: *train
+# Snakemake submits the jobs of one group as one cluster job, which saves queueing time, and the
+# grouping that suits a platform is set from the command line, here the profile ("Job Grouping").
+# The database and the two fits that read it run in one CPU job.
+groups:
+  database: analysis
+  fits: analysis
+  broken_line: analysis
+# The global profile turns the efficiency report on and leaves its directory to each workflow. The
+# plugin writes efficiency_report_<run_uuid>.csv into it (efficiency_report.py), and logs/ is
+# ignored by git in this layout.
+slurm-efficiency-report-path: logs

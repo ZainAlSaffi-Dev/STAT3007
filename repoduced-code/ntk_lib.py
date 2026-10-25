@@ -31,7 +31,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
-from torch.func import functional_call, vmap, grad
+from torch.func import functional_call, vmap, grad, stack_module_state
 
 from RepoducedCode import (
     make_modular_addition_dataset,
@@ -123,8 +123,96 @@ class NTKMLP(nn.Module):
         return z @ self.W2.T / math.sqrt(self.hidden_dim)
 
 
-def build_model(parameterisation, input_dim, hidden_dim, output_dim, activation="relu", init_scale=1.0):
-    """Return a fresh model. The caller sets the seed before calling this."""
+class OmnigrokMLP(nn.Module):
+    """The MNIST network of Liu, Michaud and Tegmark (2023), Appendix A.
+
+    It is a ReLU perceptron with three linear layers, each of width
+    hidden_dim except the last, with biases and PyTorch's default
+    initialisation. Section 4 of that paper multiplies the initial weights
+    by a constant, and build_model does this to every parameter, so that
+    the ratio of the parameter norm to its default value is init_scale. The
+    biases make the network inhomogeneous, so the closed-form kernel does
+    not apply and the kernel is computed by autograd.
+    """
+
+    def __init__(self, input_dim, hidden_dim, output_dim):
+        super().__init__()
+        self.net = nn.Sequential(nn.Linear(input_dim, hidden_dim), nn.ReLU(),
+                                 nn.Linear(hidden_dim, hidden_dim), nn.ReLU(),
+                                 nn.Linear(hidden_dim, output_dim))
+
+    def forward(self, x):
+        return self.net(x)
+
+
+class DeepBiasFreeMLP(nn.Module):
+    """A bias-free ReLU network with depth linear layers, for the MNIST study.
+
+    Every hidden layer has width hidden_dim. Layer l computes
+    h_l = c_l a_{l-1} W_l^T with a_0 = x, and a_l = relu(h_l) for every
+    layer but the last, whose h_L is the output. There are no biases, so the
+    network is depth-homogeneous in its weights.
+
+    scaling chooses the parameterisation. Under "standard" each W_l is drawn
+    uniformly from (-1 / sqrt(fan_in), 1 / sqrt(fan_in)), the draw that
+    PyTorch's nn.Linear makes for its weight, and c_l = 1. With depth 3 and
+    width 200 this is OmnigrokMLP without its biases. Under "ntk" each W_l
+    is drawn from N(0, 1) and c_l = 1 / sqrt(fan_in), which is NTKMLP when
+    depth is 2. Every weight is multiplied by init_scale after the draw.
+    """
+
+    def __init__(self, input_dim, hidden_dim, output_dim, depth=3, scaling="standard", init_scale=1.0):
+        super().__init__()
+        if depth < 2:
+            raise ValueError("DeepBiasFreeMLP needs at least two layers")
+        self.input_dim, self.hidden_dim, self.depth, self.scaling = input_dim, hidden_dim, depth, scaling
+        self.activation = "relu"
+        sizes = [input_dim] + [hidden_dim] * (depth - 1) + [output_dim]
+        self.factors = []
+        for l in range(depth):
+            fan_in, fan_out = sizes[l], sizes[l + 1]
+            if scaling == "standard":
+                bound = 1.0 / math.sqrt(fan_in)
+                W, c = torch.empty(fan_out, fan_in).uniform_(-bound, bound), 1.0
+            elif scaling == "ntk":
+                W, c = torch.randn(fan_out, fan_in), 1.0 / math.sqrt(fan_in)
+            else:
+                raise ValueError(f"unknown scaling {scaling!r}")
+            setattr(self, f"W{l + 1}", nn.Parameter(init_scale * W))
+            self.factors.append(c)
+
+    def weights(self):
+        """Return the weight matrices W_1 to W_L in order."""
+        return [getattr(self, f"W{l + 1}") for l in range(self.depth)]
+
+    def forward(self, x):
+        a = x
+        for l, (W, c) in enumerate(zip(self.weights(), self.factors)):
+            h = c * (a @ W.T)
+            a = torch.relu(h) if l < self.depth - 1 else h
+        return a
+
+
+def build_model(parameterisation, input_dim, hidden_dim, output_dim, activation="relu", init_scale=1.0,
+                depth=None):
+    """Return a fresh model. The caller sets the seed before calling this.
+
+    "deep_standard" and "deep_ntk" build a DeepBiasFreeMLP with depth layers
+    in the standard or NTK parameterisation. depth is used by these two only.
+    """
+    if parameterisation in ("deep_standard", "deep_ntk"):
+        if depth is None:
+            raise ValueError(f"parameterisation {parameterisation!r} needs depth")
+        if activation != "relu":
+            raise ValueError("DeepBiasFreeMLP uses relu only")
+        return DeepBiasFreeMLP(input_dim, hidden_dim, output_dim, depth=depth,
+                               scaling=parameterisation[len("deep_"):], init_scale=init_scale)
+    if parameterisation == "omnigrok":
+        model = OmnigrokMLP(input_dim, hidden_dim, output_dim)
+        with torch.no_grad():
+            for q in model.parameters():
+                q.mul_(init_scale)
+        return model
     if parameterisation == "ntk":
         return NTKMLP(input_dim, hidden_dim, output_dim, activation, init_scale)
     if parameterisation == "standard":
@@ -230,13 +318,117 @@ def closed_form_terms(W1, W2, x, c1, c2, output=None):
     return K_W1, K_W2
 
 
+def closed_form_terms_deep(weights, factors, x):
+    """Return the per-layer terms of the sum-over-outputs kernel of a bias-free ReLU network, in float64.
+
+    weights are W_1 to W_L and factors are c_1 to c_L, with h_l = c_l a_{l-1} W_l^T,
+    a_0 = x, a_l = relu(h_l) for l < L and f = h_L. M_l is the mask of positive
+    entries of h_l. The gradient of output c with respect to W_l is
+    c_l d_{l,c} a_{l-1}^T, where d_{L,c} = e_c and
+    d_{l,c} = M_l * (c_{l+1} W_{l+1}^T d_{l+1,c}) for l < L. Summing the inner
+    products of these gradients over the outputs gives
+
+        K(x, x') = sum_l c_l^2 <a_{l-1}(x), a_{l-1}(x')> <D_l(x), D_l(x')>_F,
+
+    where D_l(x) is the width_l by C matrix whose column c is d_{l,c}(x). For
+    the last layer D_L is the C by C identity, so the second factor is C. The
+    list returned holds the L terms, layer 1 first; their sum is the kernel.
+    For L = 2 the terms are (K_W1, K_W2) of closed_form_terms. This is the
+    group's own derivation from the definition in RepoducedCode.compute_entk
+    in mode "trace". No paper states it.
+    """
+    X = x.detach().double()
+    Ws = [W.detach().double() for W in weights]
+    L = len(Ws)
+    acts, masks = [X], []
+    for l in range(L - 1):
+        h = factors[l] * (acts[-1] @ Ws[l].T)
+        masks.append((h > 0).double())
+        acts.append(torch.relu(h))
+    C = Ws[-1].shape[0]
+    terms = [None] * L
+    terms[L - 1] = factors[L - 1] ** 2 * C * (acts[L - 1] @ acts[L - 1].T)
+    D = None
+    for l in range(L - 2, -1, -1):
+        back = factors[l + 1] * Ws[l + 1].T                 # width_l by width_{l+1}
+        if D is None:
+            D = masks[l][:, :, None] * back[None]          # n by width_l by C
+        else:
+            D = masks[l][:, :, None] * torch.einsum("ik,nkc->nic", back, D)
+        Dflat = D.reshape(D.shape[0], -1)
+        terms[l] = factors[l] ** 2 * (acts[l] @ acts[l].T) * (Dflat @ Dflat.T)
+    return terms
+
+
+def entk_closed_form_deep(model, x_probe, parts=False):
+    """The sum-over-outputs kernel of a bias-free ReLU network of any depth, from its weights.
+
+    The model is a DeepBiasFreeMLP, an NTKMLP or a MeanFieldMLP.
+    closed_form_terms_deep gives the formula. With parts=True the per-layer
+    terms are returned in float64, layer 1 first. Otherwise their sum is
+    returned in float32, as entk_closed_form does.
+    """
+    if isinstance(model, DeepBiasFreeMLP):
+        weights, factors = model.weights(), model.factors
+    else:
+        if model.activation != "relu":
+            raise ValueError("the closed-form kernel is derived for the relu activation only")
+        weights, factors = [model.W1, model.W2], list(closed_form_scales(model))
+    terms = closed_form_terms_deep(weights, factors, x_probe)
+    if parts:
+        return terms
+    return sum(terms).float()
+
+
 def probe_kernel(model, x_probe, method):
-    """Return the probe kernel by the chosen method, "autograd" or "closed_form"."""
+    """Return the probe kernel by the chosen method, "autograd" or "closed_form".
+
+    "closed_form" uses entk_closed_form_deep for a DeepBiasFreeMLP and
+    entk_closed_form for the two layer models.
+    """
     if method == "autograd":
         return entk(model, x_probe)
     if method == "closed_form":
+        if isinstance(model, DeepBiasFreeMLP):
+            return entk_closed_form_deep(model, x_probe)
         return entk_closed_form(model, x_probe)
     raise ValueError(f"unknown kernel method {method!r}")
+
+
+def gauss_newton_top_eigenvalue(model, X, alpha=1.0, f0=None, iters=50, seed=0):
+    """Largest eigenvalue of (2 / (n C)) J^T J at the model's current weights, by power iteration.
+
+    J is the Jacobian of the predictor alpha f on X, or alpha (f - f0) if f0
+    is given, with respect to the parameters. n C is the number of entries
+    MSELoss averages over. This is top_gauss_newton_eigenvalue of mnist/exploration/mnist_pilot.py
+    applied to a given model. The start vector comes from a generator seeded
+    with seed, so the global random state is not touched.
+
+    The weights stay fixed while the iteration runs, so the Jacobian-vector
+    product comes from torch.func.linearize, which its documentation gives
+    for a jvp computed many times at the same primals, and the
+    vector-Jacobian product from one torch.func.vjp, whose function is
+    called with each new cotangent.
+    """
+    params = {k: v.detach() for k, v in model.named_parameters()}
+
+    def predict(p):
+        out = functional_call(model, p, X)
+        return alpha * (out - f0) if f0 is not None else alpha * out
+
+    gen = torch.Generator().manual_seed(seed)
+    v = {k: torch.randn(t.shape, generator=gen, dtype=t.dtype).to(t.device) for k, t in params.items()}
+    _, jvp_fn = torch.func.linearize(predict, params)
+    _, pullback = torch.func.vjp(predict, params)
+    lam = 0.0
+    for _ in range(iters):
+        norm = torch.sqrt(sum((t ** 2).sum() for t in v.values()))
+        v = {k: t / norm for k, t in v.items()}
+        Jv = jvp_fn(v)
+        (Gv,) = pullback(2.0 * Jv / Jv.numel())
+        lam = sum((Gv[k] * v[k]).sum() for k in v).item()
+        v = Gv
+    return lam
 
 
 # =====================================================================
@@ -245,8 +437,40 @@ def probe_kernel(model, x_probe, method):
 def centre_kernel(K):
     """Return H K H with H = I - (1/n) 1 1^T, Cortes et al. (2012), Lemma 1."""
     n = K.shape[0]
-    H = torch.eye(n, device=K.device) - torch.ones((n, n), device=K.device) / n
+    H = torch.eye(n, device=K.device, dtype=K.dtype) - torch.ones((n, n), device=K.device, dtype=K.dtype) / n
     return H @ K @ H
+
+
+def batched_centre(K):
+    """centre_kernel for a stack of kernels with any leading dimensions."""
+    n = K.shape[-1]
+    H = torch.eye(n, device=K.device, dtype=K.dtype) - torch.ones((n, n), device=K.device, dtype=K.dtype) / n
+    return H @ K @ H
+
+
+def batched_scale_and_rotation(K_0, K_t):
+    """compute_scale_and_rotation for stacks of kernels, returning tensors with the leading dimensions."""
+    norm_0, norm_t = torch.linalg.matrix_norm(K_0), torch.linalg.matrix_norm(K_t)
+    overlap = ((K_t / norm_t[..., None, None]) * (K_0 / norm_0[..., None, None])).sum((-2, -1))
+    return torch.log(norm_t / norm_0), 1.0 - overlap
+
+
+def batched_task_alignment(K_t, y_probe):
+    """compute_task_alignment for stacks of kernels and labels, zero where a centred matrix vanishes."""
+    n = K_t.shape[-1]
+    H = (torch.eye(n, device=K_t.device, dtype=K_t.dtype)
+         - (1.0 / n) * torch.ones((n, n), device=K_t.device, dtype=K_t.dtype))
+    HKH = H @ K_t @ H
+    HYH = H @ (y_probe @ y_probe.mT) @ H
+    norm_HKH, norm_HYH = torch.linalg.matrix_norm(HKH), torch.linalg.matrix_norm(HYH)
+    alignment = (HKH * HYH).sum((-2, -1)) / (norm_HKH * norm_HYH)
+    return torch.where((norm_HKH == 0) | (norm_HYH == 0), torch.zeros_like(alignment), alignment)
+
+
+def batched_uncentred_alignment(K, y):
+    """uncentred_alignment for stacks of kernels and labels."""
+    YY = y @ y.mT
+    return (K * YY).sum((-2, -1)) / (torch.linalg.matrix_norm(K) * torch.linalg.matrix_norm(YY))
 
 
 def uncentred_alignment(K, y):
@@ -307,12 +531,20 @@ DEFAULTS = dict(parameterisation="mean_field", p=23, hidden_dim=100, alpha=1.0,
                 eta_0=100.0, eta_kappa=0.0, steps=60000, eval_interval=250,
                 probe_size=256, seed=0, data_seed=42, train_fraction=0.9,
                 activation="relu", init_scale=1.0, kernel_save_interval=5000, probe="train",
-                checkpoint_steps=None, kernel_method="autograd")
+                checkpoint_steps=None, kernel_method="autograd",
+                dataset="modular_addition", n_train=None, centred=True, optimizer="sgd",
+                batch_size=None, momentum=0.0,
+                depth=None, lr_schedule=None, lr_update_interval=10000, lr_norm_power=4.0, lr_cap=1000.0,
+                dtype="float32", fp32_precision="ieee")
 
 # Configuration keys added after some runs were saved, with the value those
 # runs were trained with. A saved run that lacks one of them is compared as if
 # it had that value.
-LEGACY_VALUES = dict(probe="train", checkpoint_steps=None, kernel_method="autograd")
+LEGACY_VALUES = dict(probe="train", checkpoint_steps=None, kernel_method="autograd",
+                     dataset="modular_addition", n_train=None, centred=True, optimizer="sgd",
+                     batch_size=None, momentum=0.0,
+                     depth=None, lr_schedule=None, lr_update_interval=10000, lr_norm_power=4.0, lr_cap=1000.0,
+                     dtype="float32", fp32_precision="ieee")
 
 # The centred terms and the two alignments on the training part and on the
 # test part of the probe. A part with fewer than two pairs gives NaN.
@@ -352,8 +584,32 @@ def select_probe(X_train, y_train, X_test, y_test, probe, probe_size):
     return x, y, is_test
 
 
+def make_dataset(cfg):
+    """Return ((X_train, y_train), (X_test, y_test)) for the dataset a configuration names.
+
+    "modular_addition" is the task of the report and uses p, train_fraction
+    and data_seed. "mnist" takes n_train training images drawn at random by
+    data_seed and the full test set, as mnist_data.load_mnist describes. The
+    targets are one-hot in both cases, so the model's input and output sizes
+    are read from the data.
+    """
+    if cfg["dataset"] == "modular_addition":
+        return make_modular_addition_dataset(p=cfg["p"], train_fraction=cfg["train_fraction"],
+                                             seed=cfg["data_seed"])
+    if cfg["dataset"] == "mnist":
+        import sys
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "mnist"))
+        from mnist_data import load_mnist
+        if cfg["n_train"] is None:
+            raise ValueError("an MNIST run needs n_train")
+        return load_mnist(n_train=cfg["n_train"], seed=cfg["data_seed"])
+    raise ValueError(f"unknown dataset {cfg['dataset']!r}")
+
+
 def probe_pairs(cfg):
     """Return the probe pairs (a, b) of a configuration and the mask of test pairs, as numpy arrays."""
+    if cfg.get("dataset", "modular_addition") != "modular_addition":
+        raise ValueError("probe pairs exist only for modular addition")
     p = cfg["p"]
     (X_train, y_train), (X_test, y_test) = make_modular_addition_dataset(
         p=p, train_fraction=cfg["train_fraction"], seed=cfg["data_seed"])
@@ -409,7 +665,7 @@ def train_run(name, verbose=True, on_checkpoint=None, results_dir=None, **overri
 
     If on_checkpoint is given, it is called at every checkpoint as
     on_checkpoint(step, model, K_t, row). K_t is the probe kernel and row is
-    a dictionary of the history values just recorded. Training continues
+    a dictionary of the history values just recorded, extra keys included. Training continues
     from the same model afterwards, so the callback must not change it. The
     callback is not part of the configuration and is not saved.
 
@@ -419,68 +675,226 @@ def train_run(name, verbose=True, on_checkpoint=None, results_dir=None, **overri
     chooses where the files are written. It defaults to RESULTS and is not
     part of the configuration.
 
+    dataset chooses the task, as make_dataset describes. centred=False drops
+    the subtraction of f_0, so the predictor is alpha f. optimizer is "sgd",
+    plain gradient descent, or "adamw", the optimiser of Liu, Michaud and
+    Tegmark (2023), Appendix A. The tangent kernel describes the
+    function-space step only under "sgd" without momentum. momentum is the
+    heavy-ball coefficient of "sgd" and is 0 by default. batch_size=None
+    trains on the full training set at every step. The defaults are the modular
+    addition task, the centred predictor and "sgd", which every run saved
+    before 11 October 2026 used.
+
     If the training loss at a checkpoint is not finite, the run stops there
     without recording that checkpoint. The returned dictionary then has
     diverged set to True and diverged_step set to that step.
+
+    The keys added on 11 October 2026 change nothing when left at their
+    defaults. parameterisation "deep_standard" or "deep_ntk" with depth set
+    trains a DeepBiasFreeMLP. With kernel_method "closed_form" such a run
+    also records, for each layer l, the centred alignment A_Wl of that
+    layer's kernel term, its log norm ratio S_Wl to its value at step 0, and
+    its share share_Wl of the trace of the kernel. lr_schedule chooses a
+    learning rate that changes during training, under "sgd" only.
+    "curvature" recomputes the top Gauss-Newton eigenvalue lam_t of the loss
+    on the full training set every lr_update_interval steps and sets
+    eta_t = eta (lam_0 / lam_t). "norm" sets
+    eta_t = eta (||theta_0|| / ||theta_t||)^lr_norm_power after every step.
+    Both cap the factor on eta at lr_cap. The per-step decay eta_kappa is
+    kept fixed when eta changes. With a schedule the history records eta,
+    the rate for the steps after the checkpoint, and under "curvature" also
+    lam, the latest eigenvalue. These extra history keys appear only for
+    the runs they describe, so the history of every other run is unchanged.
+
+    dtype, added on 18 October 2026, names the torch floating point type of
+    the data and the model. Its default "float32" is the type every earlier
+    run was trained in.
     """
     unknown = set(overrides) - set(DEFAULTS)
     if unknown:
         raise TypeError(f"unknown configuration keys: {sorted(unknown)}")
     cfg = normalise_checkpoints({**DEFAULTS, **overrides})
-    config = dict(name=name, **cfg)
-    p, alpha = cfg["p"], cfg["alpha"]
     out_dir = Path(results_dir) if results_dir is not None else RESULTS
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    (X_train, y_train), (X_test, y_test) = make_modular_addition_dataset(
-        p=p, train_fraction=cfg["train_fraction"], seed=cfg["data_seed"])
-    X_train, y_train, X_test, y_test = [t.to(DEVICE) for t in (X_train, y_train, X_test, y_test)]
-
-    # The probe set is fixed for the run. select_probe says which pairs each choice of probe takes.
-    x_probe, y_probe, probe_is_test = select_probe(X_train, y_train, X_test, y_test,
-                                                   cfg["probe"], cfg["probe_size"])
-    parts = [~probe_is_test, probe_is_test]
+    torch.backends.cuda.matmul.fp32_precision = cfg["fp32_precision"]
+    (X_train, y_train), (X_test, y_test) = make_dataset(cfg)
+    data = [t.to(DEVICE, getattr(torch, cfg["dtype"])) for t in (X_train, y_train, X_test, y_test)]
 
     torch.manual_seed(cfg["seed"])
-    model = build_model(cfg["parameterisation"], 2 * p, cfg["hidden_dim"], p,
-                        cfg["activation"], cfg["init_scale"]).to(DEVICE)
-    model_0 = copy.deepcopy(model)
-    for q in model_0.parameters():
-        q.requires_grad = False
+    model = new_model(cfg, data[0].shape[1], data[1].shape[1]).to(DEVICE, getattr(torch, cfg["dtype"]))
+    run = Run(name, cfg, model, data, on_checkpoint)
 
-    lr = cfg["eta_0"] / alpha ** 2
+    lr = run.lr
     weight_decay = cfg["eta_kappa"] / lr
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr, weight_decay=weight_decay)
+    # AdamW multiplies the weights by 1 - lr weight_decay each step, so eta_kappa
+    # is the per-step decay under both optimisers.
+    if cfg["optimizer"] == "sgd":
+        run.optimizer = torch.optim.SGD(model.parameters(), lr=lr, weight_decay=weight_decay,
+                                        momentum=cfg["momentum"])
+    elif cfg["optimizer"] == "adamw":
+        run.optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+    else:
+        raise ValueError(f"unknown optimizer {cfg['optimizer']!r}")
+    optimizer = run.optimizer
     loss_fn = nn.MSELoss()
+    schedule = cfg["lr_schedule"]
 
-    with torch.no_grad():
-        f0_train, f0_test = model_0(X_train), model_0(X_test)
+    # With batch_size set, each step takes the next batch_size training points
+    # of a random order that is drawn again once fewer remain. One step is
+    # then one minibatch, not one epoch.
+    batch_size = cfg["batch_size"]
+    batch_gen = torch.Generator().manual_seed(cfg["seed"])
+    order = []
 
-    def predict(X, f0):
-        return alpha * (model(X) - f0)
+    t0 = time.time()
+    diverged_step = None
+    if not run.evaluate(0):
+        diverged_step = 0
+    for step in range(1, cfg["steps"] + 1):
+        if diverged_step is not None:
+            break
+        optimizer.zero_grad()
+        if batch_size is None:
+            loss = loss_fn(run.predict(run.X_train, run.f0_train), run.y_train)
+        else:
+            if len(order) < batch_size:
+                order = torch.randperm(len(run.X_train), generator=batch_gen).tolist()
+            idx, order = order[:batch_size], order[batch_size:]
+            loss = loss_fn(run.predict(run.X_train[idx], run.f0_train[idx]), run.y_train[idx])
+        loss.backward()
+        optimizer.step()
+        if schedule == "norm":
+            run.set_lr((run.norm_0 / run.current_norm()) ** cfg["lr_norm_power"])
+        elif schedule == "curvature" and step % cfg["lr_update_interval"] == 0:
+            run.lr_state["lam"] = run.curvature_now(step)
+            run.set_lr(run.lr_state["lam_0"] / run.lr_state["lam"] if run.lr_state["lam"] > 0 else float("inf"))
+        if run.is_checkpoint(step):
+            if not run.evaluate(step):
+                diverged_step = step
+                break
+            if verbose and step % (cfg["eval_interval"] * 40) == 0:
+                h = run.history
+                print(f"{name}: step {step:6d}  train {h['train_loss'][-1]:.2e}  "
+                      f"test {h['test_loss'][-1]:.2e}  S {h['S_t'][-1]:+.2f}  "
+                      f"R {h['R_t'][-1]:.3f}  Rc {h['R_c'][-1]:.3f}  A {h['A_t'][-1]:.3f}")
+    return run.finish(time.time() - t0, diverged_step, out_dir, verbose)
 
-    params_0 = torch.cat([q.detach().flatten() for q in model.parameters()]).clone()
-    norm_0 = torch.linalg.norm(params_0).item()
-    K_0 = probe_kernel(model, x_probe, cfg["kernel_method"])
 
-    history = {k: [] for k in HISTORY_KEYS}
-    saved_steps, saved_kernels = [], []
+def new_model(cfg, input_dim, output_dim):
+    """Return the fresh model of a configuration. The caller sets the seed before calling this."""
+    if cfg["depth"] is None:
+        return build_model(cfg["parameterisation"], input_dim, cfg["hidden_dim"], output_dim,
+                           cfg["activation"], cfg["init_scale"])
+    return build_model(cfg["parameterisation"], input_dim, cfg["hidden_dim"], output_dim,
+                       cfg["activation"], cfg["init_scale"], depth=cfg["depth"])
 
-    def evaluate(step):
+
+class Run:
+    """The record of one run: its probe, its values at step 0, its history and its learning rate.
+
+    train_run trains one run and train_fused trains several at once. Both
+    keep one Run for each run, and Run.evaluate records a checkpoint with
+    the code train_run has always used, so the history of a run does not
+    depend on how its gradient steps were taken. The model is the run's own
+    module. Under train_fused its parameters are views into the stacked
+    parameters of all the runs.
+    """
+
+    def __init__(self, name, cfg, model, data, on_checkpoint=None, curvature=True):
+        self.name, self.cfg, self.model, self.on_checkpoint = name, cfg, model, on_checkpoint
+        self.X_train, self.y_train, self.X_test, self.y_test = data
+        self.alpha = cfg["alpha"]
+        self.optimizer = None
+
+        # The probe set is fixed for the run. select_probe says which pairs each choice of probe takes.
+        self.x_probe, self.y_probe, probe_is_test = select_probe(self.X_train, self.y_train, self.X_test,
+                                                                 self.y_test, cfg["probe"], cfg["probe_size"])
+        self.parts = [~probe_is_test, probe_is_test]
+
+        self.model_0 = copy.deepcopy(model)
+        for q in self.model_0.parameters():
+            q.requires_grad = False
+        self.lr = cfg["eta_0"] / self.alpha ** 2
+        self.loss_fn = nn.MSELoss()
+        with torch.no_grad():
+            self.f0_train, self.f0_test = self.model_0(self.X_train), self.model_0(self.X_test)
+
+        self.params_0 = torch.cat([q.detach().flatten() for q in model.parameters()]).clone()
+        self.norm_0 = torch.linalg.norm(self.params_0).item()
+        # A DeepBiasFreeMLP with the closed form also records per-layer terms.
+        self.layer_terms = isinstance(model, DeepBiasFreeMLP) and cfg["kernel_method"] == "closed_form"
+        self.K_0, self.layer_0 = self.kernel_now()
+
+        # The learning-rate schedule, off by default. lr_state holds the rate in
+        # force and, under "curvature", the eigenvalues.
+        schedule = cfg["lr_schedule"]
+        self.lr_state = dict(lr=self.lr)
+        if schedule is not None:
+            if cfg["optimizer"] != "sgd":
+                raise ValueError("lr_schedule is implemented for sgd only")
+            if schedule not in ("curvature", "norm"):
+                raise ValueError(f"unknown lr_schedule {schedule!r}")
+        if schedule == "curvature" and curvature:
+            self.lr_state["lam_0"] = self.lr_state["lam"] = self.curvature_now(0)
+
+        self.history = {k: [] for k in HISTORY_KEYS}
+        self.saved_steps, self.saved_kernels = [], []
+        self.checkpoints = None if cfg["checkpoint_steps"] is None else set(cfg["checkpoint_steps"])
+
+    # With centred=False the initial function is kept, as in Liu, Michaud and
+    # Tegmark (2023), whose large initialisations start from a large random output.
+    def predict(self, X, f0):
+        return self.alpha * (self.model(X) - f0) if self.cfg["centred"] else self.alpha * self.model(X)
+
+    def kernel_now(self):
+        if self.layer_terms:
+            terms = entk_closed_form_deep(self.model, self.x_probe, parts=True)
+            return sum(terms).to(self.X_train.dtype), terms
+        return probe_kernel(self.model, self.x_probe, self.cfg["kernel_method"]).to(self.X_train.dtype), None
+
+    def current_norm(self):
+        with torch.no_grad():
+            return math.sqrt(sum((q.detach() ** 2).sum().item() for q in self.model.parameters()))
+
+    def curvature_now(self, step):
+        self.model.eval()
+        f0 = self.f0_train if self.cfg["centred"] else None
+        lam = gauss_newton_top_eigenvalue(self.model, self.X_train, alpha=self.alpha, f0=f0,
+                                          seed=self.cfg["seed"] + step)
+        self.model.train()
+        return lam
+
+    def set_lr(self, factor):
+        new_lr = self.lr * min(factor, self.cfg["lr_cap"])
+        if self.optimizer is not None:
+            for g in self.optimizer.param_groups:
+                g["lr"] = new_lr
+                g["weight_decay"] = self.cfg["eta_kappa"] / new_lr
+        self.lr_state["lr"] = new_lr
+
+    def is_checkpoint(self, step):
+        if self.checkpoints is None:
+            return step % self.cfg["eval_interval"] == 0
+        return step in self.checkpoints
+
+    def evaluate(self, step):
         """Record one checkpoint. Return False, and record nothing, if the training loss is not finite."""
+        model, history, cfg = self.model, self.history, self.cfg
         model.eval()
         with torch.no_grad():
-            tr, te = predict(X_train, f0_train), predict(X_test, f0_test)
-            train_loss, test_loss = loss_fn(tr, y_train).item(), loss_fn(te, y_test).item()
+            tr, te = self.predict(self.X_train, self.f0_train), self.predict(self.X_test, self.f0_test)
+            train_loss, test_loss = self.loss_fn(tr, self.y_train).item(), self.loss_fn(te, self.y_test).item()
             if not math.isfinite(train_loss):
                 model.train()
                 return False
-            train_acc = (tr.argmax(1) == y_train.argmax(1)).float().mean().item()
-            test_acc = (te.argmax(1) == y_test.argmax(1)).float().mean().item()
+            train_acc = (tr.argmax(1) == self.y_train.argmax(1)).float().mean().item()
+            test_acc = (te.argmax(1) == self.y_test.argmax(1)).float().mean().item()
             params_t = torch.cat([q.flatten() for q in model.parameters()])
             weight_norm = torch.linalg.norm(params_t).item()
-            param_dist = (torch.linalg.norm(params_t - params_0) / norm_0).item()
-        K_t = probe_kernel(model, x_probe, cfg["kernel_method"])
+            param_dist = (torch.linalg.norm(params_t - self.params_0) / self.norm_0).item()
+        K_t, layer_t = self.kernel_now()
+        K_0, y_probe = self.K_0, self.y_probe
         S_t, R_t = compute_scale_and_rotation(K_0, K_t)
         S_c, R_c = compute_centred_scale_and_rotation(K_0, K_t)
         A_t = compute_task_alignment(K_t, y_probe)
@@ -492,7 +906,7 @@ def train_run(name, verbose=True, on_checkpoint=None, results_dir=None, **overri
             yKy = float("nan")
         # The same terms on the training part and on the test part of the probe, in the order of PART_KEYS.
         part_terms = []
-        for mask in parts:
+        for mask in self.parts:
             if int(mask.sum()) < 2:
                 part_terms += [float("nan")] * 4
                 continue
@@ -503,51 +917,378 @@ def train_run(name, verbose=True, on_checkpoint=None, results_dir=None, **overri
                                        S_t, R_t, S_c, R_c, A_t, A_u, param_dist, weight_norm,
                                        yKy, K_norm, *part_terms]):
             history[k].append(v)
+        extra = {}
+        if self.layer_terms:
+            trace_K = sum(torch.trace(T) for T in layer_t).item()
+            for l, (T, T0) in enumerate(zip(layer_t, self.layer_0), start=1):
+                extra[f"A_W{l}"] = compute_task_alignment(T.to(y_probe.dtype), y_probe)
+                n_t, n_0 = torch.linalg.norm(T).item(), torch.linalg.norm(T0).item()
+                extra[f"S_W{l}"] = math.log(n_t / n_0) if n_t > 0 and n_0 > 0 else float("nan")
+                extra[f"share_W{l}"] = torch.trace(T).item() / trace_K if trace_K > 0 else float("nan")
+        schedule = cfg["lr_schedule"]
+        if schedule is not None:
+            extra["eta"] = self.lr_state["lr"]
+            if schedule == "curvature":
+                extra["lam"] = self.lr_state["lam"]
+        for k, v in extra.items():
+            history.setdefault(k, []).append(v)
         if step % cfg["kernel_save_interval"] == 0:
-            saved_steps.append(step)
-            saved_kernels.append(K_t.cpu().numpy().astype(np.float32))
-        if on_checkpoint is not None:
-            on_checkpoint(step, model, K_t, {k: history[k][-1] for k in HISTORY_KEYS})
+            self.saved_steps.append(step)
+            self.saved_kernels.append(K_t.cpu().numpy().astype(np.float32))
+        if self.on_checkpoint is not None:
+            # The row holds every history value of this checkpoint, the extra keys of a
+            # deep or scheduled run included. For other runs that is HISTORY_KEYS alone.
+            self.on_checkpoint(step, model, K_t, {k: v[-1] for k, v in history.items()})
         model.train()
         return True
 
-    checkpoints = None if cfg["checkpoint_steps"] is None else set(cfg["checkpoint_steps"])
+    def finish(self, seconds, diverged_step, out_dir, verbose):
+        """Write the run's JSON and kernels to out_dir and return the run dictionary."""
+        name = self.name
+        run = dict(config=dict(name=name, **self.cfg), history=self.history, init_weight_norm=self.norm_0,
+                   seconds=seconds, diverged=diverged_step is not None, diverged_step=diverged_step)
+        (out_dir / f"{name}.json").write_text(json.dumps(run))
+        if self.saved_kernels:
+            np.savez_compressed(out_dir / f"{name}_kernels.npz",
+                                steps=np.asarray(self.saved_steps), K=np.stack(self.saved_kernels))
+        if verbose:
+            note = f", diverged at step {diverged_step}" if diverged_step is not None else ""
+            print(f"{name}: done in {run['seconds']:.0f} s{note}, saved to {out_dir / name}.json")
+        return run
 
-    def is_checkpoint(step):
-        if checkpoints is None:
-            return step % cfg["eval_interval"] == 0
-        return step in checkpoints
+
+# Configuration keys that every run of train_fused must share, because they fix
+# the shapes of the fused computation, the steps it takes or the checkpoints.
+FUSED_SHARED = ("parameterisation", "p", "hidden_dim", "train_fraction", "activation", "steps", "eval_interval",
+                "probe_size", "kernel_save_interval", "probe", "checkpoint_steps", "kernel_method", "dataset",
+                "n_train", "centred", "optimizer", "batch_size", "momentum", "depth", "lr_schedule",
+                "lr_update_interval", "lr_cap", "dtype", "fp32_precision")
+
+
+def train_fused(names, configs, on_checkpoints=None, results_dir=None, verbose=True, device=None,
+                on_fused_checkpoint=None):
+    """Train several runs at once as one horizontally fused model, and return the dictionary of each run.
+
+    names and configs give the runs that train_run would train one at a time,
+    and each run returns the dictionary and writes the files that train_run
+    returns and writes. on_checkpoints, if given, holds one on_checkpoint
+    callback for each run. The runs must agree on every key in
+    FUSED_SHARED. They may differ in the seeds, the initial scale, alpha,
+    eta_0 and eta_kappa. The optimiser must be plain SGD without momentum,
+    and the schedule None or "curvature".
+
+    The parameters of the runs are stacked with
+    torch.func.stack_module_state and trained together under vmap. This is
+    the model-ensembling pattern of the PyTorch tutorials, and the
+    horizontally fused training of Wang et al. (2021), arXiv:2102.02344,
+    Section 3, in which the learning rate and the decay of each model enter
+    the fused step as one entry of a vector. Each run keeps its own data
+    draw, initial weights and minibatch order. A run's minibatch is drawn as
+    train_run draws it: the next batch_size points of a permutation from
+    the run's own generator, which is drawn again when fewer than batch_size
+    points remain. The step is that of torch.optim.SGD with weight decay
+    eta_kappa / eta, so the parameters move by eta times the gradient plus
+    eta_kappa times the parameters. The curvature schedule takes the
+    eigenvalue of every run from one vmapped power iteration,
+    fused_gauss_newton_top_eigenvalue.
+
+    The device defaults to the accelerator that
+    torch.accelerator.current_accelerator reports, or the CPU. On a CUDA
+    device the step is compiled with torch.compile in its default mode and
+    captured as one CUDA graph after one warm-up step on a side stream, as
+    the CUDA Graphs section of the PyTorch CUDA semantics notes describes
+    whole-network capture. A replay then launches the whole step at once.
+    The permutations and the learning rates, which change between steps,
+    are copied into the static tensors the graph reads.
+
+    Checkpoints are recorded run by run with Run.evaluate, the code of
+    train_run. A run whose training loss stops being finite records nothing
+    after that checkpoint, as under train_run. Its parameters keep taking
+    fused steps. vmap keeps the computation of every run separate, so this
+    cannot change the other runs.
+    """
+    if on_checkpoints is None:
+        on_checkpoints = [None] * len(names)
+    if not (len(names) == len(configs) == len(on_checkpoints)) or not names:
+        raise ValueError("train_fused needs one name, one configuration and one callback for each run")
+    cfgs = []
+    for overrides in configs:
+        unknown = set(overrides) - set(DEFAULTS)
+        if unknown:
+            raise TypeError(f"unknown configuration keys: {sorted(unknown)}")
+        cfgs.append(normalise_checkpoints({**DEFAULTS, **overrides}))
+    for key in FUSED_SHARED:
+        if len({json.dumps(c[key]) for c in cfgs}) > 1:
+            raise ValueError(f"the runs of train_fused must share {key!r}")
+    shared = cfgs[0]
+    if shared["optimizer"] != "sgd" or shared["momentum"] != 0.0:
+        raise ValueError("train_fused takes plain SGD steps without momentum only")
+    schedule = shared["lr_schedule"]
+    if schedule not in (None, "curvature"):
+        raise ValueError(f"train_fused does not implement lr_schedule {schedule!r}")
+    if device is None:
+        device = torch.accelerator.current_accelerator(check_available=True) or torch.device("cpu")
+    device = torch.device(device)
+    dtype = getattr(torch, shared["dtype"])
+    # fp32_precision is the setting of torch.backends.cuda.matmul.fp32_precision: "ieee", or "tf32" for the
+    # TensorFloat32 tensor cores the PyTorch numerical accuracy notes describe.
+    torch.backends.cuda.matmul.fp32_precision = shared["fp32_precision"]
+    out_dir = Path(results_dir) if results_dir is not None else RESULTS
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    runs, test_set = [], None
+    for name, cfg, hook in zip(names, cfgs, on_checkpoints):
+        (X_train, y_train), (X_test, y_test) = make_dataset(cfg)
+        # Every run of the same dataset has the same test set, so it is held on the device once.
+        if test_set is None or not (torch.equal(X_test, test_set[0]) and torch.equal(y_test, test_set[1])):
+            test_set = (X_test, y_test, X_test.to(device, dtype), y_test.to(device, dtype))
+        data = [X_train.to(device, dtype), y_train.to(device, dtype), test_set[2], test_set[3]]
+        torch.manual_seed(cfg["seed"])
+        model = new_model(cfg, data[0].shape[1], data[1].shape[1]).to(device, dtype)
+        runs.append(Run(name, cfg, model, data, hook, curvature=False))
+    M = len(runs)
+
+    params = {k: v.detach().clone() for k, v in stack_module_state([r.model for r in runs])[0].items()}
+    for m, run in enumerate(runs):
+        for k, v in params.items():
+            owner, _, leaf = k.rpartition(".")
+            setattr(run.model.get_submodule(owner), leaf, nn.Parameter(v[m]))
+    X = torch.stack([r.X_train for r in runs])
+    Y = torch.stack([r.y_train for r in runs])
+    for m, run in enumerate(runs):
+        run.X_train, run.y_train = X[m], Y[m]
+    centred = shared["centred"]
+    F0 = torch.stack([r.f0_train for r in runs]) if centred else None
+    alpha = torch.tensor([r.alpha for r in runs], dtype=X.dtype, device=device)
+    eta_kappa = torch.tensor([c["eta_kappa"] for c in cfgs], dtype=X.dtype, device=device)
+    lr_v = torch.tensor([r.lr_state["lr"] for r in runs], dtype=X.dtype, device=device)
+    wd_v = eta_kappa / lr_v
+    base = copy.deepcopy(runs[0].model).to("meta")
+    if schedule == "curvature":
+        # The eigenvalue at step 0 that Run.curvature_now(0) would give each run, for all runs at once.
+        lams = fused_gauss_newton_top_eigenvalue(base, params, X, alpha, f0=F0, seeds=[c["seed"] for c in cfgs])
+        for run, lam in zip(runs, lams):
+            run.lr_state["lam_0"] = run.lr_state["lam"] = lam
+
+    def fnet(p, x):
+        return functional_call(base, (p,), (x,))
+
+    def loss(p, x, y, f0, a):
+        out = a * (fnet(p, x) - f0) if f0 is not None else a * fnet(p, x)
+        return nn.functional.mse_loss(out, y)
+
+    fused_grad = vmap(grad(loss), in_dims=(0, 0, 0, 0 if centred else None, 0))
+    n = X.shape[1]
+    batch = n if shared["batch_size"] is None else shared["batch_size"]
+    per_epoch = n // batch
+    perm = torch.arange(n, device=device).expand(M, n).clone()
+    counter = torch.zeros((), dtype=torch.long, device=device)
+    offsets = torch.arange(batch, device=device)
+    gens = [torch.Generator().manual_seed(c["seed"]) for c in cfgs]
+
+    def advance():
+        idx = perm[:, (counter % per_epoch) * batch + offsets]
+        xb = torch.take_along_dim(X, idx[..., None], dim=1)
+        yb = torch.take_along_dim(Y, idx[..., None], dim=1)
+        f0b = torch.take_along_dim(F0, idx[..., None], dim=1) if centred else None
+        grads = fused_grad(params, xb, yb, f0b, alpha)
+        for k, p in params.items():
+            shape = (-1,) + (1,) * (p.dim() - 1)
+            p.sub_(lr_v.view(shape) * (grads[k] + wd_v.view(shape) * p))
+        counter.add_(1)
+
+    graph, captured = None, False
+    if device.type == "cuda":
+        advance = torch.compile(advance)
+        graph = torch.cuda.CUDAGraph()
+
+    def take_step():
+        nonlocal captured
+        if graph is None:
+            advance()
+        elif not captured:
+            # The real step warms the workload up on a side stream once, then it is captured.
+            side = torch.Stream(device)
+            side.wait_stream(torch.accelerator.current_stream())
+            with side:
+                advance()
+            torch.accelerator.current_stream().wait_stream(side)
+            with torch.cuda.graph(graph):
+                advance()
+            captured = True
+        else:
+            graph.replay()
+
+    live, diverged = [True] * M, [None] * M
+    # The closed-form deep kernel lets every run's checkpoint be computed at once, as tensors with a leading
+    # run dimension, with one copy to the host per checkpoint. Other models are recorded run by run.
+    batched = all(r.layer_terms for r in runs) and all(
+        all(torch.equal(a, b) for a, b in zip(r.parts, runs[0].parts)) for r in runs)
+    if batched:
+        x_probe, y_probe = torch.stack([r.x_probe for r in runs]), torch.stack([r.y_probe for r in runs])
+        K_0 = torch.stack([r.K_0 for r in runs])
+        layer_0 = [torch.stack(T) for T in zip(*[r.layer_0 for r in runs])]
+        theta_0 = torch.stack([r.params_0 for r in runs])
+        norm_0 = torch.tensor([r.norm_0 for r in runs], dtype=X.dtype, device=device)
+        F0_test = torch.stack([r.f0_test for r in runs]) if centred else None
+        X_test, y_test = runs[0].X_test, runs[0].y_test
+        factors = runs[0].model.factors
+        layer_terms = vmap(lambda Ws, x: closed_form_terms_deep(Ws, factors, x))
+
+    test_chunk = [None]
+
+    def record(step):
+        if not batched:
+            for m, run in enumerate(runs):
+                if live[m] and not run.evaluate(step):
+                    live[m], diverged[m] = False, step
+            return
+        with torch.no_grad():
+            out_train = vmap(fnet)(params, X)
+            # The test forward of every member at once can exceed the device memory, 40 GB on an A100
+            # at width 800. vmap's chunk_size bounds it; the chunk is the free memory over the peak
+            # that one member's forward measures.
+            if test_chunk[0] is None:
+                test_chunk[0] = len(runs)
+                if device.type == "cuda":
+                    torch.cuda.reset_peak_memory_stats(device)
+                    base = torch.cuda.memory_allocated(device)
+                    vmap(fnet, in_dims=(0, None))({k: v[:1] for k, v in params.items()}, X_test)
+                    peak = torch.cuda.max_memory_allocated(device) - base
+                    test_chunk[0] = max(1, min(len(runs), torch.cuda.mem_get_info(device)[0] // max(peak, 1)))
+            out_test = vmap(fnet, in_dims=(0, None), chunk_size=test_chunk[0])(params, X_test)
+            if centred:
+                out_train, out_test = out_train - F0, out_test - F0_test
+            tr, te = alpha[:, None, None] * out_train, alpha[:, None, None] * out_test
+            values = dict(train_loss=((tr - Y) ** 2).mean((1, 2)), test_loss=((te - y_test) ** 2).mean((1, 2)),
+                          train_acc=(tr.argmax(-1) == Y.argmax(-1)).to(X.dtype).mean(1),
+                          test_acc=(te.argmax(-1) == y_test.argmax(-1)).to(X.dtype).mean(1))
+            theta = torch.cat([p.flatten(1) for p in params.values()], 1)
+            values["weight_norm"] = torch.linalg.vector_norm(theta, dim=1)
+            values["param_dist"] = torch.linalg.vector_norm(theta - theta_0, dim=1) / norm_0
+        terms = layer_terms(list(base_weights(params)), x_probe)
+        K_t = sum(terms).to(X.dtype)
+        values["S_t"], values["R_t"] = batched_scale_and_rotation(K_0, K_t)
+        values["S_c"], values["R_c"] = batched_scale_and_rotation(batched_centre(K_0), batched_centre(K_t))
+        values["A_t"] = batched_task_alignment(K_t, y_probe)
+        values["A_u"] = batched_uncentred_alignment(K_t, y_probe)
+        values["K_norm"] = torch.linalg.matrix_norm(K_t)
+        # K_t is symmetric, so pinv takes the eigh route of hermitian=True: 8.67 ms against 994 ms for the
+        # SVD route on 140 stacked 256x256 float32 kernels on an H100 (pyperf timeit).
+        values["yKy"] = torch.where(values["K_norm"] > 0, (y_probe * (torch.linalg.pinv(K_t, rtol=1e-6, hermitian=True) @ y_probe))
+                                    .sum((1, 2)), torch.nan)
+        for part, mask in zip(("train", "test"), runs[0].parts):
+            names = [f"{term}_{part}" for term in ("S_c", "R_c", "A_t", "A_u")]
+            if int(mask.sum()) < 2:
+                values.update({k: torch.full_like(values["K_norm"], torch.nan) for k in names})
+                continue
+            K_p, K_p0, y_p = K_t[:, mask][:, :, mask], K_0[:, mask][:, :, mask], y_probe[:, mask]
+            S_p, R_p = batched_scale_and_rotation(batched_centre(K_p0), batched_centre(K_p))
+            values.update(zip(names, (S_p, R_p, batched_task_alignment(K_p, y_p),
+                                      batched_uncentred_alignment(K_p, y_p))))
+        traces = [T.diagonal(dim1=-2, dim2=-1).sum(-1) for T in terms]
+        trace_K = sum(traces)
+        for l, (T, T0, tr_l) in enumerate(zip(terms, layer_0, traces), start=1):
+            values[f"A_W{l}"] = batched_task_alignment(T.to(y_probe.dtype), y_probe)
+            n_t, n_0 = torch.linalg.matrix_norm(T), torch.linalg.matrix_norm(T0)
+            values[f"S_W{l}"] = torch.where((n_t > 0) & (n_0 > 0), torch.log(n_t / n_0), torch.nan)
+            values[f"share_W{l}"] = torch.where(trace_K > 0, tr_l / trace_K, torch.nan)
+        names = list(values)
+        host = torch.stack([values[k].to(torch.float64) for k in names]).cpu().tolist()
+        saving = step % shared["kernel_save_interval"] == 0
+        K_host = K_t.cpu().numpy().astype(np.float32) if saving else None
+        rows = [None] * M
+        for m, run in enumerate(runs):
+            if not live[m]:
+                continue
+            row = {k: host[i][m] for i, k in enumerate(names)}
+            if not math.isfinite(row["train_loss"]):
+                live[m], diverged[m] = False, step
+                continue
+            row["step"] = step
+            if schedule is not None:
+                row["eta"] = run.lr_state["lr"]
+                if schedule == "curvature":
+                    row["lam"] = run.lr_state["lam"]
+            for k in HISTORY_KEYS:
+                run.history[k].append(row[k])
+            for k in [k for k in row if k not in HISTORY_KEYS]:
+                run.history.setdefault(k, []).append(row[k])
+            if saving:
+                run.saved_steps.append(step)
+                run.saved_kernels.append(K_host[m])
+            rows[m] = {k: v[-1] for k, v in run.history.items()}
+            if on_fused_checkpoint is None and run.on_checkpoint is not None:
+                run.on_checkpoint(step, run.model, K_t[m], rows[m])
+        if on_fused_checkpoint is not None:
+            on_fused_checkpoint(step, [m for m in range(M) if live[m]], params, K_t, terms, rows, fnet, factors)
+
+    def base_weights(p):
+        return (p[k] for k in params)
 
     t0 = time.time()
-    diverged_step = None
-    if not evaluate(0):
-        diverged_step = 0
-    for step in range(1, cfg["steps"] + 1):
-        if diverged_step is not None:
+    record(0)
+    for step in range(1, shared["steps"] + 1):
+        if not any(live):
             break
-        optimizer.zero_grad()
-        loss = loss_fn(predict(X_train, f0_train), y_train)
-        loss.backward()
-        optimizer.step()
-        if is_checkpoint(step):
-            if not evaluate(step):
-                diverged_step = step
-                break
-            if verbose and step % (cfg["eval_interval"] * 40) == 0:
-                h = history
-                print(f"{name}: step {step:6d}  train {h['train_loss'][-1]:.2e}  "
-                      f"test {h['test_loss'][-1]:.2e}  S {h['S_t'][-1]:+.2f}  "
-                      f"R {h['R_t'][-1]:.3f}  Rc {h['R_c'][-1]:.3f}  A {h['A_t'][-1]:.3f}")
-    run = dict(config=config, history=history, init_weight_norm=norm_0,
-               seconds=time.time() - t0, diverged=diverged_step is not None, diverged_step=diverged_step)
-    (out_dir / f"{name}.json").write_text(json.dumps(run))
-    if saved_kernels:
-        np.savez_compressed(out_dir / f"{name}_kernels.npz",
-                            steps=np.asarray(saved_steps), K=np.stack(saved_kernels))
-    if verbose:
-        note = f", diverged at step {diverged_step}" if diverged_step is not None else ""
-        print(f"{name}: done in {run['seconds']:.0f} s{note}, saved to {out_dir / name}.json")
-    return run
+        if shared["batch_size"] is not None and (step - 1) % per_epoch == 0:
+            perm.copy_(torch.stack([torch.randperm(n, generator=g) for g in gens]))
+        take_step()
+        if schedule == "curvature" and step % shared["lr_update_interval"] == 0:
+            lams = fused_gauss_newton_top_eigenvalue(base, params, X, alpha, f0=F0,
+                                                     seeds=[c["seed"] + step for c in cfgs])
+            for run, lam in zip(runs, lams):
+                run.lr_state["lam"] = lam
+                run.set_lr(run.lr_state["lam_0"] / lam if lam > 0 else float("inf"))
+            lr_v.copy_(torch.tensor([r.lr_state["lr"] for r in runs], dtype=X.dtype))
+            wd_v.copy_(eta_kappa / lr_v)
+        if runs[0].is_checkpoint(step):
+            record(step)
+    seconds = time.time() - t0
+    return [run.finish(seconds, d, out_dir, verbose) for run, d in zip(runs, diverged)]
+
+
+def fused_gauss_newton_top_eigenvalue(base, params, X, alpha, f0=None, seeds=None, iters=50):
+    """The eigenvalue of gauss_newton_top_eigenvalue for every run of a fused model, from one vmapped power iteration.
+
+    base is a module with the runs' architecture, params their stacked
+    parameters, X their stacked inputs and alpha their output scales. f0,
+    if given, holds their stacked initial outputs on X. Run m starts from
+    the vector that gauss_newton_top_eigenvalue draws from a generator
+    seeded with seeds[m], so each run takes the iteration it would take
+    alone. The whole iteration of one run is vmapped over the runs, with its
+    vjp built once per run. torch.func.linearize has no batching rule under
+    vmap in PyTorch 2.14 (aten::_make_dual), so the Jacobian-vector product
+    is a torch.func.jvp at each iteration. Returns a list with one float for
+    each run.
+    """
+    M = next(iter(params.values())).shape[0]
+    seeds = [0] * M if seeds is None else seeds
+    device = next(iter(params.values())).device
+    starts = []
+    for s in seeds:
+        gen = torch.Generator().manual_seed(s)
+        starts.append({k: torch.randn(t.shape[1:], generator=gen, dtype=t.dtype) for k, t in params.items()})
+    v = {k: torch.stack([st[k] for st in starts]).to(device) for k in params}
+
+    def power_iteration(p, x, a, f, u):
+        def predict(q):
+            out = functional_call(base, (q,), (x,))
+            return a * (out - f) if f is not None else a * out
+
+        _, pullback = torch.func.vjp(predict, p)
+        lam = torch.zeros((), dtype=x.dtype, device=x.device)
+        for _ in range(iters):
+            norm = torch.sqrt(sum((t ** 2).sum() for t in u.values()))
+            u = {k: t / norm for k, t in u.items()}
+            _, Jv = torch.func.jvp(predict, (p,), (u,))
+            (Gv,) = pullback(2.0 * Jv / Jv.numel())
+            lam = sum((Gv[k] * u[k]).sum() for k in u)
+            u = Gv
+        return lam
+
+    return vmap(power_iteration, in_dims=(0, 0, 0, 0 if f0 is not None else None, 0))(
+        params, X, alpha, f0, v).tolist()
 
 
 def run_or_load(name, rerun=False, verbose=True, on_checkpoint=None, results_dir=None, **overrides):

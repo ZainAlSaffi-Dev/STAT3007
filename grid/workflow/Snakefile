@@ -1,0 +1,248 @@
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import yaml
+from snakemake.utils import Paramspace
+
+
+configfile: "config/grid.yaml"
+configfile: "config/animations.yaml"
+
+
+cells = Paramspace(pd.DataFrame(config["cells"]))
+baseline = Paramspace(cells.dataframe.head(1))
+tables = ["metrics", "events", "spectra", "phases"]
+# A scan run measures no kernel, so it writes no spectra.
+scan_tables = ["metrics", "events", "phases"]
+
+
+def written(rule):
+    """The YAML a rule wrote, which a job that takes it as input reads."""
+    return yaml.safe_load(Path(rule.output[0]).read_text(encoding="utf-8"))
+
+
+def at(levels):
+    """The baseline at each eta*lambda level."""
+    return Paramspace(
+        pd.concat(
+            [baseline.dataframe.assign(eta_lambda=level) for level in levels],
+            ignore_index=True,
+        )
+    )
+
+
+scanned = at(
+    baseline.dataframe.eta_0.item()
+    * np.geomspace(*config["scan"]["lambda"], config["scan"]["count"])
+)
+
+
+def placed():
+    """Stage 2: Park's levels at the break the scan estimates."""
+    return at(written(rules.design)["levels"]["eta_lambda"])
+
+
+def stages():
+    """Every stage's cells, stage 2 behind the checkpoint that places it."""
+    return {"1": lambda: cells, "scan": lambda: scanned, "2": placed}
+
+
+localrules:
+    animation,
+    animations,
+
+
+rule all:
+    input:
+        "results/grid.duckdb",
+        "results/fits.duckdb",
+        "results/broken_line.duckdb",
+        # Requested here as well, since the database reaches stage 1 only after
+        # the last checkpoint, and it needs none of them.
+        "results/stages/stage=1/events.parquet",
+
+
+# One job per stage trains all its cells fused, the partitioning of Wang et
+# al. (2021), Section 3. A stage's placement is an input, so its cells are read
+# only once the checkpoint that places them has run.
+rule train:
+    input:
+        training="src/deeplearning/training.py",
+        kernels="src/deeplearning/kernels.py",
+        placement=lambda wildcards: {"1": [], "2": "results/design.yaml"}[
+            wildcards.stage
+        ],
+    output:
+        **{table: f"results/stages/stage={{stage}}/{table}.parquet" for table in tables},
+    wildcard_constraints:
+        stage="1|2",
+    log:
+        "logs/train/{stage}.log",
+    benchmark:
+        "results/benchmarks/train/{stage}.tsv"
+    params:
+        cells=lambda wildcards: stages()[wildcards.stage]().dataframe,
+        fixed=config["fixed"],
+        tables=tables,
+    script:
+        "scripts/train.py"
+
+
+use rule train as scan_train with:
+    input:
+        training="src/deeplearning/training.py",
+        kernels="src/deeplearning/kernels.py",
+    output:
+        **{table: f"results/stages/stage=scan/{table}.parquet" for table in scan_tables},
+    log:
+        "logs/train/scan.log",
+    benchmark:
+        "results/benchmarks/train/scan.tsv"
+    params:
+        cells=scanned.dataframe,
+        fixed=config["fixed"] | config["scan"]["fixed"],
+        tables=scan_tables,
+
+
+checkpoint boundary:
+    input:
+        "results/stages/stage=scan/phases.parquet",
+    output:
+        "results/boundary.yaml",
+    log:
+        "logs/boundary.log",
+    script:
+        "scripts/boundary.py"
+
+
+rule join:
+    input:
+        events="results/stages/stage=scan/events.parquet",
+        boundary=rules.boundary.output[0],
+    output:
+        "results/join.duckdb",
+    log:
+        "logs/join.log",
+    params:
+        level=config["design"]["level"],
+        upper=lambda wildcards: written(rules.boundary)["upper"],
+    conda:
+        "envs/segmented.yaml"
+    script:
+        "scripts/join.R"
+
+
+checkpoint design:
+    input:
+        boundary=rules.boundary.output[0],
+        join=rules.join.output[0],
+    output:
+        "results/design.yaml",
+    log:
+        "logs/design.log",
+    params:
+        lower=scanned.dataframe.eta_lambda.min(),
+    script:
+        "scripts/design.py"
+
+
+rule database:
+    input:
+        **{
+            table: [
+                f"results/stages/stage={stage}/{table}.parquet"
+                for stage in stages()
+                if stage != "scan" or table in scan_tables
+            ]
+            for table in tables
+        },
+        design=rules.design.output[0],
+        boundary=rules.boundary.output[0],
+        join=rules.join.output[0],
+    output:
+        "results/grid.duckdb",
+    log:
+        "logs/database.log",
+    params:
+        tables=tables,
+        design=config["design"],
+        # The seeds of each cell are those of its rows in the tables.
+        cells=lambda wildcards: pd.concat(
+            [place().dataframe.assign(stage=stage) for stage, place in stages().items()],
+            ignore_index=True,
+        )
+        .rename_axis("cell")
+        .reset_index(),
+        fixed={key: value for key, value in config["fixed"].items() if key != "seeds"},
+    script:
+        "scripts/database.py"
+
+
+rule fits:
+    input:
+        rules.database.output[0],
+    output:
+        "results/fits.duckdb",
+    log:
+        "logs/fits.log",
+    benchmark:
+        "results/benchmarks/fits.tsv"
+    script:
+        "scripts/fits.py"
+
+
+rule broken_line:
+    input:
+        rules.database.output[0],
+    output:
+        "results/broken_line.duckdb",
+    log:
+        "logs/broken_line.log",
+    conda:
+        "envs/segmented.yaml"
+    script:
+        "scripts/broken_line.R"
+
+
+# Stage 1 of this run against a reference run's stage-1 tables, given as
+# --config reference=<directory>: the check that a change to the code keeps the
+# computation, which stops on differing events or phases and writes the greatest
+# differences of the measurements.
+rule equivalence:
+    input:
+        sql="workflow/sql/equivalence.sql",
+        tables=expand("results/stages/stage=1/{table}.parquet", table=tables),
+    output:
+        "results/equivalence/stage1.duckdb",
+    log:
+        "logs/equivalence.log",
+    params:
+        reference=lambda wildcards: config["reference"],
+        candidate=lambda wildcards, input: Path(input.tables[0]).parent,
+    conda:
+        "envs/duckdb.yaml"
+    shell:
+        "REFERENCE={params.reference:q} CANDIDATE={params.candidate:q}"
+        " duckdb -bail -f {input.sql} {output:q} > {log} 2>&1"
+
+
+rule animation:
+    input:
+        scene="workflow/scripts/scenes.py",
+        settings="config/animations.yaml",
+        kernels="src/deeplearning/kernels.py",
+    output:
+        "results/animations/{scene}/videos/scenes/1080p60/{scene}.mp4",
+    log:
+        "logs/animation/{scene}.log",
+    params:
+        media=lambda wildcards, output: Path(output[0]).parents[3],
+    shell:
+        "manim render --media_dir {params.media} {input.scene} {wildcards.scene}"
+        " > {log} 2>&1"
+
+
+rule animations:
+    input:
+        expand(rules.animation.output, scene=config["animations"]),

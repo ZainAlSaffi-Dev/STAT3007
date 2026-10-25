@@ -1,0 +1,19 @@
+\pgfplotstableread{pythontex-files-\jobname/phases.csv}\phases
+\mmznext{
+  context={%
+    \csname pdf@filemdfivesum\endcsname{pythontex-files-\jobname/phases.csv}%
+  },
+}
+\begin{tikzpicture}
+  \begin{axis}[
+      xmode=log,
+      xlabel={$\eta\lambda$},
+      symbolic y coords/.expand once=\phasenames,
+      ytick=data,
+      extra x ticks/.expand once=\boundaryupper,
+      extra x tick labels={},
+      extra x tick style={grid=major, major grid style={dashed}},
+    ]
+    \addplot+[only marks] table [x=eta_lambda, y=phase] {\phases};
+  \end{axis}
+\end{tikzpicture}
