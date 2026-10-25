@@ -637,6 +637,12 @@ tightening ratio is
 :::
 
 No shuffle gave $R_t$ or $S_t$ a spread as small as the true one.
+
+::: {.g2-small}
+The ratio is how many times wider the spread gets when each run is read at
+another run's grokking step. The larger the ratio, the more the statistic
+marks the moment of grokking.
+:::
 :::
 ::::
 
