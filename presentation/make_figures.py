@@ -1,4 +1,4 @@
-"""Slide versions of the report figures E2, E4, E5, E7, E8 and E19, the placebo boxes E3, R_t on two scales, and the Tier 3 models and curve sketch.
+"""Slide versions of the report figures E2, E4, E5, E7, E8 and E19, the placebo boxes E3, R_t on two scales, linear regression against kernel ridge, and the Tier 3 models and curve sketch.
 
 The report figures come from the scripts in report_v2/code. They are drawn for an A4 page, so their
 type is too small on a projector. This script draws each one again for its place in slides.qmd.
@@ -7,7 +7,8 @@ Each figure is 16 by 9, its type matches the deck clips, and it keeps to the mes
 It reads the committed extract and the saved numbers that the report scripts read, in
 report_v2/code/data and report_v2/code/out/numbers, and it takes its colours from
 report_v2/code/common.py. A change to the report numbers therefore reaches the slides when this
-script runs again. It trains nothing and fits nothing.
+script runs again. It trains nothing and fits nothing. The linear regression scores on slide 19
+come from fit_tier3_linear.py, which must run first.
 
 Run it from the repository root with Python 3.11 or later and the packages of pyproject.toml:
 
@@ -15,6 +16,7 @@ Run it from the repository root with Python 3.11 or later and the packages of py
 
 It writes presentation/assets/figures/E<k>_<name>.png.
 """
+import json
 import sys
 from pathlib import Path
 
@@ -358,6 +360,43 @@ def two_places(value):
     return str(Decimal(value).quantize(Decimal('0.01'), ROUND_HALF_UP))
 
 
+def tier3_linear():
+    """Slide 19: held-out R^2 of log T for linear regression and kernel ridge on each set of statistics.
+
+    The kernel ridge scores are E10's. The linear scores come from fit_tier3_linear.py, which fits
+    ordinary least squares on the same runs and folds through E10's own code. Each set has two bars,
+    the light one for the straight line and the solid one for kernel ridge. A single statistic takes
+    its colour, and a set of two or three is grey, as in the deck's bar chart.
+    """
+    saved = json.loads((HERE / 'assets' / 'tier3_linear.json').read_text())
+    kernel = C.read_json('E10')['subsets']
+    assert saved['kernel_ridge_from_E10'] == kernel, 'rerun fit_tier3_linear.py after E10 changes'
+    rows = [('A', '$A_t$', 'A'), ('S', '$S_t$', 'S'), ('log R', r'$\log R_t$', 'R'),
+            ('S + A', '$S_t$ and $A_t$', None), ('log R + A', r'$\log R_t$ and $A_t$', None),
+            ('S + log R', r'$S_t$ and $\log R_t$', None), ('S + log R + A', 'All three', None)]
+    fig, ax = plt.subplots(figsize=(10.56, 7.4), layout='constrained')
+    h = 0.38
+    for i, (key, label, stat) in enumerate(rows):
+        solid = C.STAT_COLOUR[stat] if stat else '#3d3c3a'
+        light = C.STAT_RAMP[stat][0] if stat else '#dddcd8'
+        for dy, r2, face in ((-h / 2, saved['linear'][key]['R2'], light), (h / 2, kernel[key]['R2'], solid)):
+            ax.barh(i + dy, r2, height=h, color=face, edgecolor=solid, lw=1.4, zorder=2)
+            ax.text(max(r2, 0) + 0.01, i + dy, f'{r2:.2f}', va='center', fontsize=19,
+                    fontweight='bold' if face == solid else 'normal')
+    ax.set_yticks(range(len(rows)), [label for _, label, _ in rows])
+    ax.invert_yaxis()
+    ax.tick_params(axis='y', length=0)
+    ax.set_xlim(0, 0.65)
+    ax.set_xticks([0, 0.2, 0.4, 0.6])
+    ax.grid(axis='y', visible=False)
+    ax.set_xlabel(r'held-out $R^2$ of $\log T$, one cell held out at a time')
+    from matplotlib.patches import Patch
+    ax.legend(handles=[Patch(facecolor='#dddcd8', edgecolor='#3d3c3a', label='linear regression'),
+                       Patch(facecolor='#3d3c3a', edgecolor='#3d3c3a', label='kernel ridge')],
+              loc='upper right', frameon=False)
+    save(fig, 'tier3_linear')
+
+
 def tier3_models():
     """Tier 3 models slide: held-out R^2 of each model on all three statistics, one panel per kind.
 
@@ -489,6 +528,6 @@ def e19():
 
 
 if __name__ == '__main__':
-    for draw in (e2, e3, e4, e5, e7, e8, e10_log_r, tier3_models, tier3_curve, e19):
+    for draw in (e2, e3, e4, e5, e7, e8, e10_log_r, tier3_linear, tier3_models, tier3_curve, e19):
         draw()
         print('drew', draw.__name__)
