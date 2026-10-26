@@ -814,37 +814,29 @@ If asked:
 - Wider networks memorise sooner, so the width effect is not a delay in fitting the training data.
 :::
 
-## Tier 3: shape is the best single predictor, and scale adds what shape lacks {time="0:55"}
+## Tier 3: shape is the best single predictor, and scale adds what shape lacks {time="1:00"}
 
 :::: {.columns}
 ::: {.column width="58%"}
-::: {.g2-bars max="0.6" label="Held-out $R^2$ of $\log T$, one cell held out at a time"}
-- [$A_t$]{.is-alignment var="EtenARsq"}
-- [$S_t$]{.is-scale var="EtenSRsq"}
-- [$\log R_t$]{.is-rotation var="EtenRRsq"}
-- [$S_t$ and $A_t$]{var="EtenSARsq"}
-- [$\log R_t$ and $A_t$]{var="EtenRARsq"}
-- [$S_t$ and $\log R_t$]{var="EtenSRRsq"}
-- [All three]{var="EtenSRARsq"}
-:::
+![](assets/figures/tier3_linear.png){.g2-fig}
 :::
 ::: {.column width="42%" .g2-compact}
 We read the statistics at step 2,430, before any run groks, and predict
 $\log T$ for settings the model has not seen. $R^2$ is the share of the spread
 in $\log T$ that the prediction explains.
 
-Linear regression on all three reaches 0.36. A squared term for scale lifts it
-to 0.50, and interaction terms add about 0.02.
+In a straight line, scale adds nothing to shape. Kernel ridge can bend scale
+and combine it with shape.
 
 ::: {.g2-takeaway}
-Shape alone predicts best, and adding scale raises $R^2$ from
-{{< var EtenRRsq >}} to {{< var EtenSRRsq >}}. The clock is mixed.
+Shape alone predicts best. Scale helps once the model can bend it, and then
+$R^2$ rises from {{< var EtenRRsq >}} to {{< var EtenSRRsq >}}. The clock is mixed.
 :::
 
 ::: {.g2-small}
-Kernel statistics can be measured in any network. The settings predict better.
-We use $\log R_t$, since with $R_t$ as it is all three reach only
-{{< var EtenRawKrrSRARsq >}}.
+A straight line with scale squared reaches 0.50, and with the products of the
+statistics 0.54. We use $\log R_t$, since with $R_t$ as it is all three reach
+only {{< var EtenRawKrrSRARsq >}}.
 :::
 :::
 ::::
@@ -860,12 +852,13 @@ Say:
 - Can the statistics still forecast when a run will grok?
 - It is like guessing a runner's marathon time from their first few kilometres.
 - We read them at step 2,430, before any run groks, and predict settings the model has never seen.
-- Alignment explains almost nothing.
-- Shape alone explains about a third, and adding scale takes it to a half.
-- These bars come from kernel ridge, which predicts a run from the runs most like it, a bit like pricing a house from similar houses.
-- Plain linear regression on all three statistics explains 0.36, and kernel ridge explains {{< var EtenSRARsq >}}.
-- Adding a squared term for scale closes most of that gap, at 0.50.
-- Interaction terms, where one statistic changes how much another matters, add only about 0.02 on top of that.
+- The light bars are plain linear regression, which gives each statistic one fixed slope.
+- The dark bars are kernel ridge, which predicts a run from the runs most like it, a bit like pricing a house from similar houses.
+- In both models alignment explains almost nothing, and shape alone explains about a third.
+- In a straight line, adding scale to shape adds nothing.
+- In kernel ridge, adding scale takes it from a third to a half.
+- So scale helps once the model can bend it or combine it with shape.
+- A straight line with scale squared, or with the products of the statistics, closes most of the gap.
 
 If asked:
 
@@ -881,7 +874,9 @@ If asked:
 - On that test, boosted trees on all three statistics reach {{< var EeightXgb >}} and a recurrent network on their history {{< var EeightGru >}}, so we do not claim that the kernel beats the weight decay.
 - The kernel ridge regression uses a Gaussian kernel, and whole cells are held out because the seeds of a cell are close copies.
 - We do not claim that shape and scale interact, because that analysis was cut from the report.
-- The linear regression, squared term and interaction numbers come from model_fitting/4_nonlinear_exploration.ipynb, Parts 3 and 7, on the same {{< var EtenRuns >}} runs, and its kernel ridge matches the report.
+- The linear regression scores come from presentation/fit_tier3_linear.py, which fits least squares through the report's own E10 code, so the {{< var EtenRuns >}} runs and the folds are the same as for kernel ridge.
+- A straight line with both scale squared and the products reaches 0.54, about the same as with the products alone, so we cannot tell a bend in scale from an interaction with shape.
+- The straight line on log R alone, 0.37, is a little above kernel ridge on log R alone, 0.35, so for shape alone a straight line is enough.
 - Boosted trees on the three statistics reach only 0.39, and boosted trees given the settings reach 0.93.
 - Two backup slides show every model we compared and what a curve and a product mean.
 :::
