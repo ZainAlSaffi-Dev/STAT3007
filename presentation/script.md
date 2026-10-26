@@ -10,7 +10,7 @@ Each slide gives its number in the browser, its budget and the running total. "S
 | 2 | 5 to 9 | 2:15 |
 | 3 | 10 to 14 | 1:50 |
 | 4 | 15 to 18 | 2:00 |
-| 5 | 19 to 25 | 2:50 |
+| 5 | 19 to 26 | 3:15 |
 
 ## Turn 1 (1:20)
 
@@ -249,12 +249,14 @@ Each slide gives its number in the browser, its budget and the running total. "S
 
 **Say**
 
-- If grokking happens when a statistic reaches a threshold, the statistic should take nearly the same value at every run's grokking step.
-- A statistic that barely moves would pass that check too.
-- So we read each run twice, at its own grokking step and at the grokking step of another run, and the second reading is a placebo.
-- A real threshold spreads out at the wrong step, and the SD ratio says by how much.
-- Shape spreads the most, by 1.71, and scale by 1.29, and no shuffle gave either a spread as small as the true one.
-- Alignment spreads by only 1.09, which is close to one.
+- Okay, so first we test whether grokking happens when a statistic hits a fixed value.
+- Think of water, which boils at 100 degrees in any pot.
+- If grokking had a boiling point, the statistic would read the same in every run at the moment that run groks.
+- But a thermometer stuck on one number also reads the same every time.
+- So we also read each run at the step where some other run grokked.
+- If the statistic is a real boiling point, those readings should be much more spread out.
+- Shape spreads out the most, 1.71 times.
+- Scale spreads 1.29 times, and alignment hardly at all.
 
 **Point at**
 
@@ -273,10 +275,12 @@ Each slide gives its number in the browser, its budget and the running total. "S
 
 **Say**
 
-- That tie only holds at a fixed width.
-- Each dot is one run at its grokking step, with width 100 on top and alpha 1 across widths below.
-- Across widths no statistic takes the same value at grokking, and wider networks grok with much less change of shape, yet later.
-- So shape matters more than scale, but shape alone does not set the time.
+- But water only boils at 100 degrees at sea level.
+- Up a mountain it boils at a lower temperature.
+- Width acts like the mountain.
+- Once we change the width, no statistic has the same value at grokking.
+- Wide networks grok with much less change of shape, and yet they grok later.
+- So shape alone does not decide when a network groks.
 
 **If asked**
 
@@ -305,7 +309,7 @@ Each slide gives its number in the browser, its budget and the running total. "S
 - Both logarithms are centred at the middle of the grid, so a and b are the slopes there.
 - Wider networks memorise sooner, so the width effect is not a delay in fitting the training data.
 
-## Turn 5 (2:50)
+## Turn 5 (3:15)
 
 ### Slide 19. Tier 3: shape is the best single predictor, and scale adds what shape lacks (0:40, total 8:05)
 
@@ -313,13 +317,11 @@ Each slide gives its number in the browser, its budget and the running total. "S
 
 **Say**
 
-- Last, which statistic, read early, tells us when a run will grok?
-- We read the statistics at step 2,430, before any run groks, and predict the grokking time on cells the model has never seen.
-- Alignment explains almost nothing, and shape explains the most.
-- Adding scale raises R squared from 0.35 to 0.51, so the clock is mixed.
-- We use the log of R, since with R as it is all three reach only 0.47.
-- In our grid we set the width, alpha and weight decay ourselves, so we know them exactly.
-- In a real model they are not clean measurements, since weight decay is only part of the regularisation, while the kernel can be measured in any network.
+- Can the statistics still forecast when a run will grok?
+- It is like guessing a runner's marathon time from their first few kilometres.
+- We read them at step 2,430, before any run groks, and predict settings the model has never seen.
+- Alignment explains almost nothing.
+- Shape alone explains about a third, and adding scale takes it to a half.
 
 **If asked**
 
@@ -336,31 +338,50 @@ Each slide gives its number in the browser, its budget and the running total. "S
 - The kernel ridge regression uses a Gaussian kernel, and whole cells are held out because the seeds of a cell are close copies.
 - We do not claim that shape and scale interact, because that analysis was cut from the report.
 
-### Slide 20. Tier 3: kernel ridge on all three statistics is the best model (0:35, total 8:40)
+### Slide 20. Tier 3: a curve beats a straight line, and kernel ridge fits best (0:30, total 8:35)
 
-*Message:* a curved model fits best, and a straight line with two bends gets most of the way.
+*Message:* a curve predicts much better than a straight line, and the most flexible models add little on top.
 
 **Say**
 
-- Which model fits best? We climbed a ladder, from straight lines up to kernel ridge.
-- A straight line explains 0.31, and the log of shape lifts it to 0.36.
-- A square of scale lifts it to 0.50, and kernel ridge on all three reaches 0.55, the best we found.
-- So this equation gets most of the way, with two bends: the log of shape and a square of scale.
-- The settings still reach 0.93, but any network's kernel can be measured.
+- A straight line through the three statistics explains 0.36.
+- Letting it bend for scale, with a squared term, jumps it to 0.50.
+- Kernel ridge predicts a run from the runs most like it, like pricing a house from similar houses.
+- It does best, at 0.55.
 
 **Point at**
 
-- Grey bars are straight lines and black bars are curved models, and the dashed line is the trees given the settings.
+- The dashed line is boosted trees given width, alpha and weight decay, which a real network does not report.
 
 **If asked**
 
-- The ladder numbers come from model_fitting/4_nonlinear_exploration.ipynb, Part 3, on the same 355 runs as Tier 3, and its kernel ridge matches the report.
-- A curve for each statistic reaches 0.52, and adding the products of the statistics reaches 0.54, so interactions add little among runs that grok.
-- Each gain above 0.50 is about 0.02, which is close to our noise level.
+- The numbers come from model_fitting/4_nonlinear_exploration.ipynb, Parts 3 and 7, on the same 355 runs as the last slide, and its kernel ridge matches the report.
+- Boosted trees do well on other inputs: 0.74 on the 25 early readings of the statistics and 0.93 on the settings. The notebook reads the history as mostly a record of the settings.
+- On an unseen alpha, trees on the three statistics rank runs at a concordance of 0.70, better than any statistic alone.
+- Each gain above 0.50 is about 0.02, which is close to our noise level, and seed noise sets a ceiling of 0.96.
 - Without shape, kernel ridge falls from 0.55 to 0.23, so shape carries the most information.
-- The settings line is boosted trees on alpha, width and weight decay, and seed noise sets a ceiling of 0.96.
+- Kernel ridge fits $\log T$ minus its mean, with the sum over the training runs $i$, and its penalty and $\gamma$ are chosen by cross-validation over whole cells.
+- The trees are XGBoost on squared error, with depth 1 to 4 chosen on held-out training cells.
 
-### Slide 21. Tier 4: on MNIST, weight decay alone sets the time (0:35, total 9:15)
+### Slide 21. A curve changes the slope, and a product links two statistics (0:30, total 9:05)
+
+*Message:* a curve lets the slope of a statistic change along the way, a product lets one statistic set the slope of another, and the best simple formula is a straight line plus a square of scale.
+
+**Say**
+
+- A straight line says each step up in a statistic always moves the time by the same amount.
+- A curve lets that amount change, like a road that is steep and then flattens.
+- A product means how much scale matters depends on shape.
+- In our data that adds very little.
+
+**If asked**
+
+- The spline has 5 knots and degree 3, which gives 7 basis functions per statistic, and the weights $c_j$ are fitted by ridge regression.
+- The square is the simplest curve, since its slope $\beta + 2\beta' z$ changes in a straight line.
+- Shape enters on a log scale, so the straight line in $z_R$ is already a curve in $R_t$.
+- The betas are fitted by least squares on the training cells of each fold, and the notebook did not save them, so we quote only the form and its score.
+
+### Slide 22. Tier 4: on MNIST, weight decay alone sets the time (0:35, total 9:40)
 
 *Message:* on a second task, weight decay alone sets the time through the weight norm, and shape plays no part.
 
@@ -382,13 +403,13 @@ Each slide gives its number in the browser, its budget and the running total. "S
 - We did not repeat Tier 3, because with a residual of 0.03 the time is a function of the settings alone.
 - The placebo test cannot separate the statistics here, because each is a function of the step and the grokking times span more than a decade.
 
-### Act 22. What we found (0:05, total 9:20)
+### Act 23. What we found (0:05, total 9:45)
 
 **Say**
 
 - So what sets the grokking time?
 
-### Slide 23. Limitations (0:20, total 9:40)
+### Slide 24. Limitations (0:20, total 10:05)
 
 *Message:* the claims hold for this task and parameterisation, on the runs that grok.
 
@@ -406,7 +427,7 @@ Each slide gives its number in the browser, its budget and the running total. "S
 - MNIST shows which clock sets the time once a delay exists, and not whether shape can cause one.
 - The alignment uses the kernel of the summed logits, and the kernel of all p logits may behave differently.
 
-### Slide 24. Grokking runs on a mixed clock, and shape is its best single reading (0:30, total 10:10)
+### Slide 25. Grokking runs on a mixed clock, and shape is its best single reading (0:30, total 10:35)
 
 *Message:* grokking runs on a mixed clock, in which shape is the most informative statistic and scale also matters.
 
@@ -422,7 +443,7 @@ Each slide gives its number in the browser, its budget and the running total. "S
 - What is new is the split into scale and shape, the placebo test, the crossed grid on two tasks, and prediction from quantities that any network exposes.
 - A next step is to test whether the early rate of shape change falls as one over the width.
 
-### Slide 25. Thank you (0:05, total 10:15)
+### Slide 26. Thank you (0:05, total 10:40)
 
 **Say**
 

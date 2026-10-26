@@ -1,4 +1,4 @@
-"""Slide versions of the report figures E2, E4, E5, E7, E8 and E19, the placebo boxes E3, R_t on two scales, and the Tier 3 models.
+"""Slide versions of the report figures E2, E4, E5, E7, E8 and E19, the placebo boxes E3, R_t on two scales, and the Tier 3 models and curve sketch.
 
 The report figures come from the scripts in report_v2/code. They are drawn for an A4 page, so their
 type is too small on a projector. This script draws each one again for its place in slides.qmd.
@@ -338,15 +338,17 @@ def e10_log_r():
 
 
 
-# The ladder of models of model_fitting/4_nonlinear_exploration.ipynb, Part 3: held-out R^2 of log T
-# with one cell held out at a time, on the same 355 runs as E10. Each model reads all three
-# statistics. The report has no macro for these, so they are copied from the saved output of that
-# notebook (cell 20, three decimals). Its kernel ridge, 0.550, matches E10.json (0.550). The settings
-# line is the trees on alpha, width and weight decay of Part 7 (cell 39).
-LADDER_HELD_OUT_CELLS = {r'straight line, $R_t$': '0.305', r'straight line, $\log R_t$': '0.364',
-                         'plus a square of $S_t$': '0.497', 'a curve for each': '0.517',
-                         'curves and products': '0.537', 'kernel ridge': '0.550'}
-STRAIGHT_LINES = (r'straight line, $R_t$', r'straight line, $\log R_t$')
+# The models of model_fitting/4_nonlinear_exploration.ipynb on the same 355 runs as E10: held-out R^2 of
+# log T with one cell held out at a time, each model reading S_t, log R_t and A_t at t*. The report has
+# no macro for these, so they are copied, to three decimals, from the saved output of the notebook:
+# Part 3 (cell 20) for the ladder and Part 7 (cell 39) for the trees. Its kernel ridge, 0.550,
+# matches E10.json (0.550). The settings line is the trees on alpha, width and weight decay (cell 39).
+# Each panel is one kind of model, as (label, R^2).
+MODEL_PANELS = [
+    ('straight lines', [('$R_t$', '0.305'), (r'$\log R_t$', '0.364')]),
+    ('curves', [('square\nof $S_t$', '0.497'), ('curve for\neach', '0.517'), ('curves +\nproducts', '0.537')]),
+    ('flexible models', [('kernel\nridge', '0.550'), ('boosted\ntrees', '0.392')]),
+]
 SETTINGS_HELD_OUT_CELLS = 0.930
 
 
@@ -357,50 +359,59 @@ def two_places(value):
 
 
 def tier3_models():
-    """Tier 3 model slide: which statistic predicts best, and which model fits best.
+    """Tier 3 models slide: held-out R^2 of each model on all three statistics, one panel per kind.
 
-    The top group is kernel ridge on each statistic alone, from E10.json. The bottom group is the
-    ladder of notebook 4 on all three statistics, with the straight lines in grey and the curved
-    models in black. The dashed line is the trees given the settings.
+    The panels hold the straight lines, the curves and the flexible models of notebook 4. The best
+    model has a black bar and the rest are grey. The dashed line is the trees given the settings.
     """
-    subsets = C.read_json('E10')['subsets']
-    groups = [('one statistic, kernel ridge',
-               [(STAT_NAME['A'], subsets['A']['R2'], C.STAT_COLOUR['A']),
-                (STAT_NAME['S'], subsets['S']['R2'], C.STAT_COLOUR['S']),
-                (r'shape $\log R_t$', subsets['log R']['R2'], C.STAT_COLOUR['R'])]),
-              ('all three statistics',
-               [(name, r2, NEUTRAL if name in STRAIGHT_LINES else C.TEXT)
-                for name, r2 in LADDER_HELD_OUT_CELLS.items()])]
-    fig, ax = plt.subplots(figsize=COLUMN, layout='constrained')
-    y, ticks, labels = -0.5, [], []
-    for title, bars in groups:
-        y += 0.5
-        ax.text(-0.02, y, title, ha='right', va='center', color=C.MUTED, style='italic',
-                transform=ax.get_yaxis_transform())
-        best = max(float(r2) for _, r2, _ in bars)
-        for label, r2, colour in bars:
-            y += 1
-            ax.barh(y, float(r2), height=0.66, color=colour, zorder=2)
-            ax.text(float(r2) + 0.012, y, two_places(r2) if isinstance(r2, str) else f'{r2:.2f}', va='center',
+    best = max(float(r2) for _, bars in MODEL_PANELS for _, r2 in bars)
+    fig, axes = plt.subplots(1, len(MODEL_PANELS), figsize=COLUMN, layout='constrained', sharey=True,
+                             gridspec_kw={'width_ratios': [len(bars) for _, bars in MODEL_PANELS]})
+    for ax, (title, bars) in zip(axes, MODEL_PANELS):
+        for i, (label, r2) in enumerate(bars):
+            ax.bar(i, float(r2), width=0.66, color=C.TEXT if float(r2) == best else NEUTRAL, zorder=2)
+            ax.text(i, float(r2) + 0.02, two_places(r2), ha='center', va='bottom',
                     fontweight='bold' if float(r2) == best else 'normal')
-            ticks.append(y)
-            labels.append(label)
-        y += 0.6
-    ax.vlines(SETTINGS_HELD_OUT_CELLS, -0.4, y - 0.5, color=C.TEXT, ls='--', lw=2, zorder=3)
-    ax.text(SETTINGS_HELD_OUT_CELLS - 0.015, -0.4, f'given the settings, {SETTINGS_HELD_OUT_CELLS:.2f}',
-            ha='right', va='top')
-    ax.barh(-5, 0, color=NEUTRAL, label='straight line')
-    ax.barh(-5, 0, color=C.TEXT, label='curved')
-    ax.legend(loc='upper right', bbox_to_anchor=(0.9, 0.86), frameon=False)
-    ax.set_yticks(ticks, labels)
-    ax.tick_params(axis='y', length=0)
-    ax.set_ylim(y - 0.3, -0.9)
-    ax.set_xlim(0, 1)
-    ax.set_xticks([0, 0.25, 0.5, 0.75, 1])
-    ax.set_xlabel(r'held-out $R^2$ of $\log T$')
-    ax.grid(axis='y', visible=False)
-    ax.spines['left'].set_visible(False)
+        ax.axhline(SETTINGS_HELD_OUT_CELLS, color=C.TEXT, ls='--', lw=2, zorder=3)
+        ax.set_xticks(range(len(bars)), [label for label, _ in bars], fontsize=19)
+        ax.tick_params(axis='x', length=0)
+        ax.set_xlim(-0.6, len(bars) - 0.4)
+        ax.set_title(title, loc='center')
+        ax.grid(axis='x', visible=False)
+    axes[0].set_ylim(0, 1)
+    axes[0].set_yticks([0, 0.25, 0.5, 0.75, 1])
+    axes[0].set_ylabel(r'held-out $R^2$ of $\log T$')
+    axes[1].text(len(MODEL_PANELS[1][1]) - 0.45, SETTINGS_HELD_OUT_CELLS - 0.02,
+                  f'given the settings, {SETTINGS_HELD_OUT_CELLS:.2f}', ha='right', va='top', fontsize=19)
     save(fig, 'tier3_models')
+
+
+def tier3_curve():
+    """Tier 3 formula slide: a sketch of a straight line, a curve and a product, with no data.
+
+    Each panel plots predicted log T against a standardised statistic z. Along a straight line the
+    slope is beta everywhere. Along a curve the slope f'(z) changes with z. With a product term the
+    slope in z_S is beta_S + gamma z_R, so the line for each value of z_R has its own slope. The
+    numbers are made up, so the axes carry no ticks.
+    """
+    z = np.linspace(-1.6, 1.6, 100)
+    fig, axes = plt.subplots(1, 3, figsize=COLUMN, layout='constrained', sharey=True)
+    axes[0].plot(z, 0.2 - 0.55 * z, color=NEUTRAL, lw=4)
+    axes[1].plot(z, 0.2 - 0.55 * z + 0.45 * z ** 2, color=C.TEXT, lw=4)
+    for z_r, colour in ((-1, NEUTRAL), (1, C.STAT_COLOUR['R'])):
+        axes[2].plot(z, 0.2 + (-0.2 - 0.5 * z_r) * z, color=colour, lw=4, label=f'$z_R = {z_r:+d}$')
+    axes[2].legend(loc='upper center', frameon=False, fontsize=19, handlelength=1.2)
+    notes = (r'slope $\beta$', r"slope $f\,'(z)$", r'slope $\beta_S + \gamma z_R$')
+    for ax, title, note, xlabel in zip(axes, ('straight line', 'curve', 'product'), notes, ('$z$', '$z$', '$z_S$')):
+        ax.set_title(title)
+        ax.text(0, -1.5, note, ha='center', va='top', fontsize=21)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_xlabel(xlabel)
+        ax.grid(visible=False)
+    axes[0].set_ylabel(r'predicted $\log T$')
+    axes[0].set_ylim(-2.1, 2.6)
+    save(fig, 'tier3_curve')
 
 
 def e19():
@@ -478,6 +489,6 @@ def e19():
 
 
 if __name__ == '__main__':
-    for draw in (e2, e3, e4, e5, e7, e8, e10_log_r, tier3_models, e19):
+    for draw in (e2, e3, e4, e5, e7, e8, e10_log_r, tier3_models, tier3_curve, e19):
         draw()
         print('drew', draw.__name__)
