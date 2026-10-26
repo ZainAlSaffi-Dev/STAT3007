@@ -27,9 +27,10 @@ These are the answers we prepared for questions after the talk. `make_script.py`
 
 **Why do you use the logarithm of R?**
 
-- We tried R and log R, among other non-linear forms, and log R predicted best of the forms of R.
+- We fitted R as it is and log R in straight lines and in kernel ridge, and log R predicted better on held-out cells.
 - R also spans more than a decade across widths, so its logarithm puts the widths on one scale.
-- TODO: confirm with Zain which forms were compared, and whether log S was tried.
+- Kernel ridge on all three statistics reaches {{< var EtenSRARsq >}} with log R and {{< var EtenRawKrrSRARsq >}} with R as it is.
+- We did not try log S. S entered on its own scale, and a square term and splines let its curve bend.
 
 **Is the kernel on 53 test pairs really the network's kernel?**
 
