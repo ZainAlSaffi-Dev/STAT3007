@@ -869,6 +869,57 @@ If asked:
 - We do not claim that shape and scale interact, because that analysis was cut from the report.
 :::
 
+## Tier 3: kernel ridge on all three statistics is the best model {time="0:35"}
+
+:::: {.columns}
+::: {.column width="60%"}
+![](assets/figures/tier3_models.png){.g2-fig}
+:::
+::: {.column width="40%" .g2-compact}
+Best statistic: shape, $\log R_t$.
+
+Best model: kernel ridge on $S_t$, $\log R_t$ and $A_t$.
+
+Best equation:
+$$\log T = \beta_0 + \beta_A z_A + \beta_S z_S + \beta_{SS} z_S^2 + \beta_R z_R$$
+
+::: {.g2-takeaway}
+Two bends do most of the work: the log of shape and a square of scale.
+:::
+
+::: {.g2-small}
+Each $z$ is a standardised statistic. The ladder comes from notebook 4.
+:::
+:::
+::::
+
+::: {.notes}
+Turn 5.
+
+Message: a curved model fits best, and a straight line with two bends gets
+most of the way.
+
+Say:
+
+- Which model fits best? We climbed a ladder, from straight lines up to kernel ridge.
+- A straight line explains 0.31, and the log of shape lifts it to 0.36.
+- A square of scale lifts it to 0.50, and kernel ridge on all three reaches {{< var EtenSRARsq >}}, the best we found.
+- So this equation gets most of the way, with two bends: the log of shape and a square of scale.
+- The settings still reach 0.93, but any network's kernel can be measured.
+
+Point at:
+
+- Grey bars are straight lines and black bars are curved models, and the dashed line is the trees given the settings.
+
+If asked:
+
+- The ladder numbers come from model_fitting/4_nonlinear_exploration.ipynb, Part 3, on the same {{< var EtenRuns >}} runs as Tier 3, and its kernel ridge matches the report.
+- A curve for each statistic reaches 0.52, and adding the products of the statistics reaches 0.54, so interactions add little among runs that grok.
+- Each gain above 0.50 is about 0.02, which is close to our noise level.
+- Without shape, kernel ridge falls from {{< var EtenSRARsq >}} to 0.23, so shape carries the most information.
+- The settings line is boosted trees on alpha, width and weight decay, and seed noise sets a ceiling of {{< var EtenBetweenLogT >}}.
+:::
+
 ## Tier 4: on MNIST, weight decay alone sets the time {time="0:35"}
 
 :::: {.columns}

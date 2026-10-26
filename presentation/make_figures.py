@@ -1,4 +1,4 @@
-"""Slide versions of the report figures E2, E4, E5, E7, E8 and E19, the placebo boxes E3, and R_t on two scales.
+"""Slide versions of the report figures E2, E4, E5, E7, E8 and E19, the placebo boxes E3, R_t on two scales, and the Tier 3 models.
 
 The report figures come from the scripts in report_v2/code. They are drawn for an A4 page, so their
 type is too small on a projector. This script draws each one again for its place in slides.qmd.
@@ -337,6 +337,72 @@ def e10_log_r():
     save(fig, 'E10_log_r')
 
 
+
+# The ladder of models of model_fitting/4_nonlinear_exploration.ipynb, Part 3: held-out R^2 of log T
+# with one cell held out at a time, on the same 355 runs as E10. Each model reads all three
+# statistics. The report has no macro for these, so they are copied from the saved output of that
+# notebook (cell 20, three decimals). Its kernel ridge, 0.550, matches E10.json (0.550). The settings
+# line is the trees on alpha, width and weight decay of Part 7 (cell 39).
+LADDER_HELD_OUT_CELLS = {r'straight line, $R_t$': '0.305', r'straight line, $\log R_t$': '0.364',
+                         'plus a square of $S_t$': '0.497', 'a curve for each': '0.517',
+                         'curves and products': '0.537', 'kernel ridge': '0.550'}
+STRAIGHT_LINES = (r'straight line, $R_t$', r'straight line, $\log R_t$')
+SETTINGS_HELD_OUT_CELLS = 0.930
+
+
+def two_places(value):
+    """Round a notebook value given to three places half up to two, as its text does (0.305 is 31%)."""
+    from decimal import ROUND_HALF_UP, Decimal
+    return str(Decimal(value).quantize(Decimal('0.01'), ROUND_HALF_UP))
+
+
+def tier3_models():
+    """Tier 3 model slide: which statistic predicts best, and which model fits best.
+
+    The top group is kernel ridge on each statistic alone, from E10.json. The bottom group is the
+    ladder of notebook 4 on all three statistics, with the straight lines in grey and the curved
+    models in black. The dashed line is the trees given the settings.
+    """
+    subsets = C.read_json('E10')['subsets']
+    groups = [('one statistic, kernel ridge',
+               [(STAT_NAME['A'], subsets['A']['R2'], C.STAT_COLOUR['A']),
+                (STAT_NAME['S'], subsets['S']['R2'], C.STAT_COLOUR['S']),
+                (r'shape $\log R_t$', subsets['log R']['R2'], C.STAT_COLOUR['R'])]),
+              ('all three statistics',
+               [(name, r2, NEUTRAL if name in STRAIGHT_LINES else C.TEXT)
+                for name, r2 in LADDER_HELD_OUT_CELLS.items()])]
+    fig, ax = plt.subplots(figsize=COLUMN, layout='constrained')
+    y, ticks, labels = -0.5, [], []
+    for title, bars in groups:
+        y += 0.5
+        ax.text(-0.02, y, title, ha='right', va='center', color=C.MUTED, style='italic',
+                transform=ax.get_yaxis_transform())
+        best = max(float(r2) for _, r2, _ in bars)
+        for label, r2, colour in bars:
+            y += 1
+            ax.barh(y, float(r2), height=0.66, color=colour, zorder=2)
+            ax.text(float(r2) + 0.012, y, two_places(r2) if isinstance(r2, str) else f'{r2:.2f}', va='center',
+                    fontweight='bold' if float(r2) == best else 'normal')
+            ticks.append(y)
+            labels.append(label)
+        y += 0.6
+    ax.vlines(SETTINGS_HELD_OUT_CELLS, -0.4, y - 0.5, color=C.TEXT, ls='--', lw=2, zorder=3)
+    ax.text(SETTINGS_HELD_OUT_CELLS - 0.015, -0.4, f'given the settings, {SETTINGS_HELD_OUT_CELLS:.2f}',
+            ha='right', va='top')
+    ax.barh(-5, 0, color=NEUTRAL, label='straight line')
+    ax.barh(-5, 0, color=C.TEXT, label='curved')
+    ax.legend(loc='upper right', bbox_to_anchor=(0.9, 0.86), frameon=False)
+    ax.set_yticks(ticks, labels)
+    ax.tick_params(axis='y', length=0)
+    ax.set_ylim(y - 0.3, -0.9)
+    ax.set_xlim(0, 1)
+    ax.set_xticks([0, 0.25, 0.5, 0.75, 1])
+    ax.set_xlabel(r'held-out $R^2$ of $\log T$')
+    ax.grid(axis='y', visible=False)
+    ax.spines['left'].set_visible(False)
+    save(fig, 'tier3_models')
+
+
 def e19():
     """Slide 20: MNIST, after E19_mnist.py.
 
@@ -412,6 +478,6 @@ def e19():
 
 
 if __name__ == '__main__':
-    for draw in (e2, e3, e4, e5, e7, e8, e10_log_r, e19):
+    for draw in (e2, e3, e4, e5, e7, e8, e10_log_r, tier3_models, e19):
         draw()
         print('drew', draw.__name__)

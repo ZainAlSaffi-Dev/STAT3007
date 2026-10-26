@@ -10,7 +10,7 @@ Each slide gives its number in the browser, its budget and the running total. "S
 | 2 | 5 to 9 | 2:15 |
 | 3 | 10 to 14 | 1:50 |
 | 4 | 15 to 18 | 2:00 |
-| 5 | 19 to 24 | 2:15 |
+| 5 | 19 to 25 | 2:50 |
 
 ## Turn 1 (1:20)
 
@@ -305,7 +305,7 @@ Each slide gives its number in the browser, its budget and the running total. "S
 - Both logarithms are centred at the middle of the grid, so a and b are the slopes there.
 - Wider networks memorise sooner, so the width effect is not a delay in fitting the training data.
 
-## Turn 5 (2:15)
+## Turn 5 (2:50)
 
 ### Slide 19. Tier 3: shape is the best single predictor, and scale adds what shape lacks (0:40, total 8:05)
 
@@ -336,7 +336,31 @@ Each slide gives its number in the browser, its budget and the running total. "S
 - The kernel ridge regression uses a Gaussian kernel, and whole cells are held out because the seeds of a cell are close copies.
 - We do not claim that shape and scale interact, because that analysis was cut from the report.
 
-### Slide 20. Tier 4: on MNIST, weight decay alone sets the time (0:35, total 8:40)
+### Slide 20. Tier 3: kernel ridge on all three statistics is the best model (0:35, total 8:40)
+
+*Message:* a curved model fits best, and a straight line with two bends gets most of the way.
+
+**Say**
+
+- Which model fits best? We climbed a ladder, from straight lines up to kernel ridge.
+- A straight line explains 0.31, and the log of shape lifts it to 0.36.
+- A square of scale lifts it to 0.50, and kernel ridge on all three reaches 0.55, the best we found.
+- So this equation gets most of the way, with two bends: the log of shape and a square of scale.
+- The settings still reach 0.93, but any network's kernel can be measured.
+
+**Point at**
+
+- Grey bars are straight lines and black bars are curved models, and the dashed line is the trees given the settings.
+
+**If asked**
+
+- The ladder numbers come from model_fitting/4_nonlinear_exploration.ipynb, Part 3, on the same 355 runs as Tier 3, and its kernel ridge matches the report.
+- A curve for each statistic reaches 0.52, and adding the products of the statistics reaches 0.54, so interactions add little among runs that grok.
+- Each gain above 0.50 is about 0.02, which is close to our noise level.
+- Without shape, kernel ridge falls from 0.55 to 0.23, so shape carries the most information.
+- The settings line is boosted trees on alpha, width and weight decay, and seed noise sets a ceiling of 0.96.
+
+### Slide 21. Tier 4: on MNIST, weight decay alone sets the time (0:35, total 9:15)
 
 *Message:* on a second task, weight decay alone sets the time through the weight norm, and shape plays no part.
 
@@ -358,13 +382,13 @@ Each slide gives its number in the browser, its budget and the running total. "S
 - We did not repeat Tier 3, because with a residual of 0.03 the time is a function of the settings alone.
 - The placebo test cannot separate the statistics here, because each is a function of the step and the grokking times span more than a decade.
 
-### Act 21. What we found (0:05, total 8:45)
+### Act 22. What we found (0:05, total 9:20)
 
 **Say**
 
 - So what sets the grokking time?
 
-### Slide 22. Limitations (0:20, total 9:05)
+### Slide 23. Limitations (0:20, total 9:40)
 
 *Message:* the claims hold for this task and parameterisation, on the runs that grok.
 
@@ -382,7 +406,7 @@ Each slide gives its number in the browser, its budget and the running total. "S
 - MNIST shows which clock sets the time once a delay exists, and not whether shape can cause one.
 - The alignment uses the kernel of the summed logits, and the kernel of all p logits may behave differently.
 
-### Slide 23. Grokking runs on a mixed clock, and shape is its best single reading (0:30, total 9:35)
+### Slide 24. Grokking runs on a mixed clock, and shape is its best single reading (0:30, total 10:10)
 
 *Message:* grokking runs on a mixed clock, in which shape is the most informative statistic and scale also matters.
 
@@ -398,7 +422,7 @@ Each slide gives its number in the browser, its budget and the running total. "S
 - What is new is the split into scale and shape, the placebo test, the crossed grid on two tasks, and prediction from quantities that any network exposes.
 - A next step is to test whether the early rate of shape change falls as one over the width.
 
-### Slide 24. Thank you (0:05, total 9:40)
+### Slide 25. Thank you (0:05, total 10:15)
 
 **Say**
 
