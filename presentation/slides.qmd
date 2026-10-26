@@ -416,7 +416,7 @@ alike exactly when they share an answer
 :::
 
 ::: {.g2-lead .g2-invariant}
-Shape and alignment ignore rescaling. Only scale sees the size.
+Shape and alignment ignore rescaling.
 :::
 
 ::: {.g2-small}
