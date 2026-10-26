@@ -1,6 +1,6 @@
 # Zain's script
 
-This is the script for slides 16, 17, 19, 20 and 21 of the seminar: Tier 1, its limits, and Tier 3 with its models, and what a curve and a product are. Each section is one paragraph to read aloud. Together they run to just over two minutes at the deck's pace of 150 words a minute. The numbers on slides 16 to 19 come from the report's `numbers.tex`, through `_variables.yml`. The models on slides 20 and 21 come from `model_fitting/4_nonlinear_exploration.ipynb`, Parts 3 and 7, on the same 355 runs, and its kernel ridge matches the report.
+This is the script for slides 16, 17 and 19 of the seminar: Tier 1, its limits, and Tier 3. Each section is one paragraph to read aloud. Together they run to about two minutes at the deck's pace of 150 words a minute. The numbers on these slides come from the report's `numbers.tex`, through `_variables.yml`. The linear regression, squared term and interaction numbers on slide 19 come from `model_fitting/4_nonlinear_exploration.ipynb`, Parts 3 and 7, on the same 355 runs, and its kernel ridge matches the report. The two slides on the models are now backup slides.
 
 ## The script
 
@@ -12,17 +12,9 @@ Okay, so first we test whether grokking happens when a statistic hits a fixed va
 
 But water only boils at 100 degrees at sea level. Up a mountain it boils at a lower temperature. Width acts like the mountain. Once we change the width, no statistic has the same value at grokking. Wide networks grok with much less change of shape, and yet they grok later. So shape alone does not decide when a network groks.
 
-### Slide 19. Tier 3: which statistic predicts best? (about 0:25)
+### Slide 19. Tier 3: which statistic predicts best? (about 0:50)
 
-Can the statistics still forecast when a run will grok? It is like guessing a runner's marathon time from their first few kilometres. We read them at step 2,430, before any run groks, and predict settings the model has never seen. Alignment explains almost nothing. Shape alone explains about a third, and adding scale takes it to a half.
-
-### Slide 20. Which model fits best? (about 0:20)
-
-A straight line through the three statistics explains 0.36. Letting it bend for scale, with a squared term, jumps it to 0.50. Kernel ridge predicts a run from the runs most like it, like pricing a house from similar houses. It does best, at 0.55.
-
-### Slide 21. What a curve and a product are (about 0:20)
-
-A straight line says each step up in a statistic always moves the time by the same amount. A curve lets that amount change, like a road that is steep and then flattens. A product means how much scale matters depends on shape. In our data that adds very little.
+Can the statistics still forecast when a run will grok? It is like guessing a runner's marathon time from their first few kilometres. We read them at step 2,430, before any run groks, and predict settings the model has never seen. Alignment explains almost nothing. Shape alone explains about a third, and adding scale takes it to a half. These bars come from kernel ridge, which predicts a run from the runs most like it, a bit like pricing a house from similar houses. Plain linear regression on all three statistics explains 0.36, and kernel ridge explains 0.55. Adding a squared term for scale closes most of that gap, at 0.50. Interaction terms, where one statistic changes how much another matters, add only about 0.02 on top of that.
 
 ## Questions
 

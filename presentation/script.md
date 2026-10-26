@@ -10,7 +10,7 @@ Each slide gives its number in the browser, its budget and the running total. "S
 | 2 | 5 to 9 | 2:15 |
 | 3 | 10 to 14 | 1:50 |
 | 4 | 15 to 18 | 2:00 |
-| 5 | 19 to 26 | 3:15 |
+| 5 | 19 to 24 | 2:30 |
 
 ## Turn 1 (1:20)
 
@@ -309,9 +309,9 @@ Each slide gives its number in the browser, its budget and the running total. "S
 - Both logarithms are centred at the middle of the grid, so a and b are the slopes there.
 - Wider networks memorise sooner, so the width effect is not a delay in fitting the training data.
 
-## Turn 5 (3:15)
+## Turn 5 (2:30)
 
-### Slide 19. Tier 3: shape is the best single predictor, and scale adds what shape lacks (0:40, total 8:05)
+### Slide 19. Tier 3: shape is the best single predictor, and scale adds what shape lacks (0:55, total 8:20)
 
 *Message:* shape carries the most information about when a network will grok, scale adds to it, and alignment adds little.
 
@@ -322,6 +322,10 @@ Each slide gives its number in the browser, its budget and the running total. "S
 - We read them at step 2,430, before any run groks, and predict settings the model has never seen.
 - Alignment explains almost nothing.
 - Shape alone explains about a third, and adding scale takes it to a half.
+- These bars come from kernel ridge, which predicts a run from the runs most like it, a bit like pricing a house from similar houses.
+- Plain linear regression on all three statistics explains 0.36, and kernel ridge explains 0.55.
+- Adding a squared term for scale closes most of that gap, at 0.50.
+- Interaction terms, where one statistic changes how much another matters, add only about 0.02 on top of that.
 
 **If asked**
 
@@ -337,51 +341,11 @@ Each slide gives its number in the browser, its budget and the running total. "S
 - On that test, boosted trees on all three statistics reach 0.70 and a recurrent network on their history 0.76, so we do not claim that the kernel beats the weight decay.
 - The kernel ridge regression uses a Gaussian kernel, and whole cells are held out because the seeds of a cell are close copies.
 - We do not claim that shape and scale interact, because that analysis was cut from the report.
+- The linear regression, squared term and interaction numbers come from model_fitting/4_nonlinear_exploration.ipynb, Parts 3 and 7, on the same 355 runs, and its kernel ridge matches the report.
+- Boosted trees on the three statistics reach only 0.39, and boosted trees given the settings reach 0.93.
+- Two backup slides show every model we compared and what a curve and a product mean.
 
-### Slide 20. Tier 3: a curve beats a straight line, and kernel ridge fits best (0:30, total 8:35)
-
-*Message:* a curve predicts much better than a straight line, and the most flexible models add little on top.
-
-**Say**
-
-- A straight line through the three statistics explains 0.36.
-- Letting it bend for scale, with a squared term, jumps it to 0.50.
-- Kernel ridge predicts a run from the runs most like it, like pricing a house from similar houses.
-- It does best, at 0.55.
-
-**Point at**
-
-- The dashed line is boosted trees given width, alpha and weight decay, which a real network does not report.
-
-**If asked**
-
-- The numbers come from model_fitting/4_nonlinear_exploration.ipynb, Parts 3 and 7, on the same 355 runs as the last slide, and its kernel ridge matches the report.
-- Boosted trees do well on other inputs: 0.74 on the 25 early readings of the statistics and 0.93 on the settings. The notebook reads the history as mostly a record of the settings.
-- On an unseen alpha, trees on the three statistics rank runs at a concordance of 0.70, better than any statistic alone.
-- Each gain above 0.50 is about 0.02, which is close to our noise level, and seed noise sets a ceiling of 0.96.
-- Without shape, kernel ridge falls from 0.55 to 0.23, so shape carries the most information.
-- Kernel ridge fits $\log T$ minus its mean, with the sum over the training runs $i$, and its penalty and $\gamma$ are chosen by cross-validation over whole cells.
-- The trees are XGBoost on squared error, with depth 1 to 4 chosen on held-out training cells.
-
-### Slide 21. A curve changes the slope, and a product links two statistics (0:30, total 9:05)
-
-*Message:* a curve lets the slope of a statistic change along the way, a product lets one statistic set the slope of another, and the best simple formula is a straight line plus a square of scale.
-
-**Say**
-
-- A straight line says each step up in a statistic always moves the time by the same amount.
-- A curve lets that amount change, like a road that is steep and then flattens.
-- A product means how much scale matters depends on shape.
-- In our data that adds very little.
-
-**If asked**
-
-- The spline has 5 knots and degree 3, which gives 7 basis functions per statistic, and the weights $c_j$ are fitted by ridge regression.
-- The square is the simplest curve, since its slope $\beta + 2\beta' z$ changes in a straight line.
-- Shape enters on a log scale, so the straight line in $z_R$ is already a curve in $R_t$.
-- The betas are fitted by least squares on the training cells of each fold, and the notebook did not save them, so we quote only the form and its score.
-
-### Slide 22. Tier 4: on MNIST, weight decay alone sets the time (0:35, total 9:40)
+### Slide 20. Tier 4: on MNIST, weight decay alone sets the time (0:35, total 8:55)
 
 *Message:* on a second task, weight decay alone sets the time through the weight norm, and shape plays no part.
 
@@ -403,13 +367,13 @@ Each slide gives its number in the browser, its budget and the running total. "S
 - We did not repeat Tier 3, because with a residual of 0.03 the time is a function of the settings alone.
 - The placebo test cannot separate the statistics here, because each is a function of the step and the grokking times span more than a decade.
 
-### Act 23. What we found (0:05, total 9:45)
+### Act 21. What we found (0:05, total 9:00)
 
 **Say**
 
 - So what sets the grokking time?
 
-### Slide 24. Limitations (0:20, total 10:05)
+### Slide 22. Limitations (0:20, total 9:20)
 
 *Message:* the claims hold for this task and parameterisation, on the runs that grok.
 
@@ -427,7 +391,7 @@ Each slide gives its number in the browser, its budget and the running total. "S
 - MNIST shows which clock sets the time once a delay exists, and not whether shape can cause one.
 - The alignment uses the kernel of the summed logits, and the kernel of all p logits may behave differently.
 
-### Slide 25. Grokking runs on a mixed clock, and shape is its best single reading (0:30, total 10:35)
+### Slide 23. Grokking runs on a mixed clock, and shape is its best single reading (0:30, total 9:50)
 
 *Message:* grokking runs on a mixed clock, in which shape is the most informative statistic and scale also matters.
 
@@ -443,7 +407,7 @@ Each slide gives its number in the browser, its budget and the running total. "S
 - What is new is the split into scale and shape, the placebo test, the crossed grid on two tasks, and prediction from quantities that any network exposes.
 - A next step is to test whether the early rate of shape change falls as one over the width.
 
-### Slide 26. Thank you (0:05, total 10:40)
+### Slide 24. Thank you (0:05, total 9:55)
 
 **Say**
 
