@@ -40,9 +40,11 @@ $g2-width: #6a51a3;
 $g2-train: #8a8986;
 $g2-test: #0b0b0b;
 
-// Placeholders are amber, a colour that no statistic uses.
+// Placeholders are amber, a colour that no statistic uses. TODO chips are a
+// filled deep red.
 $g2-todo: #a8690f;
 $g2-todo-wash: #fff7e6;
+$g2-todo-red: #b3001b;
 
 $body-bg: $g2-paper;
 $body-color: $g2-ink;
@@ -308,6 +310,23 @@ $presentation-title-slide-text-align: left;
 // Smaller text for a column that holds several sentences or a formula.
 .reveal .g2-compact { font-size: 0.8em; }
 
+// The Tier 2 column: text a little smaller than the body, with its table at the
+// size of the body text, so the exponents read from the back of the room.
+.reveal .g2-tier2 { font-size: 0.74em; }
+.reveal .g2-tier2 table { font-size: 0.9em; width: 100%; }
+.reveal .g2-tier2 table td:first-child { white-space: nowrap; }
+.reveal .g2-tier2 .g2-takeaway { font-size: 0.95em; }
+.reveal .g2-tier2 .g2-small { font-size: 0.8em; }
+
+// The line under the three cards of slide 9: smaller than a lead, above the
+// small print.
+.reveal .g2-lead.g2-invariant {
+  font-size: 0.8em;
+  max-width: none;
+  margin-top: 0.7em;
+  font-weight: 600;
+}
+
 // A large sentence that carries the message of a slide.
 .reveal .g2-lead {
   font-size: 1.12em;
@@ -340,6 +359,31 @@ $presentation-title-slide-text-align: left;
 .reveal .g2-result.is-alignment { border-left-color: $g2-alignment; }
 
 .reveal .g2-result p { margin: 0.2em 0; }
+
+// The closing line of a results slide: what the result means for the clock.
+// Write ::: {.g2-takeaway} with one sentence inside. The kicker comes from CSS,
+// so every results slide ends the same way and the talk keeps one thread.
+.reveal .g2-takeaway {
+  border-top: 4px solid $g2-ink;
+  padding-top: 12px;
+  margin-top: 0.6em;
+  font-size: 0.78em;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.reveal .g2-takeaway::before {
+  content: "For the clock";
+  display: block;
+  font-size: 0.68em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: $g2-muted;
+  margin-bottom: 0.2em;
+}
+
+.reveal .g2-takeaway p { margin: 0; }
 
 // Tables.
 .reveal table {
@@ -393,15 +437,24 @@ $presentation-title-slide-text-align: left;
 
 // A small amber tag that marks an interim figure, such as a report figure that
 // still has to be redrawn for the slides.
+// It is a filled deep red, which no statistic uses and which differs from the
+// orange of shape, so that an open task cannot be missed. The word "TODO:" comes
+// from CSS, so write only the task inside the span. Clear every chip before the
+// final export; the render log lists them.
 .reveal .g2-todo-chip {
   display: inline-block;
-  border: 2px solid $g2-todo;
-  background: $g2-todo-wash;
-  color: $g2-todo;
-  border-radius: 999px;
+  border: 3px solid $g2-todo-red;
+  background: $g2-todo-red;
+  color: #ffffff;
+  border-radius: 8px;
   padding: 0 14px;
   margin-right: 10px;
-  font-weight: 600;
+  font-weight: 800;
+}
+
+.reveal .g2-todo-chip::before {
+  content: "TODO: ";
+  letter-spacing: 0.04em;
 }
 
 // The reference list runs in two columns in small type.

@@ -1,44 +1,52 @@
-"""In theory, weight decay only rescales the kernel, and only T_t can turn it.
+"""In theory, weight decay only rescales the kernel, and a wider network changes its shape less.
 
-Slide 14 of the deck. This is a schematic, and it says so on screen. It draws
-the two terms of the kernel flow of Lewkowycz and Gur-Ari (2020), Equation S5
-of arXiv:2006.08643v2, checked against the paper on 16 October 2026:
+Slide 12 of the deck, shown as a still. This is a schematic, and it says so on
+screen. It draws the two terms of the kernel flow of Lewkowycz and Gur-Ari
+(2020), Equation S5 of arXiv:2006.08643v2, checked against the paper on
+16 October 2026. The deck writes their Theta_t as K_t:
 
-    dTheta_t(x, x')/dt = -2(k - 1) lambda Theta_t(x, x') + T_t(x, x') + T_t(x', x).
+    dK_t(x, x')/dt = -2(k - 1) lambda K_t(x, x') + T_t(x, x') + T_t(x', x).
 
-The first term is proportional to the kernel itself, so on its own it shrinks
-the kernel evenly and keeps its axes. Only T_t, Equation S6, can turn it. The
-paper states that E[T_0] is of order 1 / n in the width at initialisation, a
-result it takes from Dyer and Gur-Ari (2020). The last beat draws the turn
-from T_t shrinking as 1 / N, from 70 degrees at N = 100 to 4.4 degrees at
-N = 1600. That T_t stays of order 1 / N during training is our reading, as
-the slide says, and the clip labels it so.
+The last frame has two panels, one per term.
+
+- Left, the scale part. The first term is proportional to the kernel itself,
+  so on its own it shrinks the kernel evenly and keeps its axes. The solid
+  ellipse is the start scaled by 0.75.
+- Right, the shape part. Only T_t, Equation S6, can change the shape. The
+  paper states that E[T_0] is of order 1 / n in the width at initialisation,
+  a result it takes from Dyer and Gur-Ari (2020). The solid ellipse is the
+  start turned by 35 degrees at N = 100. The light one is the turn scaled by
+  100 / N at N = 1600, about 2.2 degrees, so it barely leaves the start. That
+  T_t stays of order 1 / N during training is our prediction, and the clip
+  labels it so.
 
 Render from animations/:
 
-    uv run manim -qh slides/kernel_flow.py KernelFlow
-    uv run manim -qh -s slides/kernel_flow.py KernelFlow
+    python -m manim -qh slides/kernel_flow.py KernelFlow
+    python -m manim -qh -s slides/kernel_flow.py KernelFlow
 """
 
 import sys
 from pathlib import Path
 
 import numpy as np
-from manim import (DOWN, LEFT, RIGHT, UP, Arc, DashedVMobject, FadeIn, FadeOut, MathTex, Text,
-                   ValueTracker, VGroup, always_redraw)
+from manim import (DOWN, LEFT, ORIGIN, RIGHT, UP, DashedVMobject, FadeIn, Line, MathTex, Text, ValueTracker, VGroup,
+                   always_redraw)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from common import layout, palette
+from common import layout, notation, palette
 
-SIZE = palette.LABEL_COLUMN + 8
+SIZE = palette.LABEL_COLUMN
 MATH = SIZE + 8
-CENTRE = np.array([-2.7, -0.3, 0])
-UNIT = 1.0
+KEY = SIZE - 8
+UNIT = 0.95
 SHRINK = 0.75
 TURN = np.deg2rad(35)
-RADIUS = 2.7
-ARC_START = np.deg2rad(-35)
-ARC_AT_100 = np.deg2rad(70)
+WIDE = 1600
+LEFT_CENTRE = np.array([-3.7, 0.25, 0])
+RIGHT_CENTRE = np.array([3.5, 0.25, 0])
+NOTE = SIZE - 16
+FAINT = 0.45
 
 
 def turned(K, angle):
@@ -48,61 +56,55 @@ def turned(K, angle):
     return Q @ K @ Q.T
 
 
-def turn_arc(span, colour, dashed=False):
-    """The arrow of the T_t term: an arc around the kernel that turns it by the span."""
-    arc = Arc(radius=RADIUS, start_angle=ARC_START, angle=span, arc_center=CENTRE, color=colour, stroke_width=8)
-    arc.add_tip(tip_length=0.3, tip_width=0.3)
-    return DashedVMobject(arc, num_dashes=24) if dashed else arc
+def heading(math, words, colour, centre):
+    """The term of the flow and the name of its part, above a panel."""
+    group = VGroup(MathTex(math, font_size=MATH, color=palette.INK), Text(words, font_size=SIZE, color=colour))
+    return group.arrange(DOWN, buff=0.15).move_to(centre + 2.85 * UP)
+
+
+def key(colour, opacity, math):
+    """One entry of the key below the shape panel: a short line in the colour of an ellipse and its width."""
+    line = Line(ORIGIN, 0.5 * RIGHT, color=colour, stroke_width=8).set_stroke(opacity=opacity)
+    return VGroup(line, MathTex(math, font_size=KEY, color=palette.INK)).arrange(RIGHT, buff=0.15)
 
 
 class KernelFlow(layout.QuickScene):
     def construct(self):
         K0 = turned(np.diag([2.0, 1.0]), np.deg2rad(15))
+
+        def start(centre):
+            return DashedVMobject(layout.kernel_ellipse(K0, UNIT, palette.GRAY, centre, width=4)[0], num_dashes=48)
+
         scale = ValueTracker(1.0)
         angle = ValueTracker(0.0)
-        kernel = always_redraw(lambda: layout.kernel_ellipse(scale.get_value() * turned(K0, angle.get_value()), UNIT,
-                                                             palette.INK, CENTRE))
-        ghost = DashedVMobject(layout.kernel_ellipse(K0, UNIT, palette.GRAY, CENTRE, width=4)[0], num_dashes=48)
-        name = MathTex(r"\Theta_t", font_size=MATH, color=palette.INK).move_to(CENTRE + 2.6 * UP + 1.6 * LEFT)
-        tag = layout.tag("schematic")
+        shrunk = always_redraw(lambda: layout.kernel_ellipse(scale.get_value() * K0, UNIT, palette.SCALE, LEFT_CENTRE))
+        turned_100 = always_redraw(lambda: layout.kernel_ellipse(turned(K0, angle.get_value()), UNIT, palette.ROTATION,
+                                                                 RIGHT_CENTRE))
+        turned_wide = layout.kernel_ellipse(turned(K0, TURN * 100 / WIDE), UNIT, palette.ROTATION, RIGHT_CENTRE)
+        turned_wide.set_stroke(opacity=FAINT)
 
-        self.play(FadeIn(kernel), FadeIn(name), FadeIn(tag), run_time=1.5)
-        self.add(ghost)
+        scale_head = heading(notation.FLOW_SCALE, "scale part", palette.SCALE_TEXT, LEFT_CENTRE)
+        shape_head = heading(notation.FLOW_SHAPE, "shape part", palette.ROTATION_TEXT, RIGHT_CENTRE)
+        self.play(FadeIn(start(LEFT_CENTRE)), FadeIn(start(RIGHT_CENTRE)), FadeIn(scale_head), FadeIn(shape_head),
+                  FadeIn(Text("schematic", font_size=palette.TAG, color=palette.GRAY).to_corner(DOWN + LEFT, buff=0.3)),
+                  run_time=1.2)
 
-        # The decay term shrinks the kernel evenly and keeps its axes.
-        decay = VGroup(MathTex(r"-2(k-1)\lambda\,\Theta_t", font_size=MATH, color=palette.INK),
-                       Text("shrinks it evenly", font_size=SIZE, color=palette.GRAY))
-        decay.arrange(DOWN, aligned_edge=LEFT, buff=0.2).move_to([3.7, 2.4, 0])
-        self.play(FadeIn(decay), run_time=0.8)
-        self.play(scale.animate.set_value(SHRINK), run_time=2.5)
-        self.wait(0.7)
+        # The scale part shrinks the kernel evenly and keeps its axes.
+        evenly = Text("shrinks it evenly", font_size=KEY, color=palette.GRAY).move_to(LEFT_CENTRE + 2.45 * DOWN)
+        self.add(shrunk)
+        self.play(scale.animate.set_value(SHRINK), FadeIn(evenly), run_time=2)
+        self.wait(0.5)
 
-        # T_t turns it.
-        arc = turn_arc(ARC_AT_100, palette.INK)
-        twist = VGroup(MathTex(r"T_t", font_size=MATH, color=palette.INK),
-                       Text("turns it", font_size=SIZE, color=palette.GRAY))
-        twist.arrange(DOWN, aligned_edge=LEFT, buff=0.2).move_to([4.6, -0.1, 0])
-        self.play(FadeIn(arc), FadeIn(twist), run_time=0.8)
-        self.play(angle.animate.set_value(TURN), run_time=2.5)
-        self.wait(0.7)
+        # The shape part turns it: by 35 degrees at N = 100.
+        keys = VGroup(key(palette.ROTATION, 1.0, r"N = 100"), key(palette.ROTATION, FAINT, r"N = 1600"))
+        keys.arrange(RIGHT, buff=0.5).move_to(RIGHT_CENTRE + 2.45 * DOWN)
+        self.add(turned_100)
+        self.play(angle.animate.set_value(TURN), FadeIn(keys[0]), run_time=2)
+        self.wait(0.5)
 
-        # Our reading: T_t stays of order 1 / N, so a wider network turns its kernel more slowly.
-        width = ValueTracker(100.0)
-
-        def tip(span):
-            return CENTRE + RADIUS * np.array([np.cos(ARC_START + span), np.sin(ARC_START + span), 0])
-
-        ghost_arc = turn_arc(ARC_AT_100, palette.GRAY, dashed=True)
-        ghost_name = MathTex(r"N = 100", font_size=MATH, color=palette.GRAY).next_to(tip(ARC_AT_100), RIGHT, buff=0.3)
-        live_arc = always_redraw(lambda: turn_arc(ARC_AT_100 * 100 / width.get_value(), palette.INK))
-        live_name = always_redraw(lambda: MathTex(rf"N = {int(round(width.get_value()))}", font_size=MATH,
-                                                  color=palette.INK)
-                                  .next_to(tip(ARC_AT_100 * 100 / width.get_value()), RIGHT, buff=0.3))
-        reading = Text("our reading", font_size=SIZE, color=palette.GRAY).move_to([3.7, -2.5, 0])
-        self.play(FadeOut(twist[1]), run_time=0.4)
-        self.remove(arc)
-        self.add(ghost_arc, live_arc, live_name)
-        self.play(FadeIn(ghost_name), FadeIn(reading), run_time=0.8)
-        self.play(width.animate.set_value(1600.0), run_time=4,
-                  rate_func=lambda t: (np.power(16, t) - 1) / 15)
-        self.wait(5.3)
+        # Our prediction: with T_t of order 1 / N, the turn at N = 1600 is 100 / 1600 of it.
+        less = Text("a wider network turns less", font_size=NOTE, color=palette.GRAY)
+        less.move_to(RIGHT_CENTRE + 3.1 * DOWN)
+        note = Text("our prediction", font_size=palette.TAG, color=palette.GRAY).next_to(less, DOWN, buff=0.12)
+        self.play(FadeIn(turned_wide), FadeIn(keys[1]), FadeIn(less), FadeIn(note), run_time=1.2)
+        self.wait(5)

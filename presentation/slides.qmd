@@ -10,17 +10,27 @@ g2-target: "10:00"
 # - time="0:40" is the budget of a slide. The class "optional" marks a slide we
 #   can cut to reach ten minutes. The render log prints the totals.
 # - A div with the class "anim" stands for a Manim clip. Its storyboard is the
-#   list inside it. The filter shows the clip as soon as it is rendered.
+#   list inside it. The filter shows the clip as soon as it is rendered. Add
+#   still="true" to show the last frame of the clip without playing it.
 # - A div with the class "figure-todo" stands for a figure still to make.
 # - Every result is a variable, shown with the var shortcode and a name such
 #   as EsixMainA. Run make_numbers.py to copy the numbers from the report.
 #   Never type a result.
+# - The slides call R_t "shape". The class names below keep the older word
+#   "rotation", but they only set the orange colour of R_t.
 # - [text]{.g2-key .is-rotation} puts a swatch of the statistic colour before
 #   ink text. Use it in tables and result boxes. In formulas, \Sc, \Rc and
 #   \Ac are the coloured symbols. The classes c-scale, c-rotation and
 #   c-alignment colour a word, so keep them for a word or two.
 # - A div with the class g2-bars draws a bar chart from report variables. See
 #   the Tier 3 slide for the form.
+# - A div with the class g2-takeaway closes a results slide with one sentence
+#   on what the result means for the clock.
+# - A div with the class g2-steprows shows the rows of the table inside it one
+#   per click.
+# - The speaker notes are the script. Each note starts with "Turn N." and then
+#   has the parts "Message:", "Say:", "Point at:" and "If asked:". Each point
+#   is one full sentence. make_script.py collects them into script.md.
 ---
 
 ## {.g2-title-slide time="0:15"}
@@ -63,7 +73,7 @@ $$
       </g>
       <g font-size="40" font-weight="600">
         <text x="400" y="145" fill="#1c5cab">scale</text>
-        <text x="400" y="445" fill="#c9501f">rotation</text>
+        <text x="400" y="445" fill="#c9501f">shape</text>
         <text x="400" y="745" fill="#11704e">alignment</text>
       </g>
       <g font-size="26" fill="#52514e">
@@ -78,12 +88,14 @@ $$
 ```
 
 ::: {.notes}
-Speaker: TBD. Introduce the group and the question in one sentence each.
+Turn 1.
 
-Say: We are group G2 and our project revolves around grokking, the phenomenon
-where a network generalises long after it fits the training data. Specifically,
-we analysed the neural tangent kernel as the network trained via three measurements
-to see what predicts the delay between the memorising the trainig data and generalising. 
+Message: we study what sets the delay in grokking by watching the tangent kernel.
+
+Say:
+
+- We are group G2, and our project is about grokking, where a network generalises long after it fits its training data.
+- We tracked the network's tangent kernel during training to find out what sets the length of that delay.
 :::
 
 # Grokking {.act time="0:05"}
@@ -91,17 +103,25 @@ to see what predicts the delay between the memorising the trainig data and gener
 A network fits its training data early. Why does it take so much longer to work
 on data it has not seen?
 
+::: {.notes}
+Turn 1.
+
+Say:
+
+- What sets this delay is disputed, and we test the published answers.
+:::
+
 ## A network can fit its training data long before it generalises {time="0:35"}
 
 :::: {.columns}
 ::: {.column width="62%"}
-::: {.anim scene="GrokkingTimeline" status="planned" source="measured: baseline, seed 0" length="7 s"}
+::: {.anim scene="GrokkingTimeline" status="renders" source="measured: baseline, seed 0" length="7 s"}
 1. The step axis runs from 1 to 200,000 on a log scale.
-2. Training accuracy, in grey, reaches 0.99 near step
-   {{< var NfiveAOneMemMedian >}}. A hollow marker shows memorisation.
-3. Test accuracy, in ink, stays low and then climbs. A filled marker shows the
-   grokking step $T$.
-4. A bracket from step 0 to $T$ is labelled "grokking time".
+2. Training accuracy, in grey, reaches 0.99. A hollow grey marker labelled
+   "memorised" marks the memorisation step.
+3. Test accuracy, in ink, stays low and then climbs. A filled ink marker
+   labelled "generalised" marks the grokking step $T$.
+4. A brace from step 1 to $T$ is labelled "grokking step $T$".
 5. The data are the baseline run ($\alpha = 1$, $N = 100$, $\eta\lambda = 0$,
    seed 0) from `report_v2/code/data`.
 :::
@@ -112,9 +132,8 @@ on data it has not seen?
 **The grokking step $T$** is the first step at which test accuracy reaches
 0.95.
 
-::: {.g2-result}
-In our baseline, memorisation comes at step {{< var NfiveAOneMemMedian >}} and
-grokking at step {{< var NfiveAOneGrokMedian >}}, as medians over 5 seeds.
+::: {.g2-small}
+We repeated every analysis at test accuracy 0.80 and 0.90.
 :::
 
 ::: {.g2-source}
@@ -125,105 +144,84 @@ Grokking was first reported on small algorithmic datasets
 ::::
 
 ::: {.notes}
-Speaker: TBD.
+Turn 1.
 
 Message: grokking is a long gap between fitting the training data and
 generalising.
 
-Say: This graph depicts one of our baseline networks. Over five seeds, training accuracy
-reaches 0.99 by a median step of {{< var NfiveAOneMemMedian >}}, but test accuracy only reaches 0.95 at a median step of
-{{< var NfiveAOneGrokMedian >}}. That delay between these two events is grokking. We call the
-step where test accuracy reaches 0.95 the grokking step T, and the rest of our project
-revolves around trying to predict T.
+Say:
+
+- This is one of our baseline networks learning modular addition.
+- Training accuracy, in grey, reaches 0.99 early, and we call that step memorisation.
+- Test accuracy, in black, stays near zero and climbs much later, and the step where it reaches 0.95 is the grokking step T.
+- Over five seeds, the median memorisation step is {{< var NfiveAOneMemMedian >}} and the median grokking step is {{< var NfiveAOneGrokMedian >}}.
+- That gap is grokking, and the rest of the talk asks what sets its length.
+
+Point at:
+
+- The hollow marker is memorisation and the filled marker is the grokking step.
+
+If asked:
+
+- We take the levels from Khanh and coauthors, who use 0.99 for memorisation and check their result at test accuracy 0.80, 0.90 and 0.95.
+- We report 0.95 and repeated every analysis at 0.80 and 0.90, and the signs of our scaling exponents hold at every level.
 :::
 
-## The task is addition on a clock with 23 hours {time="0:25"}
+## The task is modular addition, a standard test bed for grokking {time="0:25"}
 
 :::: {.columns}
-::: {.column width="50%" .g2-compact}
-- Each input is a pair $(a, b)$ with $a, b \in \{0, \dots, 22\}$. The target
-  is $(a + b) \bmod 23$.
-- All 529 pairs exist. Each seed trains on 476 of them and tests on the other 53.
-- The network has one hidden layer of width $N$, a ReLU and no biases. It is
-  trained on the squared error by full-batch gradient descent.
+::: {.column width="52%" .g2-compact}
+- The input is a pair $(a, b)$ with $a, b \in \{0, \dots, 22\}$. The target
+  is $(a + b) \bmod 23$, so $(20 + 5) \bmod 23 = 2$.
+- Each run trains on 476 of the 529 pairs and tests on the other 53.
+- The network has one hidden layer of width $N$:
 
 $$
-f(x;\theta) = N^{-1/2}\, W^{(2)} \phi\!\left(D^{-1/2} W^{(1)} x\right), \qquad D = 46
+f(x;\theta) = N^{-1/2}\, W^{(2)} \phi\!\left(D^{-1/2} W^{(1)} x\right)
 $$
+
+::: {.g2-small}
+$N^{-1/2}$ and $D^{-1/2}$ are the NTK parameterisation of
+@jacotNeuralTangentKernel2020.
+:::
 
 ::: {.g2-source}
-This is the baseline of @kumarGrokkingTransitionLazy2024 [App. 8.3, arXiv v3].
-The network groks with no weight decay at all
-[@gromovGrokkingModularArithmetic2023]. A small transformer solves the task by
-turning addition into rotation about a circle
-[@nandaProgressMeasuresGrokking2023].
+Modular addition is a common test bed for grokking
+[@gromovGrokkingModularArithmetic2023; @nandaProgressMeasuresGrokking2023;
+@mohamadiWhyYouGrok2024]. Our setup is the baseline of
+@kumarGrokkingTransitionLazy2024 [App. 8.3, arXiv v3].
 :::
 :::
-::: {.column width="50%"}
-::: {.anim scene="ModularAdditionTable" status="planned" source="the split of seed 0" length="5 s"}
-1. In a 23 by 23 grid, row $a$ and column $b$ hold $(a + b) \bmod 23$, coloured
-   by value, so equal sums form diagonal stripes.
-2. The 476 training cells fade to grey. The 53 test cells stay bright.
-3. The question appears: can the network fill in the bright cells?
+::: {.column width="48%"}
+::: {.anim scene="ModularAdditionTable" still="true" status="renders" source="the split of seed 42" length="5 s"}
+1. In a 23 by 23 grid, row $a$ and column $b$ hold $(a + b) \bmod 23$, shaded
+   by value.
+2. The 476 training cells fade. The 53 test cells keep their shade and get an
+   outline.
+3. The question appears: can the network fill in the outlined cells?
+4. The slide shows the last frame as a still.
 :::
 :::
 ::::
 
 ::: {.notes}
-Speaker: TBD.
+Turn 1.
 
-Message: the task is small and has a known structure, so we can study the
-kernel exactly.
+Message: the task is small and standard, so we can measure the kernel exactly.
 
-Say: The task is modular addition with modulus 23, like a clock with 23 hours.
-Every one of the 529 pairs is in the dataset. Each run trains on 476 pairs and
-must fill in the other 53. The network is a two-layer perceptron, and this is
-the baseline that Kumar and coauthors used. It groks even without weight decay.
-:::
+Say:
 
-## What sets the length of the delay is disputed {time="0:20"}
+- Our task is modular addition with modulus 23.
+- The network sees two numbers and must output their sum mod 23, so 20 plus 5 gives 2.
+- Each run trains on 476 of the 529 pairs and must fill in the other 53, the outlined cells.
+- This task is a standard test bed in the theory of grokking, and our setup is the baseline of Kumar and coauthors.
 
-::: {.g2-cards}
-::: {.g2-card .is-scale}
-[Weight norm]{.g2-card-title}
+If asked:
 
-Networks trained with weight decay grok when the weight norm reaches a critical
-value [@khanhWeightNormSets2026]. Under cross-entropy the norm acts through the
-scale of the logits [@khanhWhatDoesWeight2026].
-:::
-
-::: {.g2-card .is-ink}
-[Weight-decay rate]{.g2-card-title}
-
-The grokking time scales with $1/(\eta\lambda)$, the inverse of the product of
-learning rate and weight decay
-[@kimGrokkingWeightDecayClock2026; @pracherSpectralTheoryGrokking2026].
-:::
-
-::: {.g2-card .is-rotation}
-[Lazy to rich]{.g2-card-title}
-
-Grokking is the move from a fixed tangent kernel to one that adapts to the task
-[@kumarGrokkingTransitionLazy2024].
-:::
-:::
-
-::: {.g2-lead .fragment}
-None of these accounts measures whether the kernel rotates. We ask whether the
-grokking time follows the **shape** of the kernel, its **scale**, or the
-**weight-decay rate**.
-:::
-
-::: {.notes}
-Speaker: TBD.
-
-Message: three published accounts give three different clocks, and none of
-them looks at the shape of the kernel.
-
-Say: The literature disagrees about what actually sets this delay. The current candidates are the
-weight norm, the weight-decay rate, and a move from lazy to rich training,
-where the network's kernel starts to adapt. To decide between them we need to
-measure the kernel itself.
+- We divide by the square root of N because this is the NTK parameterisation of Jacot and coauthors.
+- Those factors give the network and its kernel a limit as the width grows, so networks of different widths have kernels on the same scale.
+- The network has a ReLU and no biases, and its input is the one-hot vectors of a and b side by side, so D is 46.
+- It is trained on the squared error by full-batch gradient descent with learning rate 100.
 :::
 
 # The tangent kernel {.act time="0:05"}
@@ -231,123 +229,154 @@ measure the kernel itself.
 What does it mean for a network to learn features, and how could we see it
 happen?
 
-## The tangent kernel says how a step on one input moves the output on another {time="0:40"}
+::: {.notes}
+Turn 2.
 
-:::: {.columns}
-::: {.column width="46%" .g2-compact}
+Say:
+
+- To answer that we need one tool, the tangent kernel.
+:::
+
+## The tangent kernel shows which inputs the network treats alike {time="0:35"}
+
+::: {.g2-lead}
+The tangent kernel is a snapshot of the features a network learns with.
+:::
+
 $$
 K(x, x') = \big\langle \nabla_\theta f(x;\theta),\, \nabla_\theta f(x';\theta) \big\rangle
 $$
 
-A gradient step on the loss at $x$ moves the weights along
-$\nabla_\theta f(x;\theta)$. To first order, the output at $x'$ then moves by
-
-$$
-\Delta f(x') \approx -\eta\, K(x', x)\, \frac{\partial \ell}{\partial f}(x).
-$$
-
-So $K(x, x')$ measures how much the network treats $x$ and $x'$ alike. Over all
-pairs it forms a matrix, the kernel $K$.
-
-::: {.g2-source}
-The tangent kernel is from @jacotNeuralTangentKernel2020.
-:::
-:::
-::: {.column width="54%"}
-::: {.anim scene="NTKFromScratch" status="planned" source="schematic" length="10 s"}
-1. A small network appears with two inputs, $x$ and $x'$, and their outputs as
-   two bars.
-2. One gradient step pulls the output at $x$ towards its target.
-3. The output at $x'$ moves too. The size of its move is $K(x', x)$.
-4. Repeat for every pair. The values fill a heat map, the kernel matrix.
-5. Inputs that the network treats alike light up together.
-:::
-:::
-::::
+- A gradient step on $x$ moves the output at $x'$ in proportion to $K(x', x)$.
+- Near its start the network is a linear model on the features
+  $\nabla_\theta f$ [@chizatLazyTrainingDifferentiable2020].
+- If $K$ stays fixed, training ends at kernel regression with $K$
+  [@jacotNeuralTangentKernel2020].
 
 ::: {.notes}
-Speaker: TBD.
+Turn 2.
 
-Message: the kernel is the network's own similarity between inputs.
+Message: the kernel is the network's own similarity between inputs, and it
+shows which features the network learns with.
 
-Say: Suppose we take one gradient step to fix the output on one input, x. The
-weights move in the direction of the gradient at x, but it also changes the output on
-every other input as well. For an input x-prime, the change is proportional to
-the inner product of the two gradients, which is the tangent kernel. If the kernel is
-large, the network treats the two inputs alike. Collecting these values over every pair of test values
-produces a matrix that describes what the network currently thinks is similar. 
+Say:
+
+- Suppose we take one gradient step to fix the output on one input, x.
+- The weights move, so the output on every other input moves too.
+- For another input x-prime, that move is set by the inner product of the two gradients, which is the tangent kernel.
+- Near its start the network is a linear model on these gradient features, and if the kernel stays fixed, training ends at kernel regression with it.
+- So the kernel is a snapshot of the features the network learns with.
+
+If asked:
+
+- Section 5 of Jacot and coauthors shows that in the infinite-width limit the trained network equals kernel ridge regression with the tangent kernel as the ridge goes to zero.
+- Their result has a second term that comes from the network at the start, and our centred network starts at zero, so that term vanishes.
+- The linear model is defined in Section 1.1 of Chizat, Oyallon and Bach.
 :::
 
-## In the lazy regime the kernel stays fixed during training {time="0:25"}
+## Grokking may be the move from a fixed kernel to one that learns features {time="0:30"}
 
 :::: {.columns}
-::: {.column width="50%" .g2-compact}
-- At infinite width the tangent kernel stays constant, and the network trains
-  as a kernel method [@jacotNeuralTangentKernel2020].
-- Scaling up the output makes training lazier
-  [@chizatLazyTrainingDifferentiable2020]. We use the knob of Kumar and
-  coauthors [@kumarGrokkingTransitionLazy2024]:
+::: {.column width="52%" .g2-compact}
+- **Lazy.** The kernel stays near its start, as in kernel regression.
+- **Rich.** The kernel changes, and the network learns features.
+- Grokking may be the move from lazy to rich
+  [@kumarGrokkingTransitionLazy2024].
+- A larger output scale $\alpha$ keeps the network lazy for longer
+  [@chizatLazyTrainingDifferentiable2020].
 
 $$
 \tilde f(x;\theta) = \alpha\,\big[f(x;\theta) - f(x;\theta_0)\big],
-\qquad \eta = \eta_0/\alpha^2 .
+\qquad \eta = \eta_0/\alpha^2
 $$
-
-- A larger $\alpha$ gives lazier training. A rich network changes its kernel
-  and learns features. Grokking may be the move from lazy to rich
-  [@kumarGrokkingTransitionLazy2024].
 :::
-::: {.column width="50%"}
-::: {.anim scene="LazyVersusRich" status="planned" source="schematic, then measured" length="8 s"}
-1. The same network is shown at $\alpha = 0.5$, $1$ and $2$.
-2. At large $\alpha$ the weights barely move, so the kernel barely changes.
-3. At small $\alpha$ the kernel changes during training.
-4. The measured part shows that in the baseline runs, the lazier the network,
-   the later it groks. The data are from E01 in `report_v2/code`.
+::: {.column width="48%"}
+::: {.anim scene="LazyVersusRich" still="true" status="renders" source="schematic, then measured" length="8 s"}
+1. The schematic part shows the same network at $\alpha = 0.5$, $1$ and $2$.
+2. The measured part, which is the last frame and the still on the slide,
+   shows test accuracy of the baseline runs at the three values of $\alpha$.
+   The lazier the network, the later it groks.
 :::
 :::
 ::::
 
 ::: {.notes}
-Speaker: TBD.
+Turn 2.
 
-Message: alpha sets how lazy training is, and the lazy to rich account says
-grokking happens when the kernel starts to move.
+Message: alpha sets how long a network stays lazy, and the lazy to rich
+account says grokking happens when the kernel starts to move.
 
-Say: For an infinitely wide network the kernel does not change, so training is
-a fixed kernel method. That is the lazy regime. Multiplying the output by a
-factor alpha pushes a network towards it. When the kernel does change, the network
-learns new features, which is the rich regime. Kumar and coauthors propose that
-grokking is the switch from lazy to rich.
+Say:
+
+- In the lazy regime the kernel barely moves, so the network acts like kernel regression with the kernel it started with.
+- In the rich regime the kernel changes, so the network learns new features.
+- Kumar and coauthors propose that grokking is the move from lazy to rich.
+- Their knob is alpha, which scales the output, and a larger alpha lets the weights move less, so the network stays lazy for longer.
+- In our runs, the lazier the network, the later it groks.
+
+Point at:
+
+- The plot shows test accuracy at three values of alpha, and at alpha 2 no seed groks within 200,000 steps.
+
+If asked:
+
+- The centred predictor and the learning rate divided by alpha squared are from Kumar and coauthors, Appendix 8.1.
+- Chizat, Oyallon and Bach show in Section 1.2 that scaling the output by a large factor makes training lazy.
 :::
 
-## A kernel can grow, or it can change shape {time="0:25"}
+## A kernel can grow or change shape, and a distance cannot tell which {time="0:35"}
 
-::: {.anim .tall scene="ScaleVersusRotation" status="planned" source="schematic" length="8 s"}
+:::: {.columns}
+::: {.column width="48%" .g2-compact}
+The usual measure of how far the kernel has moved is a distance
+[@geigerDisentanglingFeatureLazy2020; @mohamadiWhyYouGrok2024].
+
+$$
+D_t = \frac{\Fnorm{K_t - K_0}}{\Fnorm{K_0}}
+$$
+
+It splits exactly into a part for size and a part for shape.
+
+$$
+D_t^2 = \underbrace{(\Sc - 1)^2}_{\text{scale part}} + \underbrace{2\,\Sc\,\Rc}_{\text{shape part}}
+$$
+
+::: {.g2-result}
+In our baseline, the scale part is {{< var NtwoAOneGrok >}} of $D_t^2$ at
+grokking.
+:::
+:::
+::: {.column width="52%"}
+::: {.anim scene="ScaleVersusRotation" status="renders" source="schematic" length="8 s"}
 1. Draw the kernel as an ellipse. Its axes are the eigenvectors, and their
    lengths are the eigenvalues.
-2. Growth: the ellipse gets larger and keeps its axes. Every similarity is
-   multiplied by one number.
-3. Change of shape: the ellipse turns or changes its proportions. The kernel now
-   treats different inputs alike.
-4. Both paths travel the same distance $D_t$ from the start.
+2. On the left, a change of scale: the ellipse gets larger and keeps its axes.
+3. On the right, a change of shape: the ellipse turns at a fixed size.
+4. Both paths end at the same distance $D_t = 0.50$ from the start.
 5. The word "schematic" stays on screen.
 :::
+:::
+::::
 
 ::: {.notes}
-Speaker: TBD.
+Turn 2.
 
-Message: growth and change of shape are different events with different
-meanings.
+Message: a large kernel distance can come from growth alone, so we split it.
 
-Say: Think of the kernel as an ellipse. Its axes say which directions in the
-data the network cares about. The kernel can grow, so the ellipse gets bigger
-but points the same way. Or it can change shape, so the ellipse turns or
-stretches. Only the second one changes what the network treats as similar.
-Both can produce the same distance from the start.
+Say:
+
+- The usual evidence that the kernel changed is its distance from where it started.
+- Think of the kernel as an ellipse whose axes are the directions the network cares about.
+- It can grow and point the same way, or it can turn, and both give the same distance.
+- The squared distance splits exactly into a scale part and a shape part, and in our baseline {{< var NtwoAOneGrok >}} of it at grokking is scale.
+- So a large distance alone does not show that the network learned new features.
+
+If asked:
+
+- The split comes from expanding the squared norm of the difference, and the backup slides give the steps.
 :::
 
-## Three numbers describe how the kernel moved {time="0:35"}
+## Three numbers say how the kernel moved {time="0:30"}
 
 ::: {.g2-cards}
 ::: {.g2-card .is-scale .fragment}
@@ -357,18 +386,19 @@ $$
 \Sc = \frac{\Fnorm{K_t}}{\Fnorm{K_0}}
 $$
 
-It starts at 1. Above 1 the kernel has grown, and below 1 it has shrunk.
+The size of the kernel relative to the start, 1 when unchanged.
 :::
 
 ::: {.g2-card .is-rotation .fragment}
-[Rotation]{.g2-card-title}
+[Shape]{.g2-card-title}
 
 $$
 \Rc = 1 - \frac{\langle K_t, K_0 \rangle_F}{\Fnorm{K_t}\,\Fnorm{K_0}}
 $$
 
-It starts at 0 and ignores rescaling. It is 0 only when $K_t = cK_0$. This is
-the kernel distance of @fortDeepLearningKernel2020.
+One minus the cosine between $K_t$ and $K_0$ when treating them as long
+vectors. It is 0 when the kernel is only rescaled
+[@fortDeepLearningKernel2020].
 :::
 
 ::: {.g2-card .is-alignment .fragment}
@@ -378,365 +408,417 @@ $$
 \Ac = \frac{\langle CK_tC,\, CYY^\top C \rangle_F}{\Fnorm{CK_tC}\,\Fnorm{CYY^\top C}}
 $$
 
-It measures how well the kernel matches the labels, and it ignores rescaling.
-This is the centred alignment of @cortesAlgorithmsLearningKernels2024.
+The cosine between the centred kernel and the label kernel $YY^\top$, which
+marks pairs with the same answer. It is high when the network treats inputs as
+alike exactly when they share an answer
+[@cortesAlgorithmsLearningKernels2024].
 :::
+:::
+
+::: {.g2-lead .g2-invariant}
+Shape and alignment ignore rescaling. Only scale sees the size.
 :::
 
 ::: {.g2-small}
-$K_t$ is the tangent kernel of the summed logits divided by $\sqrt{p}$, on the
-53 test pairs of a run [@mohamadiFastWellFoundedApproximation2022]. $C$ centres
-a matrix and $Y$ holds the one-hot targets. We call $R_t$ the rotation,
-although it measures any change of shape.
+$K_t$ is the summed-logit kernel on the 53 test pairs of a run
+[@mohamadiFastWellFoundedApproximation2022].
 :::
 
 ::: {.notes}
-Speaker: TBD.
+Turn 2.
 
-Message: we use one number for growth, one for change of shape and one for
-agreement with the labels.
+Message: one number for size, one for shape and one for agreement with the
+labels, and only the first sees the size.
 
-Say: We measure three numbers on the kernel. Scale, in blue, is its size
-relative to the start. Rotation, in orange, is one minus the cosine between the
-kernel now and at the start, so it ignores size and only sees shape. Alignment,
-in green, is how well the kernel lines up with the labels. These three colours
-stay the same in every figure for the rest of the talk.
+Say:
+
+- Scale, in blue, is the size of the kernel relative to the start.
+- Shape, in orange, flattens each kernel into one long vector and takes one minus the cosine between now and the start.
+- Alignment, in green, asks whether the kernel treats inputs as alike when they share an answer.
+- Shape and alignment ignore the size, so a kernel that only grows moves scale alone.
+- These colours stay the same for the rest of the talk.
+
+If asked:
+
+- We measure the kernel of the summed logits divided by the square root of p, on the 53 test pairs of each run.
+- Mohamadi and coauthors show that this sum of logits kernel converges to the full kernel at initialisation, and it is far cheaper to compute.
+- The cosine is exact for matrices: the Frobenius inner product is the dot product of the flattened matrices, so Cauchy-Schwarz holds.
+- Both kernels are positive semidefinite, so their inner product is not negative and shape lies between 0 and 1.
+- Shape is zero only when the kernel is a positive multiple of the start, and any other change raises it, including a change in the proportions of the eigenvalues.
+- The shape statistic is the kernel distance of Fort and coauthors.
+- The alignment is the centred alignment of Cortes, Mohri and Rostamizadeh, who show that a kernel with high alignment to the labels admits a good predictor.
 :::
 
-## The distance mixes growth and rotation {time="0:20"}
+# What sets the clock? {.act time="0:05"}
 
-:::: {.columns}
-::: {.column width="48%"}
-::: {data-id="identity" .g2-lead}
-$$
-D_t^2 = \underbrace{(\Sc - 1)^2}_{\text{scale part}} + \underbrace{2\,\Sc\,\Rc}_{\text{rotation part}}
-$$
-:::
-
-- A kernel that only grows has $R_t = 0$, so $D_t = |S_t - 1|$.
-- A large $D_t$ therefore does not show that the kernel rotated.
-:::
-::: {.column width="52%"}
-::: {.anim scene="IdentityLevelSets" status="exists as ScaleRotationLockstep, needs the report's definitions" source="identity, then measured" length="7 s"}
-1. The plane has $S_t$ across and $R_t$ up, with grey lines of equal $D_t$.
-2. A path along $R_t = 0$ shows pure growth.
-3. A second path rotates at a fixed size.
-4. Both end on the same grey line, so they have the same $D_t$.
-5. The measured path of the baseline run appears. It stays close to the growth
-   axis.
-:::
-:::
-::::
+Which kind of kernel movement sets the grokking time?
 
 ::: {.notes}
-Speaker: TBD.
+Turn 3.
 
-Message: a big distance can come from growth alone.
+Say:
 
-Say: Because all three numbers come from one matrix, the squared distance
-splits into a scale part and a rotation part. If
-the kernel only grows, the rotation part is zero and the distance is just the
-change in size. So a large distance does not prove that the network learned new
-features. That is why we track scale and rotation separately.
+- Now we can ask which kind of kernel movement sets the grokking time.
 :::
 
-## In theory, weight decay only rescales the kernel {time="0:25"}
+## Every published clock is scale-like {time="0:25"}
+
+A **clock** is the quantity that sets when a network groks.
+
+::: {.g2-cards}
+::: {.g2-card .is-scale}
+[Weight norm]{.g2-card-title}
+
+The network groks once weight decay has shrunk the weight norm to a critical
+value [@khanhWeightNormSets2026; @khanhWhatDoesWeight2026].
+:::
+
+::: {.g2-card .is-scale}
+[Weight-decay rate]{.g2-card-title}
+
+The grokking time scales with $1/(\eta\lambda)$
+[@kimGrokkingWeightDecayClock2026; @pracherSpectralTheoryGrokking2026].
+:::
+
+::: {.g2-card .is-ink}
+[Lazy to rich]{.g2-card-title}
+
+Grokking is the move to a kernel that adapts. Its evidence is a distance,
+which mostly records growth [@kumarGrokkingTransitionLazy2024].
+:::
+:::
+
+::: {.g2-lead .fragment}
+None of them measures the shape of the kernel. We ask which kind of kernel
+movement sets the time.
+:::
+
+::: {.notes}
+Turn 3.
+
+Message: the published clocks are all scale-like, and none measures shape.
+
+Say:
+
+- By a clock we mean the quantity that sets when a network groks.
+- One account says the network groks once weight decay has shrunk the weight norm enough.
+- Another says doubling the weight decay halves the time.
+- The third rests on the kernel distance, which mostly records growth.
+- So every account is scale-like, and none measures the shape of the kernel.
+
+If asked:
+
+- Under cross-entropy, Khanh and coauthors find that the weight norm acts through the scale of the logits.
+:::
+
+## In theory, weight decay rescales and width slows the change of shape {time="0:30"}
 
 $$
-\frac{d\Theta_t(x,x')}{dt} =
-\underbrace{-2(k-1)\lambda\,\Theta_t(x,x')}_{\text{rescales}}
-+ \underbrace{T_t(x,x') + T_t(x',x)}_{\text{can rotate}}
+\frac{dK_t(x,x')}{dt} =
+\underbrace{-2(k-1)\lambda\,K_t(x,x')}_{\text{scale part}}
++ \underbrace{T_t(x,x') + T_t(x',x)}_{\text{shape part}}
 $$
 
 :::: {.columns}
-::: {.column width="55%" .g2-compact}
-- The weight decay $\lambda$ appears only in the first term, which rescales the
-  kernel.
-- Only $T_t$ can rotate it. At initialisation $T_0$ has expectation of order
-  $1/N$ in the width $N$, as the same paper states.
-- Our reading: if $T_t$ stays of order $1/N$ during training, a wider network
-  rotates its kernel more slowly and should grok later.
+::: {.column width="50%" .g2-compact}
+- Weight decay $\lambda$ enters only the scale part, which shrinks the kernel
+  evenly.
+- Only $T_t$ changes the shape, and at the start it is of order $1/N$.
+- With $T \propto N^{a}(\eta\lambda)^{b}$, a scale clock gives $b = -1$
+  [@kimGrokkingWeightDecayClock2026]. A shape clock gives $a > 0$ and
+  $b \approx 0$ (our prediction).
 
 ::: {.g2-source}
-The kernel flow is Eqs. S5 and S6 of @lewkowyczTrainingDynamicsDeep2021
-[arXiv v2]. It assumes gradient flow and a $k$-homogeneous network, so for our
-network it is a guide.
+Eqs. S5 and S6 of @lewkowyczTrainingDynamicsDeep2021 [arXiv v2], for gradient
+flow on a network whose output is homogeneous of degree $k$ in its weights. For
+our network it is a guide.
 :::
 :::
-::: {.column width="45%"}
-::: {.anim scene="KernelFlow" status="planned" source="schematic" length="7 s"}
-1. The ellipse of the kernel appears.
-2. The weight-decay term shrinks it evenly and keeps its axes.
-3. The $T_t$ term turns it.
-4. As the width grows, the $T_t$ arrow gets shorter.
+::: {.column width="50%"}
+::: {.anim scene="KernelFlow" still="true" status="renders" source="schematic" length="6 s"}
+1. Two panels, one per term. Each starts from the same dashed ellipse.
+2. Left, the scale part: the ellipse shrinks to 0.75 of its size and keeps its
+   axes.
+3. Right, the shape part: the ellipse turns by 35 degrees at $N = 100$, and by
+   100 / 1600 of that at $N = 1600$, so a wider network turns less. That is
+   our prediction.
+4. The slide shows the last frame as a still.
 :::
 :::
 ::::
 
 ::: {.notes}
-Speaker: TBD.
+Turn 3.
 
-Message: weight decay alone cannot change the shape of the kernel, so a
-rotation clock and a weight-decay clock make different predictions.
+Message: the theory gives the two clocks different predictions for width and
+weight decay, which we test with the exponents a and b.
 
-Say: Lewkowycz and Gur-Ari wrote down how the kernel changes under gradient
-flow with weight decay. The weight decay only enters a term that shrinks the
-kernel evenly. Any change of shape has to come from the second term, T, which
-starts out small for wide networks. So if rotation sets the clock, and T stays
-small during training, wider networks should grok later and the weight decay
-should matter much less. That second step is our own reading.
+Say:
+
+- Lewkowycz and Gur-Ari wrote down how the kernel changes under weight decay.
+- Weight decay appears only in the first term, which changes the scale and never the shape.
+- Only the second term, T, changes the shape, and it starts out of order one over the width.
+- So if scale sets the clock, b is minus one.
+- If shape sets the clock, wider networks grok later and weight decay matters little, which is our own prediction.
+
+Point at:
+
+- On the left, weight decay shrinks the kernel and keeps its axes.
+- On the right, the shape term turns it, and at width 1600 the turn is a sixteenth of the turn at width 100.
+
+If asked:
+
+- Here k is the degree to which the output scales when every weight is scaled, and our network has k equal to 2 before the centring.
+- The centred network is not homogeneous, so the equation is a guide for us and not a theorem.
+- Lewkowycz and Gur-Ari credit the order one over N of T at the start to Dyer and Gur-Ari.
 :::
 
-# The experiment {.act time="0:05"}
+## Our hypothesis: the shape of the kernel sets the grokking time {time="0:30"}
 
-How can one experiment tell the three clocks apart?
+::: {.g2-lead}
+**Hypothesis.** A network groks once its kernel has changed shape enough, so
+the shape statistic $R_t$ sets the clock.
+:::
 
-## Each account predicts a different result {time="0:30"}
-
-| Account | Fixed value at grokking (Tier 1) | Width exponent $a$ (Tier 2) | Decay exponent $b$ (Tier 2) | Early predictor (Tier 3) |
-|:---|:---|:---|:---|:---|
-| [Rotation clock]{.g2-key .is-rotation}, our hypothesis | $R_t$ reaches a threshold | $a > 0$, since $T_t$ shrinks with width (ours) | $b \approx 0$ | $R_t$ |
-| Weight-decay clock [@kimGrokkingWeightDecayClock2026; @pracherSpectralTheoryGrokking2026] | Not stated | $a \approx 0$ (ours) | $b \approx -1$ | $\eta\lambda$ alone |
-| [Norm or scale clock]{.g2-key .is-scale} [@khanhWeightNormSets2026; @khanhWhatDoesWeight2026] | $S_t$ at grokking is fixed (ours) | Not stated | Not stated | $S_t$ |
+::: {.g2-steprows}
+| Test | [Shape clock]{.g2-key .is-rotation} (our hypothesis) | Weight-decay clock | [Scale clock]{.g2-key .is-scale} |
+|:---|:---|:---|:---|
+| **Tier 1.** Is a statistic the same at every grokking step? | Yes, $R_t$ | Not stated | Yes, $S_t$ (our prediction) |
+| **Tier 2.** How does $T$ scale? | Wider networks grok later, and weight decay matters little (our prediction) | $T \propto 1/(\eta\lambda)$, and width does not matter (our prediction) | Not stated |
+| **Tier 3.** What predicts $T$ early? | $R_t$ | $\eta\lambda$, which a real network does not report | $S_t$ |
+:::
 
 ::: {.g2-small}
-The exponents are those of $\log T = c + a\log N + b\log(\eta\lambda)$.
-"Ours" marks our reading of a source. Each test of the next slides answers one
-column. Tier 3 uses as predictors only what can be measured on a network. The
-settings enter it only as a reference.
+"Our prediction" marks a prediction that the source does not state, which we
+derived from it.
 :::
 
 ::: {.notes}
-Speaker: TBD.
+Turn 3.
 
-Message: each of the three tests separates the accounts.
+Message: our hypothesis is that shape sets the clock, and each test can tell the
+accounts apart.
 
-Say: Each account makes different predictions. A rotation clock says grokking
-happens when rotation reaches a fixed value, that wider networks grok later,
-and that weight decay barely matters. A weight-decay clock says the time is
-proportional to one over the weight decay. A norm clock says the scale is fixed
-at grokking. We designed one test for each column of this table. In the last
-column we test only the kernel statistics. We set the weight decay ourselves, so
-we know it exactly. In a general network the effective regularisation cannot be
-measured directly, while the tangent kernel can.
+Say:
+
+- Our hypothesis is that the shape of the kernel sets the grokking time.
+- Each test separates the accounts in a different way.
+- Tier 1 asks whether one statistic takes the same value at every grokking step, and we expect shape.
+- Tier 2 asks how the time scales, and we expect wider networks to grok later and weight decay to matter little.
+- Tier 3 asks which statistic, read early, predicts the time best, and we expect shape.
+
+If asked:
+
+- In Tier 3 we test only quantities measured on the network.
+- We set the weight decay ourselves, so we know it exactly, but a general network does not report its effective regularisation, while its tangent kernel can be measured.
+- The cells marked "our prediction" give a prediction the source does not state, which we derived from it.
+- For example, the weight-decay papers give one over the weight decay but say nothing about width, so "width does not matter" is ours.
 :::
 
-## We trained 720 networks across laziness, width and weight decay {time="0:25"}
+## We trained 720 networks across laziness, width and weight decay {time="0:20"}
 
-:::: {.columns}
-::: {.column width="58%"}
 | Setting | Values | What it tests |
 |:---|:---|:---|
 | Output scale $\alpha$ | 0.5, 1, 2 | How lazy training is |
-| Width $N$ | 50 to 1600, six values | The size of $T_t$ |
+| Width $N$ | 50 to 1600, six values | How fast the shape can change |
 | Weight decay $\eta\lambda$ | 0, and seven values from $3\times10^{-6}$ to $3\times10^{-3}$ | The weight-decay clock |
 
-144 cells with 5 seeds each give 720 runs of 200,000 steps. Each seed has its
-own split. The runs took {{< var NoneSummedHours >}} hours of compute in all.
+::: {.g2-compact}
+Each of the 144 cells has 5 seeds, and each run has 200,000 steps.
 
-::: {.g2-result}
-A run that never reaches test accuracy 0.95 is kept. Its grokking step is
-recorded as more than 200,000, which is a censored time.
+A run that has not grokked by then is kept as **censored**, with
+$T > 200{,}000$. The fits use it through the likelihood
+[@kalbfleischStatisticalAnalysisFailure2002].
 :::
+
+::: {.g2-small}
+Our baseline grokking steps are close to those of
+@kumarGrokkingTransitionLazy2024 [Fig. 2(c), arXiv v3].
 :::
-::: {.column width="42%"}
-::: {.anim scene="GridOfRuns" status="renders" source="design, report_runs.csv" length="5 s"}
-1. Three panels show 6 by 8 cells, one panel per value of $\alpha$, with the
-   width $N$ down and the weight decay $\eta\lambda$ across.
-2. Then the counts appear. There are $3 \times 6 \times 8 = 144$ cells with 5
-   seeds each, so 720 runs. The clip reads the counts from the runs table.
-:::
-:::
-::::
 
 ::: {.notes}
-Speaker: TBD.
+Turn 3.
 
-Message: one grid crosses all three knobs, so the accounts are tested on the
-same runs.
+Message: one grid crosses all three knobs, and slow runs are kept as censored
+data.
 
-Say: We trained 720 networks. The output scale alpha controls laziness. The
-width controls how fast the kernel can rotate. And weight decay is the knob of
-the weight-decay clock. Every combination has five seeds. Runs that never grok
-are kept as censored data, so the slow cells are not thrown away.
+Say:
+
+- We trained 720 networks across alpha, width and weight decay, with five seeds per cell.
+- Runs that never grok within 200,000 steps are kept as censored times, where we only know the step is later.
+- At the baseline we reproduce the grokking steps of Kumar and coauthors.
+
+If asked:
+
+- Dropping the runs that never grok would keep only the fast runs, so survival models use them through the likelihood instead.
+- The fixed settings are p of 23, 90 percent of the pairs for training, full-batch gradient descent with learning rate 100 and the squared error.
+- Each seed has its own split, and the runs took {{< var NoneSummedHours >}} hours of compute in all.
 :::
 
 # Results {.act time="0:05"}
 
 Which clock does the grokking time follow?
 
-## Baseline: the network memorises early, groks late, and its kernel mostly grows {time="0:30"}
+::: {.notes}
+Turn 4.
+
+Say:
+
+- Which clock does the grokking time follow?
+:::
+
+## Tier 1: at a fixed width, shape is the statistic most tied to grokking {time="0:45"}
 
 :::: {.columns}
-::: {.column width="60%"}
-::: {.anim scene="BaselineKernel" status="renders" source="measured: baseline, 5 seeds" length="8 s"}
-1. The clip plots $S_t$ on top and $R_t$ below against step, for the five seeds
-   at $\alpha = 1$, $N = 100$ and $\eta\lambda = 0$. The line is the median and
-   the band the range.
-2. A hollow marker shows the median memorisation step and a filled one the
-   median grokking step.
-3. A bar splits $D_t^2$ at grokking into the scale part and the rotation part.
+::: {.column width="62%"}
+![](assets/figures/E3_placebo.png){.g2-fig}
 :::
-:::
-::: {.column width="40%" .g2-compact}
-::: {.g2-result}
-At $\alpha = 1$ the scale part carries {{< var NtwoAOneGrok >}} of $D_t^2$ at
-grokking. By the last step the scale is $S_t$ = {{< var NtwoAOneSfinal >}},
-while the rotation is only $R_t$ = {{< var NtwoAOneRfinal >}}. At $\alpha = 2$
-no seed groks within 200,000 steps.
-:::
+::: {.column width="38%" .g2-compact}
+If grokking has a boiling point, a statistic reads the same in every run at
+the moment it groks.
+
+We also read each run at another run's grokking step. The **SD ratio** says how
+much more the readings spread there.
 
 ::: {.g2-small}
-Our grokking steps, and their order in $\alpha$, are close to those of
-@kumarGrokkingTransitionLazy2024 [Fig. 2(c), arXiv v3]. Lazier networks grok
-later.
+The {{< var EthreeNhundredRuns >}} runs of width 100 that grok. Boxes hold the
+middle half of the runs, and whiskers reach 1.5 box heights.
+:::
+
+::: {.g2-takeaway}
+Shape bunches up the most at the true grokking step, and then scale.
+Alignment hardly changes.
 :::
 :::
 ::::
 
 ::: {.notes}
-Speaker: TBD.
+Turn 4.
 
-Message: on the baseline, the distance is mostly growth.
+Message: at a fixed width, the shape statistic marks the grokking step most
+closely.
 
-Say: These are the five baseline runs at alpha 1, with the median as the
-line. They memorise at a median step of {{< var NfiveAOneMemMedian >}} and
-grok at a median step of {{< var NfiveAOneGrokMedian >}}. Look at the kernel.
-By the end the scale is {{< var NtwoAOneSfinal >}} times its starting value,
-while the rotation is only {{< var NtwoAOneRfinal >}}. At grokking,
-{{< var NtwoAOneGrok >}} of the squared distance is growth. As Kumar and
-coauthors found, lazier networks grok later, and at alpha 2 no seed groks
-within 200,000 steps.
+Say:
+
+- Okay, so first we test whether grokking happens when a statistic hits a fixed value.
+- Think of water, which boils at 100 degrees in any pot.
+- If grokking had a boiling point, the statistic would read the same in every run at the moment that run groks.
+- But a thermometer stuck on one number also reads the same every time.
+- So we also read each run at the step where some other run grokked.
+- If the statistic is a real boiling point, those readings should be much more spread out.
+- Shape spreads out the most, {{< var EthreeNhundredRRatio >}} times.
+- Scale spreads {{< var EthreeNhundredSRatio >}} times, and alignment hardly at all.
+
+Point at:
+
+- In each panel the left box is the true grokking step and the right box is the placebo.
+
+If asked:
+
+- The p values are {{< var EthreeNhundredRP >}} for shape, {{< var EthreeNhundredSP >}} for scale and {{< var EthreeNhundredAP >}} for alignment.
+- Alignment is tied to grokking a little, but its ratio is close to one, so we do not call it a threshold.
+- A standard deviation carries the units of its statistic, so we compare statistics only through the ratio and p.
+- The placebo SD is the median over 2,000 shuffles in which no run keeps its own step.
 :::
 
-## Tier 1: at a fixed width, rotation is the statistic most tied to grokking {time="0:45"}
+## No statistic is a fixed threshold, so shape is not the whole clock {time="0:25"}
 
 :::: {.columns}
-::: {.column width="58%"}
-::: {.anim scene="PlaceboTest" status="new" source="measured: E03" length="8 s"}
-1. Each dot is one run of width 100 that groks. Its height is $R_t$ at its own
-   grokking step.
-2. The dots sit in a narrow band. Their spread is the standard deviation (SD).
-3. Each run is now read at the grokking step of another run, drawn at random.
-   The band widens.
-4. The tightening ratio is the placebo SD over the true SD, over 2,000 shuffles.
-5. The same is done for $S_t$ and $A_t$. A ratio near 1 means no tie to the
-   event.
+::: {.column width="62%"}
+![](assets/figures/E2_thresholds.png){.g2-fig}
 :::
+::: {.column width="38%" .g2-compact}
+- At width 100 (top), shape bunches up at grokking.
+- Across widths (bottom), no statistic keeps one value at grokking, and no
+  $p$ is below 0.05.
+- Wider networks grok with less change of shape, yet later.
+
+::: {.g2-takeaway}
+Shape tells us the most. Shape alone does not set the grokking time.
 :::
-::: {.column width="42%"}
-At width 100, over {{< var EthreeNhundredRuns >}} runs that grok, the
-tightening ratio is
-
-::: {.g2-result .is-rotation}
-[rotation $R_t$: {{< var EthreeNhundredRRatio >}}]{.g2-key .is-rotation}
-
-[scale $S_t$: {{< var EthreeNhundredSRatio >}}]{.g2-key .is-scale}
-
-[alignment $A_t$: {{< var EthreeNhundredARatio >}}]{.g2-key .is-alignment}
-:::
-
-No shuffle gave $R_t$ or $S_t$ a spread as small as the true one.
 :::
 ::::
 
 ::: {.notes}
-Speaker: TBD.
+Turn 4.
 
-Message: the placebo test separates a real threshold from a statistic that
-barely moves.
+Message: the tie between shape and grokking holds only within one width, so
+shape is not a universal threshold.
 
-Say: If grokking happens when a statistic reaches a threshold, then that
-statistic should take nearly the same value at every run's grokking step. But a
-statistic that barely moves would pass that check too. So we also read each run
-at somebody else's grokking step. A real threshold gets much looser when we do
-that. Rotation tightens the most, by a factor of
-{{< var EthreeNhundredRRatio >}}. Alignment barely tightens at all.
+Say:
+
+- But water only boils at 100 degrees at sea level.
+- Up a mountain it boils at a lower temperature.
+- Width acts like the mountain.
+- Once we change the width, no statistic has the same value at grokking.
+- Wide networks grok with much less change of shape, and yet they grok later.
+- So shape alone does not decide when a network groks.
+
+If asked:
+
+- At grokking, R falls from {{< var NsevenRWFifty >}} at width 50 to {{< var NsevenRWSixteenhundred >}} at width 1600.
+- In {{< var NeightAboveRMedianMemorised >}} of the {{< var NeightNoGrokMemorised >}} cells where a seed memorises but none groks, a seed still reaches the median shape change at grokking of its width, so reaching that shape is not enough to grok.
+- Alignment barely moves: its median is {{< var NsixAzero >}} at the start and {{< var NsixAgrok >}} at grokking.
 :::
 
-## Reaching that rotation is not enough to grok {time="0:20"}
+## Tier 2: the grokking time follows both width and weight decay {time="0:45"}
 
-- Across widths no statistic takes a fixed value at grokking. At $\alpha = 1$
-  the ratios are {{< var EthreeAoneSRatio >}} for $S_t$,
-  {{< var EthreeAoneRRatio >}} for $R_t$ and {{< var EthreeAoneARatio >}} for
-  $A_t$, and no $p$ is below 0.05.
-- At grokking, $R_t$ falls from {{< var NsevenRWFifty >}} at $N = 50$ to
-  {{< var NsevenRWSixteenhundred >}} at $N = 1600$. Wider networks grok with
-  less rotation, but later.
-- There are {{< var NeightNoGrokMemorised >}} cells in which a seed memorises
-  but none groks. In {{< var NeightAboveRMedianMemorised >}} of them, a seed
-  still reaches the median rotation at grokking of its width.
-- The alignment barely moves: its median is {{< var NsixAzero >}} at the start
-  and {{< var NsixAgrok >}} at grokking.
-
-::: {.notes}
-Speaker: TBD.
-
-Message: rotation is tied to grokking within one width, but it is not a
-universal threshold and it is not sufficient.
-
-Say: The tie only holds within one width. Wider networks grok with less
-rotation but take longer, which suggests that width sets how fast the kernel
-rotates. And some networks reach the usual rotation without ever grokking, so
-rotation alone does not make a network grok.
-:::
-
-## Tier 2: the grokking time depends on both width and weight decay {time="0:40"}
-
-::: {.g2-compact}
 $$
 \log T = c + a\log N + b\log(\eta\lambda) + \gamma\log N\log(\eta\lambda) + \sigma\varepsilon
 $$
-:::
 
-:::: {.columns}
-::: {.column width="55%"}
-![](assets/figures/E5_scaling.png){.g2-fig}
+::: {.g2-tier2}
+Each clock predicts $T \propto N^a(\eta\lambda)^b$, a straight line in
+logarithms. $\gamma$ lets the settings interact, and its interval
+**includes 0**.
+
+| | $a$ (width) | $b$ (weight decay) | $\gamma$ | $\sigma$ |
+|:---|:---|:---|:---|:---|
+| [Shape clock]{.g2-key .is-rotation} predicts | $> 0$ | $\approx 0$ | | |
+| Weight-decay clock predicts | $\approx 0$ | $-1$ | | |
+| **Our fit** | **{{< var EsixMainA >}}** | **{{< var EsixMainB >}}** | {{< var EsixMainG >}} | {{< var EsixMainS >}} |
+| 95% interval | {{< var EsixMainALo >}}, {{< var EsixMainAHi >}} | {{< var EsixMainBLo >}}, {{< var EsixMainBHi >}} | {{< var EsixMainGLo >}}, {{< var EsixMainGHi >}} | |
+
+::: {.g2-takeaway}
+The fit takes $a > 0$ from the shape clock and $b < 0$ from the weight-decay
+clock. The clock is mixed.
 :::
-::: {.column width="45%"}
-| | $a$ | $b$ |
-|:---|:---|:---|
-| Rotation clock | $> 0$ | $\approx 0$ |
-| Weight-decay clock | $\approx 0$ | $\approx -1$ |
-| **Our fit** | **{{< var EsixMainA >}}** | **{{< var EsixMainB >}}** |
-| 95% interval | {{< var EsixMainALo >}} to {{< var EsixMainAHi >}} | {{< var EsixMainBLo >}} to {{< var EsixMainBHi >}} |
 
 ::: {.g2-small}
-This is a censored log-normal fit on the {{< var EsixMainRuns >}} runs at
-$\alpha = 1$ with $10^{-5} \le \eta\lambda \le 10^{-4}$, where every seed groks.
-The intervals resample cells, then seeds.
+A censored log-normal fit on the {{< var EsixMainRuns >}} runs at $\alpha = 1$
+with $10^{-5} \le \eta\lambda \le 10^{-4}$, where every seed groks.
 :::
 :::
-::::
 
 ::: {.notes}
-Speaker: TBD.
+Turn 4.
 
-Message: both knobs matter, so neither single clock is right.
+Message: both width and weight decay set the time, so neither single clock
+holds.
 
-Say: We fit how the grokking time scales with width and with weight decay. A
-rotation clock predicts a positive width exponent and no decay effect. A
-weight-decay clock predicts no width effect and an exponent of minus one. We
-find both: a is {{< var EsixMainA >}} and b is {{< var EsixMainB >}}. Both
-intervals exclude zero, and neither value is what its account predicts on its
-own.
-To read the figure, follow one coloured line. Each line is one width, and each
-point on it is the median grokking step at one weight decay. Faint dots are
-single seeds, and open circles at the top are runs that never grokked. The
-dashed lines are our fit. The two grey lines at the lower right show the slope
-each clock predicts. A rotation clock gives a flat line, and a weight-decay
-clock gives a slope of minus one. Between ten to the minus five and ten to the
-minus four, where every seed groks, our lines fall, but on average less
-steeply than minus one. At ten to the minus five the wider networks sit higher.
-Adding the next decay level, three times ten to the minus four, moves b towards
-zero, so this holds for the range where every seed groks.
+Say:
+
+- Next, how does the time scale with width and weight decay?
+- Each clock predicts a power law, a straight line on log axes, so we fit log T as a plane in log width and log weight decay.
+- The shape clock predicts a positive a and b near zero, and the weight-decay clock predicts a near zero and b of minus one.
+- We find a = {{< var EsixMainA >}} and b = {{< var EsixMainB >}}, and both intervals exclude zero.
+- So the fit takes the sign of a from the shape clock and the sign of b from the weight-decay clock, which is a mixed clock.
+- Gamma's interval includes zero, so we do not claim an interaction.
+
+If asked:
+
+- The backup slide shows the grokking time at each width, with the slope each clock predicts.
+- Sigma, {{< var EsixMainS >}}, is the spread of log T between runs that the plane does not explain.
+- The fit uses the range where every seed groks, and adding the next weight decay, three times ten to the minus four, moves b to {{< var EsixWideB >}}, so the exponents depend on the range.
+- Both logarithms are centred at the middle of the grid, so a and b are the slopes there.
+- Wider networks memorise sooner, so the width effect is not a delay in fitting the training data.
 :::
 
-## Tier 3: rotation is the best single predictor, and scale adds what rotation lacks {time="0:40"}
+## Tier 3: shape is the best single predictor, and scale adds what shape lacks {time="0:55"}
 
 :::: {.columns}
-::: {.column width="60%"}
-::: {.g2-bars .stepwise max="0.6" label="Held-out $R^2$ of $\log T$, with one cell held out at a time"}
+::: {.column width="58%"}
+::: {.g2-bars max="0.6" label="Held-out $R^2$ of $\log T$, one cell held out at a time"}
 - [$A_t$]{.is-alignment var="EtenARsq"}
 - [$S_t$]{.is-scale var="EtenSRsq"}
 - [$\log R_t$]{.is-rotation var="EtenRRsq"}
@@ -746,166 +828,206 @@ zero, so this holds for the range where every seed groks.
 - [All three]{var="EtenSRARsq"}
 :::
 :::
-::: {.column width="40%" .g2-compact}
-- Rotation alone predicts the grokking time best.
-- Adding scale to rotation raises $R^2$ from {{< var EtenRRsq >}} to
-  {{< var EtenSRRsq >}}.
-- Alignment adds little. All three together reach {{< var EtenSRARsq >}}.
+::: {.column width="42%" .g2-compact}
+We read the statistics at step 2,430, before any run groks, and predict
+$\log T$ for settings the model has not seen. $R^2$ is the share of the spread
+in $\log T$ that the prediction explains.
+
+Linear regression on all three reaches 0.36. A squared term for scale lifts it
+to 0.50, and interaction terms add about 0.02.
+
+::: {.g2-takeaway}
+Shape alone predicts best, and adding scale raises $R^2$ from
+{{< var EtenRRsq >}} to {{< var EtenSRRsq >}}. The clock is mixed.
+:::
 
 ::: {.g2-small}
-We fit kernel ridge regression to the statistics at $t^* = 2{,}430$, before
-any run groks. The fit uses {{< var EtenRuns >}} runs that grok and holds out
-each of the {{< var EtenCells >}} cells in turn. The backup slides give the
-concordance.
+Kernel statistics can be measured in any network. The settings predict better.
+We use $\log R_t$, since with $R_t$ as it is all three reach only
+{{< var EtenRawKrrSRARsq >}}.
 :::
 :::
 ::::
 
 ::: {.notes}
-Speaker: TBD.
+Turn 5.
 
-Message: of the three statistics, rotation carries the most information about
-when a network will grok, scale adds to it, and alignment adds little.
+Message: shape carries the most information about when a network will grok,
+scale adds to it, and alignment adds little.
 
-Say: Now we ask which statistic, measured early, tells us when a run will grok.
-We use only the kernel statistics here, because they can be measured in any
-network. We read the three numbers at step 2,430, before any run has grokked,
-and predict the grokking step of cells the model has never seen. Each bar appears
-on a click. Alignment alone explains almost nothing. Scale explains more, and
-rotation explains the most. Adding scale to rotation raises the held-out R
-squared from {{< var EtenRRsq >}} to {{< var EtenSRRsq >}}. Adding alignment
-on top only takes it to {{< var EtenSRARsq >}}.
+Say:
+
+- Can the statistics still forecast when a run will grok?
+- It is like guessing a runner's marathon time from their first few kilometres.
+- We read them at step 2,430, before any run groks, and predict settings the model has never seen.
+- Alignment explains almost nothing.
+- Shape alone explains about a third, and adding scale takes it to a half.
+- These bars come from kernel ridge, which predicts a run from the runs most like it, a bit like pricing a house from similar houses.
+- Plain linear regression on all three statistics explains 0.36, and kernel ridge explains {{< var EtenSRARsq >}}.
+- Adding a squared term for scale closes most of that gap, at 0.50.
+- Interaction terms, where one statistic changes how much another matters, add only about 0.02 on top of that.
+
+If asked:
+
+- We tried R as it is and log R, and log R predicted better in every model on held-out cells, and the backup slide shows why.
+- At step 2,430, {{< var EtenRawRSmall >}} of the runs that grok have R below 0.01, while the largest R is {{< var EtenRawRMax >}}.
+- On its own scale those runs bunch near zero, so a model can hardly tell them apart, while on a log scale they spread out and the grokking time falls close to a straight line.
+- A straight line in R alone explains {{< var EtenRawLinRRsq >}} of log T, and a straight line in log R explains {{< var EtenRawLinLogRRsq >}}.
+- Kernel ridge on R alone can bend to follow the curve, so it reaches {{< var EtenRawKrrRRsq >}} against {{< var EtenRRsq >}} with log R, and the gap is small.
+- The gap is large once the statistics are combined: all three reach {{< var EtenRawKrrSRARsq >}} with R as it is and {{< var EtenSRARsq >}} with log R.
+- With R as it is, the interaction of scale and shape also does not show, so which pairs of statistics seem to interact depends on the scale of R.
+- On an unseen alpha the gain is smaller: a straight line in the three statistics ranks runs a little better with R as it is, and log R helps once scale can bend as well.
+- The settings predict better than any kernel model: on an unseen alpha, trees on the width and weight decay reach a concordance of {{< var EeightRef >}}, and weight decay alone {{< var EeightDecayref >}}.
+- On that test, boosted trees on all three statistics reach {{< var EeightXgb >}} and a recurrent network on their history {{< var EeightGru >}}, so we do not claim that the kernel beats the weight decay.
+- The kernel ridge regression uses a Gaussian kernel, and whole cells are held out because the seeds of a cell are close copies.
+- We do not claim that shape and scale interact, because that analysis was cut from the report.
+- The linear regression, squared term and interaction numbers come from model_fitting/4_nonlinear_exploration.ipynb, Parts 3 and 7, on the same {{< var EtenRuns >}} runs, and its kernel ridge matches the report.
+- Boosted trees on the three statistics reach only 0.39, and boosted trees given the settings reach 0.93.
+- Two backup slides show every model we compared and what a curve and a product mean.
 :::
 
-## Tier 4: on MNIST the time is set by weight decay alone {time="0:30"}
+## Tier 4: on MNIST, weight decay alone sets the time {time="0:35"}
 
 :::: {.columns}
-::: {.column width="42%"}
-- The time is one over the weight decay: $b =$ {{< var EnineteenMainB >}},
-  against {{< var EsixMainB >}} on modular addition. Width does not enter,
-  $a =$ {{< var EnineteenMainA >}}.
-- At grokking the weight norm has always fallen to
-  {{< var EnineteenNc >}} times its value at $s = 1$, within
-  {{< var EnineteenNcRel >}} over {{< var EnineteenNcRuns >}} runs. This is the
-  law of @liuOmnigrokGrokkingAlgorithmic2023.
-- Width still sets the rotation. $R$ at grokking falls from
-  {{< var EnineteenRWTwohundred >}} to {{< var EnineteenRWEighthundred >}}
-  between $N = 200$ and $N = 800$, and the time does not move.
+::: {.column width="44%" .g2-compact}
+We repeated Tiers 1 and 2 on MNIST in the setup of
+@liuOmnigrokGrokkingAlgorithmic2023.
+
+| Setting | Value |
+|:---|:---|
+| Data | 1,000 training images |
+| Network | three layers, rectifier, no biases, squared error |
+| Initial scale $s$ | 3, 5, 7, 9 |
+| Width $N$ | 200, 400, 800 in the fits |
+| Weight decay | seven values, 5 seeds each |
+| Budget and level | 500,000 steps, test accuracy 0.80 |
+
+Large initial weights must shrink to a fixed norm, so
+$T \propto 1/(\eta\lambda)$ and width drops out.
 :::
-::: {.column width="58%"}
+::: {.column width="56%"}
 ![](assets/figures/E19_mnist.png){.g2-fig}
+
+::: {.g2-takeaway}
+MNIST does not force the kernel to change shape, so only the scale route acts.
+Modular addition does [@mohamadiWhyYouGrok2024], so both act (our reading).
+:::
 :::
 ::::
 
 ::: {.notes}
-Speaker: TBD.
+Turn 5.
 
-Message: on a second task the time follows weight decay alone, through the
-weight norm, and the rotation plays no part in it.
+Message: on a second task, weight decay alone sets the time through the weight
+norm, and shape plays no part.
 
-Say: We ran the same two questions on MNIST, in the setup of Omnigrok and got a
-cleaner answer here. The grokking time is one over the weight decay, and
-width does not enter. When a network groks, its weight norm
-consistently falls to the same value, within three percent across every scale,
-width and decay. Weight decay shrinks the norm at a fixed rate, so the time is
-how long that takes. We did not derive that law. It comes from Liu et
-al. Rotation falls with width, but the time does not move.
+Say:
 
-For questions. The grid is 560 runs: 4 initial scales, 4 widths, 7 weight
-decays and 5 seeds, each run 500,000 steps, on 1,000 training images and all
-10,000 test images. The network is a three-layer rectifier network without
-biases on the squared error. The grokking level is 0.80, because no run reaches
-0.95 within the budget. The fit is the main range, $s = 7$ at widths 200 to
-800, where every seed groks, and the exponents are the same at $s = 5$ and
-$s = 9$. Width 100 is left out: its test accuracy at memorisation is already
-{{< var EnineteenWhundredAccmem >}}, so there is little delay to time, and we
-read that as a limit of capacity at 1,000 images. Without weight decay no run
-reaches the level. The learning rate is reset from the curvature every 10,000
-steps, which sets the memorisation step. The placebo test of Tier 1 cannot
-separate the statistics here, because each is a function of the step and the
-grokking times span more than a decade. We did not repeat Tier 3, because a
-residual of {{< var EnineteenMainS >}} makes the time a function of the
-settings alone. Why the two tasks differ is our own reading: on modular
-addition a fixed kernel cannot solve the task
-[@mohamadiWhyYouGrok2024], so the kernel has to change shape first.
+- To see whether this carries over, we repeated Tiers 1 and 2 on MNIST, in the setup of Omnigrok.
+- Here the initial weights are scaled up, and weight decay must shrink them before the network generalises.
+- The time is one over the weight decay, width drops out, and at grokking the weight norm is the same within {{< var EnineteenNcRel >}}.
+- Our reading is that MNIST never forces the kernel to change shape, while on modular addition a fixed kernel cannot solve the task.
+
+If asked:
+
+- The fit gives b = {{< var EnineteenMainB >}} and a = {{< var EnineteenMainA >}}, with a residual of only {{< var EnineteenMainS >}}.
+- The weight norm at grokking is {{< var EnineteenNc >}} times the default initial norm over {{< var EnineteenNcRuns >}} runs, which is the law of Liu and coauthors, Section 2.
+- Width still sets the shape change, since R at grokking falls from {{< var EnineteenRWTwohundred >}} to {{< var EnineteenRWEighthundred >}} between widths 200 and 800, while the time does not move.
+- Width 100 is left out of the fits because its test accuracy at memorisation is already {{< var EnineteenWhundredAccmem >}}, which we read as a limit of capacity at 1,000 images.
+- The grokking level is 0.80 because no run reaches 0.95 within the budget, and without weight decay no run reaches the level.
+- The learning rate is reset from the curvature every 10,000 steps, which sets the memorisation step.
+- We did not repeat Tier 3, because with a residual of {{< var EnineteenMainS >}} the time is a function of the settings alone.
+- The placebo test cannot separate the statistics here, because each is a function of the step and the grokking times span more than a decade.
 :::
-
 
 # What we found {.act time="0:05"}
 
 So what sets the grokking time?
 
-## Limitations {time="0:15"}
-
-- The main grid uses one task, one architecture and the NTK parameterisation.
-- The Tier 2 exponents depend on which weight-decay cells enter the fit.
-- The kernel statistics do not separate the seeds of a cell, and the settings
-  predict better than any kernel model.
-- MNIST changes the task, the architecture and the way the delay is made, so we
-  cannot say which of the three gives the different answer.
-
 ::: {.notes}
-Speaker: TBD.
+Turn 5.
 
-Say: We used one task and one network family for the main grid, so we cannot
-claim the picture holds in general. The exponents depend on the range of weight
-decays. The kernel statistics are not a better forecast than the settings
-themselves. And MNIST changes three things at once, so it tells us which clock
-sets the time once a delay exists, and not whether rotation can cause one.
+Say:
 
-If asked. Each cell has 5 seeds, and each event is known only to the nearest
-checkpoint. The kernel-flow result assumes a homogeneous network, which the
-centred predictor is not. On MNIST the learning rate is reset from the
-curvature every 10,000 steps, which is what sets the memorisation step, and
-whether the group accepts that rule is still open. Width 100 does not follow
-the MNIST law and is left out of the fits. The alignment uses the kernel of the
-summed logits, and the kernel of all $p$ logits may behave differently.
+- So what sets the grokking time?
 :::
 
-## Weight decay sets the time, through the weight norm {time="0:30"}
+## Limitations {time="0:20"}
+
+- One task, one architecture and the NTK parameterisation.
+- No seed groks in {{< var NeightNoGrok >}} of the 144 cells, and the exponents
+  depend on which cells are fitted.
+- The settings predict better than the kernel statistics.
+- MNIST changes the task, the network and how the delay is made at once.
+
+::: {.notes}
+Turn 5.
+
+Message: the claims hold for this task and parameterisation, on the runs that
+grok.
+
+Say:
+
+- We used one task and the NTK parameterisation, where wider networks stay lazier, so the width effect may belong to this setup.
+- In {{< var NeightNoGrok >}} of the 144 cells no seed groks, and the exponents depend on the cells fitted.
+- The settings predict better than the kernel, and MNIST changes three things at once.
+
+If asked:
+
+- Jacot and coauthors note that the NTK factors reduce the influence of each weight when the width is large, which is why wider networks stay lazier here.
+- Another parameterisation could change the width exponent, so we do not claim a value of a beyond this setup.
+- Each cell has 5 seeds, and each event is known only to the nearest saved step.
+- MNIST shows which clock sets the time once a delay exists, and not whether shape can cause one.
+- The alignment uses the kernel of the summed logits, and the kernel of all p logits may behave differently.
+:::
+
+## Grokking runs on a mixed clock, and shape is its best single reading {time="0:30"}
 
 ::: {.g2-cards .big}
 ::: {.g2-card .is-scale}
 [Growth]{.g2-card-title}
 
-The usual kernel distance mostly records growth. Split it into scale and
-rotation before reading it as feature learning.
+The usual kernel distance mostly records growth, so split it into scale and
+shape.
 :::
 
 ::: {.g2-card .is-rotation}
-[Rotation]{.g2-card-title}
+[Shape]{.g2-card-title}
 
-On modular addition, at a fixed width, rotation is the statistic most tied to
-grokking, and read early it is the best single predictor. Reaching it does not
-make a network grok, and scale adds what it lacks.
+Shape is the most informative statistic. It is not enough alone and not a
+fixed threshold.
 :::
 
 ::: {.g2-card .is-ink}
-[The clock]{.g2-card-title}
+[A mixed clock]{.g2-card-title}
 
-Weight decay sets the time through the weight norm on both tasks. Width enters
-only on modular addition ($a$ = {{< var EsixMainA >}} there,
-{{< var EnineteenMainA >}} on MNIST), where a fixed kernel cannot solve the
-task, so the kernel has to change shape first.
+No single account holds, ours included. Width, through shape, and weight
+decay, through scale, both set the time.
 :::
 :::
 
 ::: {.g2-small}
-That last step is our own reading, resting on @mohamadiWhyYouGrok2024. A next
-step is to test whether the early rate of rotation falls as $1/N$.
+On MNIST weight decay alone sets the time. That shape is needed only where a
+fixed kernel cannot solve the task is our reading [@mohamadiWhyYouGrok2024].
 :::
 
 ::: {.notes}
-Speaker: TBD.
+Turn 5.
 
-Say: The usual kernel distance mostly records growth, so split it before you
-read it as feature learning. On modular addition, at a fixed width, rotation is
-the statistic most tied to grokking, and read early it is the best single
-predictor. Reaching that rotation does not make a network grok, and scale adds
-what rotation lacks. Across both tasks the thing that sets the time is weight
-decay, acting through the weight norm. Width enters only on modular addition,
-and our reading of why is that a fixed kernel cannot solve that task, so the
-kernel has to change shape first.
+Message: grokking runs on a mixed clock, in which shape is the most informative
+statistic and scale also matters.
+
+Say:
+
+- First, the usual kernel distance mostly records growth, so split it before reading it as feature learning.
+- Second, on modular addition shape is the most informative statistic, but it is not enough alone and it is not a fixed threshold.
+- Third, no account holds alone, ours included, because width, through shape, and weight decay, through scale, both set the time.
+- On MNIST, where shape is not needed, weight decay alone sets it.
+
+If asked:
+
+- What is new is the split into scale and shape, the placebo test, the crossed grid on two tasks, and prediction from quantities that any network exposes.
+- A next step is to test whether the early rate of shape change falls as one over the width.
 :::
 
 ## Thank you {time="0:05"}
@@ -915,50 +1037,121 @@ Questions?
 :::
 
 ::: {.g2-small}
-[To agree as a group]{.g2-todo-chip} We used an AI assistant (Claude, by
-Anthropic) to help draft code, the report and this deck. We checked every
-result and every reference ourselves.
-
 The code and the data extract behind every number are in the repository, in
 `report_v2/code`.
+:::
+
+::: {.notes}
+Turn 5.
+
+Say:
+
+- Thank you, and we are happy to take questions.
 :::
 
 # Backup {.backup}
 
 These slides are for questions.
 
-## The usual evidence is a distance, and a distance hides how the kernel moved
+## How we used AI tools
 
-$$
-D_t = \frac{\Fnorm{K_t - K_0}}{\Fnorm{K_0}}
-$$
+[agree this AI statement as a group]{.g2-todo-chip} We used an AI assistant (Claude, by
+Anthropic) to help draft code, the report and this deck. We checked every
+result and every reference ourselves.
 
-- The kernel stays close to its start until the training data are fitted, and
-  moves far from it afterwards [@mohamadiWhyYouGrok2024].
-- A distance measures how far the kernel moved. It does not say how.
-
-::: {.g2-source}
-The relative variation $D_t$ is from @geigerDisentanglingFeatureLazy2020.
+::: {.notes}
+Speaker: TBD. The project brief asks every deliverable to state how AI tools
+were used. This statement should match the one in the report.
 :::
+
+## Baseline: the network memorises early, groks late, and its kernel mostly grows
+
+:::: {.columns}
+::: {.column width="60%"}
+::: {.anim scene="BaselineKernel" status="renders" source="measured: baseline, 5 seeds" length="8 s"}
+1. The clip plots $S_t$ on top and $R_t$ below against step, for the five seeds
+   at $\alpha = 1$, $N = 100$ and $\eta\lambda = 0$. The line is the median and
+   the band the range.
+2. A hollow marker shows the median memorisation step and a filled one the
+   median grokking step.
+3. A bar splits $D_t^2$ at grokking into the scale part and the shape part.
+:::
+:::
+::: {.column width="40%" .g2-compact}
+- At grokking, the scale part is {{< var NtwoAOneGrok >}} of $D_t^2$.
+- By the last step the kernel is {{< var NtwoAOneSfinal >}} times its starting
+  size, while its shape statistic is only {{< var NtwoAOneRfinal >}}.
+- At $\alpha = 2$ no seed groks within 200,000 steps.
+
+::: {.g2-small}
+Our grokking steps, and their order in $\alpha$, are close to those of
+@kumarGrokkingTransitionLazy2024 [Fig. 2(c), arXiv v3].
+:::
+:::
+::::
 
 ::: {.notes}
 Speaker: TBD.
 
-Message: the evidence for lazy to rich is a single distance.
+Message: on the baseline, the distance is mostly growth.
 
-Say: The usual evidence that the kernel changes is this distance between the
-kernel now and the kernel at the start. It stays small and then grows once the
-training data are fitted. But a distance alone cannot tell us what kind of
-change happened.
+Say: These are the five baseline runs at alpha 1, with the median as the line.
+By the end the kernel is {{< var NtwoAOneSfinal >}} times its starting size,
+while the shape statistic is only {{< var NtwoAOneRfinal >}}, so the cosine
+between the first and last kernel is still close to one. At grokking,
+{{< var NtwoAOneGrok >}} of the squared distance is the scale part.
+:::
+
+## The tangent kernel of one network at the start
+
+::: {.anim .tall scene="NTKFromScratch" status="renders" source="schematic, then measured" length="10 s"}
+1. A small schematic: one gradient step on $x$ moves the output at $x$ and at
+   $x'$, and the move at $x'$ is proportional to $K(x', x)$.
+2. The measured kernel of the baseline network at step 0 on all 529 pairs.
+3. A zoom on the pairs with $a \le 4$ shows that pairs sharing $a$ or $b$ are
+   treated alike at the start.
+:::
+
+::: {.notes}
+Speaker: TBD. Use this clip if someone asks what the kernel looks like.
+:::
+
+## The split of the distance on a plane
+
+::: {.anim .tall scene="IdentityLevelSets" status="renders" source="identity, then measured" length="7 s"}
+1. The plane has the scale part $(S_t - 1)^2$ across and the shape part
+   $2S_tR_t$ up, with grey lines of equal $D_t$.
+2. A path along the scale axis shows pure growth, and a path up the other axis
+   shows pure change of shape. Both end on the line $D_t = 0.5$.
+3. The view zooms out and the path of the baseline run appears. It stays close
+   to the scale axis.
+:::
+
+::: {.notes}
+Speaker: TBD. Use this clip if someone asks how the split looks for a real run.
+:::
+
+## The placebo test, step by step
+
+::: {.anim .tall scene="PlaceboTest" status="renders" source="measured: E03" length="8 s"}
+1. Each dot is one run of width 100 that groks. Its height is $R_t$ at its own
+   grokking step, and the dark band is its spread.
+2. Each run is then read at the grokking step of another run. The dots spread
+   out, and the light band shows the new spread.
+3. The same is done for $S_t$ and $A_t$, and each panel shows its SD ratio.
+:::
+
+::: {.notes}
+Speaker: TBD. Use this clip if someone asks how the placebo test works.
 :::
 
 ## Seen as arrows, the three numbers are a length and two angles
 
-::: {.anim .tall scene="KernelAsArrows" status="planned" source="schematic" length="7 s"}
+::: {.anim .tall scene="KernelAsArrows" status="renders" source="schematic" length="7 s"}
 1. Treat each kernel matrix as one arrow, with the Frobenius inner product.
 2. The arrow of $K_0$ appears, then the arrow of $K_t$. The ratio of their
    lengths is the scale $S_t$.
-3. The angle between them gives the rotation: $R_t$ is one minus its cosine.
+3. The angle between them gives the shape statistic. $R_t$ is one minus its cosine.
 4. After centring, the angle between the kernel and the label kernel $YY^\top$
    gives the alignment $A_t$.
 5. Stretching an arrow changes $S_t$ and leaves both angles alone.
@@ -971,7 +1164,7 @@ Message: the three numbers are one length and two angles, which is why scale
 cannot change the other two.
 
 Say: Think of each kernel matrix as a single arrow. Scale is how much longer
-the arrow got. Rotation is how far it turned away from where it started.
+the arrow got. Shape is how far it turned away from where it started.
 Alignment is how close it points to the labels. Stretching the arrow changes
 the first number and not the other two.
 :::
@@ -994,7 +1187,7 @@ the first number and not the other two.
 ::: {.notes}
 Speaker: TBD.
 
-Message: rotation is a concrete change in which pairs the network treats as
+Message: a change of shape is a concrete change in which pairs the network treats as
 similar.
 
 Say: This is the measured kernel change on our task. At the start the kernel
@@ -1004,7 +1197,7 @@ agree, which is the structure of the answer. The other is where the
 differences agree, which the answer does not contain.
 :::
 
-## Three tests, one for each column of the table
+## Three tests, one for each row of the table
 
 ::: {.g2-cards}
 ::: {.g2-card .is-ink}
@@ -1032,20 +1225,7 @@ cells and on values of $\alpha$ they have not seen.
 ::: {.notes}
 Speaker: TBD.
 
-Say: We start with the baseline and then take the three tests in order.
-:::
-
-## The statistics at the grokking step of every run
-
-![](assets/figures/E2_thresholds.png){.g2-fig}
-
-::: {.g2-small}
-Each dot is a run at its grokking step, and each bar is a median. The ratio on
-each panel is the tightening ratio of the placebo test.
-:::
-
-::: {.notes}
-Speaker: TBD. Use only if there is time, or keep it for questions.
+Say: We take the three tests in order, one for each row of the hypothesis table.
 :::
 
 ## What the two clocks would look like
@@ -1053,8 +1233,8 @@ Speaker: TBD. Use only if there is time, or keep it for questions.
 ::: {.anim .tall scene="TwoClocks" status="renders" source="measured: E06 fit" length="7 s"}
 1. Two slices pass through the centre of the fit. They show $\log T$ against
    $\log N$ and $\log T$ against $\log(\eta\lambda)$.
-2. The rotation clock rises with width with slope $a = 1$ and is flat in decay.
-   This slope is our reading.
+2. The shape clock rises with width with slope $a = 1$ and is flat in decay.
+   This slope is our prediction.
 3. The weight-decay clock is flat in width and falls with slope $b = -1$ in
    decay.
 4. Our fitted lines lie between the two in both slices.
@@ -1062,6 +1242,32 @@ Speaker: TBD. Use only if there is time, or keep it for questions.
 
 ::: {.notes}
 Speaker: TBD. Use this clip if the audience needs a picture of the exponents.
+:::
+
+## Tier 2: the grokking time at each width
+
+:::: {.columns}
+::: {.column width="62%"}
+![](assets/figures/E5_scaling.png){.g2-fig}
+:::
+::: {.column width="38%" .g2-compact}
+- Each line is one width, and each point is the median grokking step of a cell.
+- Open circles at the top did not grok within 200,000 steps.
+- The grey lines show the slope each clock predicts. In the shaded fit range
+  the lines follow neither slope consistently.
+:::
+::::
+
+::: {.notes}
+Speaker: TBD. Use this slide if someone asks what the Tier 2 data look like.
+
+Say: Each coloured line is one width, and each point is the median grokking
+step at one weight decay. Faint dots are single seeds, and open circles at the
+top are runs that never grokked. The two grey lines show the slope each clock
+predicts: flat for the shape clock and minus one for the weight-decay clock. In
+the shaded range, where every seed groks, some widths fall gently and some
+steeply, so neither slope fits all of them. The interval of gamma includes
+zero, so we do not claim that width changes the slope.
 :::
 
 ## A wider network groks later and stops grokking at a smaller weight decay
@@ -1083,7 +1289,7 @@ Speaker: TBD. Use this clip if the audience needs a picture of the exponents.
 Speaker: TBD. This is a practical point for anyone who tunes weight decay.
 :::
 
-## Width sets the rotation, and at a fixed width weight decay shrinks the scale
+## Width sets the shape change, and at a fixed width weight decay shrinks the scale
 
 :::: {.columns}
 ::: {.column width="55%"}
@@ -1092,7 +1298,7 @@ Speaker: TBD. This is a practical point for anyone who tunes weight decay.
 ::: {.column width="45%" .g2-compact}
 Both maps are read at $t^* = 2{,}430$, before any run groks.
 
-- Up to $\eta\lambda = 3\times10^{-4}$, the rotation changes with the width and
+- Up to $\eta\lambda = 3\times10^{-4}$, the shape change varies with the width and
   hardly with the weight decay.
 - The scale falls with the weight decay at every width.
 
@@ -1110,9 +1316,9 @@ Speaker: TBD.
 
 Message: this links Tier 2 back to Tier 1.
 
-Say: Read early, before any run groks, rotation depends on the width and hardly
+Say: Read early, before any run groks, the shape change depends on the width and hardly
 on the weight decay. At a fixed width, the scale shrinks as the weight decay
-grows. So width goes with rotation, and weight decay goes with a smaller scale.
+grows. So width goes with shape, and weight decay goes with a smaller scale.
 The grokking time depends on both. These are associations, and we have not
 tested a causal link.
 :::
@@ -1185,7 +1391,7 @@ $c > 0$, and then $D_t = |S_t - 1|$.
 
 ## The placebo test in numbers
 
-| Runs | Statistic | SD at grokking | SD at placebo | Ratio | $p$ |
+| Runs | Statistic | SD at grokking | SD at placebo | SD ratio | $p$ |
 |:---|:---|:---|:---|:---|:---|
 | $N = 100$ ({{< var EthreeNhundredRuns >}} runs) | [$S_t$]{.g2-key .is-scale} | {{< var EthreeNhundredSSd >}} | {{< var EthreeNhundredSSdplacebo >}} | {{< var EthreeNhundredSRatio >}} | {{< var EthreeNhundredSP >}} |
 | | [$R_t$]{.g2-key .is-rotation} | {{< var EthreeNhundredRSd >}} | {{< var EthreeNhundredRSdplacebo >}} | {{< var EthreeNhundredRRatio >}} | {{< var EthreeNhundredRP >}} |
@@ -1232,6 +1438,153 @@ delay in fitting the training data.
 The share of the spread that lies between cells is {{< var EtenBetweenLogT >}}
 for $\log T$, {{< var EtenBetweenS >}} for $S_t$, {{< var EtenBetweenLogR >}} for
 $\log R_t$ and {{< var EtenBetweenA >}} for $A_t$.
+:::
+
+## Tier 3: a curve beats a straight line, and kernel ridge fits best
+
+:::: {.columns}
+::: {.column width="60%"}
+![](assets/figures/tier3_models.png){.g2-fig}
+:::
+::: {.column width="40%" .g2-compact}
+Every model reads the same three statistics at step 2,430. Each one is
+rescaled to mean 0 and spread 1, giving $z_A$, $z_S$ and $z_R$.
+
+| Model | $\log T \approx$ |
+|:---|:---|
+| Straight line | $\beta_0 + \sum_k \beta_k z_k$ |
+| Square of $S_t$ | line $+\ \beta_{SS} z_S^2$ |
+| Curve for each | $\beta_0 + \sum_k f_k(z_k)$ |
+| Curves + products | curves $+ \sum_{j<k} \gamma_{jk} z_j z_k$ |
+| Kernel ridge | $\sum_i a_i\, e^{-\gamma \lVert z - z_i \rVert^2}$ |
+| Boosted trees | a sum of small decision trees |
+
+::: {.g2-takeaway}
+Letting scale bend helps the most. Products and flexible models add little.
+:::
+:::
+::::
+
+::: {.notes}
+Turn 5.
+
+Message: a curve predicts much better than a straight line, and the most
+flexible models add little on top.
+
+Say:
+
+- A straight line through the three statistics explains 0.36.
+- Letting it bend for scale, with a squared term, jumps it to 0.50.
+- Kernel ridge predicts a run from the runs most like it, like pricing a house from similar houses.
+- It does best, at {{< var EtenSRARsq >}}.
+
+Point at:
+
+- The dashed line is boosted trees given width, alpha and weight decay, which a real network does not report.
+
+If asked:
+
+- The numbers come from model_fitting/4_nonlinear_exploration.ipynb, Parts 3 and 7, on the same {{< var EtenRuns >}} runs as the last slide, and its kernel ridge matches the report.
+- Boosted trees do well on other inputs: 0.74 on the 25 early readings of the statistics and 0.93 on the settings. The notebook reads the history as mostly a record of the settings.
+- On an unseen alpha, trees on the three statistics rank runs at a concordance of {{< var EeightXgb >}}, better than any statistic alone.
+- Each gain above 0.50 is about 0.02, which is close to our noise level, and seed noise sets a ceiling of {{< var EtenBetweenLogT >}}.
+- Without shape, kernel ridge falls from {{< var EtenSRARsq >}} to 0.23, so shape carries the most information.
+- Kernel ridge fits $\log T$ minus its mean, with the sum over the training runs $i$, and its penalty and $\gamma$ are chosen by cross-validation over whole cells.
+- The trees are XGBoost on squared error, with depth 1 to 4 chosen on held-out training cells.
+:::
+
+## A curve changes the slope, and a product links two statistics
+
+:::: {.columns}
+::: {.column width="55%"}
+![](assets/figures/tier3_curve.png){.g2-fig}
+:::
+::: {.column width="45%" .g2-compact}
+**Curve.** The slope can change along the way. We replace $\beta z$ with a
+cubic spline with 5 knots:
+$$f(z) = \sum_{j=1}^{7} c_j B_j(z)$$
+Each $B_j$ is a fixed cubic bump. The square $\beta z + \beta' z^2$ is the
+simplest curve.
+
+**Product.** How much scale matters depends on shape. We add
+$\gamma\, z_S z_R$, so the slope in $z_S$ becomes $\beta_S + \gamma z_R$.
+
+::: {.g2-takeaway}
+Best simple formula, $R^2$ 0.50:
+$\log T = \beta_0 + \beta_A z_A + \beta_S z_S + \beta_{SS} z_S^2 + \beta_R z_R$
+:::
+:::
+::::
+
+::: {.notes}
+Turn 5.
+
+Message: a curve lets the slope of a statistic change along the way, a
+product lets one statistic set the slope of another, and the best simple
+formula is a straight line plus a square of scale.
+
+Say:
+
+- A straight line says each step up in a statistic always moves the time by the same amount.
+- A curve lets that amount change, like a road that is steep and then flattens.
+- A product means how much scale matters depends on shape.
+- In our data that adds very little.
+
+If asked:
+
+- The spline has 5 knots and degree 3, which gives 7 basis functions per statistic, and the weights $c_j$ are fitted by ridge regression.
+- The square is the simplest curve, since its slope $\beta + 2\beta' z$ changes in a straight line.
+- Shape enters on a log scale, so the straight line in $z_R$ is already a curve in $R_t$.
+- The betas are fitted by least squares on the training cells of each fold, and the notebook did not save them, so we quote only the form and its score.
+:::
+
+## Shape enters on a log scale, because $R_t$ bunches near zero
+
+:::: {.columns}
+::: {.column width="55%"}
+![](assets/figures/E10_log_r.png){.g2-fig}
+:::
+::: {.column width="45%" .g2-compact}
+At $t^*$, $R_t$ runs from {{< var EtenRawRMin >}} to {{< var EtenRawRMax >}}.
+{{< var EtenRawRSmall >}} of the runs that grok have $R_t$ below 0.01.
+
+| Held-out $R^2$ of $\log T$ | $R_t$ | $\log R_t$ |
+|:---|:---|:---|
+| Straight line in shape alone | {{< var EtenRawLinRRsq >}} | {{< var EtenRawLinLogRRsq >}} |
+| Kernel ridge on shape alone | {{< var EtenRawKrrRRsq >}} | {{< var EtenRRsq >}} |
+| Kernel ridge on all three | {{< var EtenRawKrrSRARsq >}} | {{< var EtenSRARsq >}} |
+
+::: {.g2-result}
+On a log scale the runs spread out and $T$ falls close to a straight line.
+The log matters most when the statistics are combined.
+:::
+
+::: {.g2-small}
+The runs and the held-out cells are those of Tier 3. A flexible model can bend
+to follow $R_t$ alone, so the gap is small there.
+:::
+:::
+::::
+
+::: {.notes}
+Speaker: TBD.
+
+Message: we use the log of R because R bunches near zero, and every model on
+held-out cells predicts better with the log.
+
+Say: At step 2,430, {{< var EtenRawRSmall >}} of the runs that grok have R
+below 0.01, while the largest R is {{< var EtenRawRMax >}}. On the left, on its own scale, those runs sit in a thin strip
+near zero, and the grokking time falls along a curve. On the right, on a log
+scale, the runs spread out and the fall is close to a straight line. A straight
+line in R explains {{< var EtenRawLinRRsq >}} of log T, and a straight line in
+log R explains {{< var EtenRawLinLogRRsq >}}. Kernel ridge can bend to follow R
+alone, so there the gap is small. Once scale and alignment are added, the gap
+is large: {{< var EtenRawKrrSRARsq >}} with R as it is, and
+{{< var EtenSRARsq >}} with log R. Kernel ridge compares runs by their
+distance, and with R as it is, the runs below 0.01 look almost the same in
+shape. With R as it is, the interaction of scale and shape also does not
+show. On an unseen alpha the gain is smaller, and a straight line in the three
+statistics ranks runs a little better with R as it is.
 :::
 
 ## Tier 3 on an unseen $\alpha$ in numbers

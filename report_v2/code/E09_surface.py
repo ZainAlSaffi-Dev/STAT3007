@@ -5,7 +5,7 @@ with all three statistics and their pairwise products, fitted with censoring on 
 eta lambda at most 1e-3 (penalizer 1e-4). The z-scores use the mean and spread of all 630 runs. Its
 interval comes from 200 bootstrap draws of whole cells (model_fitting/3_kernel_only.ipynb, Part 2).
 A negative gamma_SR means that a larger scale shortens the grokking time more when the kernel has
-rotated more.
+changed shape more.
 
 Figure: the kernel ridge prediction of log10 T over S_t and R_t at t*, with A_t at its median, fitted
 on the 355 runs that grok (model_fitting/4_nonlinear_exploration.ipynb, cells 28 and 33). The runs
@@ -61,7 +61,7 @@ def main():
     ax.scatter(grok.S_t, grok.R_t, s=5, color=C.TEXT, lw=0, alpha=0.8, label='runs that grok')
     ax.set_yscale('log')
     ax.set_xlabel(r'scale $S_t$ at $t^\ast$')
-    ax.set_ylabel(r'rotation $R_t$ at $t^\ast$')
+    ax.set_ylabel(r'shape $R_t$ at $t^\ast$')
     ax.grid(False)
     cb = fig.colorbar(im, ax=ax, pad=0.02)
     cb.set_label(r'predicted $\log_{10} T$')

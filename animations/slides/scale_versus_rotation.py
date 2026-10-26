@@ -1,6 +1,6 @@
 """A kernel can grow, or it can change shape, and both can travel the same distance.
 
-Slide 8 of the deck. This is a schematic, and it says so on screen. Each
+Slide 8 of the deck, in a column beside the distance. This is a schematic, and it says so on screen. Each
 ellipse is an exact 2 by 2 kernel, drawn by layout.kernel_ellipse: its axes are
 the eigenvectors and their lengths are the eigenvalues. The start is K_0 with
 eigenvalues 2 and 1. On the left the kernel grows, K_t = s K_0 with s from 1 to
@@ -9,11 +9,12 @@ the angle phi. For this K_0 the turn gives S_t = 1 and R_t = 0.2 sin^2 phi, so
 D_t^2 = 2 R_t by report_v2 Equation eq:identity. The turn stops at the angle
 where D_t = 0.5, the distance of the growth path, which is phi = 52.2 degrees.
 The counters compute D_t from the drawn matrices with kernels.statistics.
+The deck calls the second path a change of shape, its name for R_t.
 
 Render from animations/:
 
-    uv run manim -qh slides/scale_versus_rotation.py ScaleVersusRotation
-    uv run manim -qh -s slides/scale_versus_rotation.py ScaleVersusRotation
+    python -m manim -qh slides/scale_versus_rotation.py ScaleVersusRotation
+    python -m manim -qh -s slides/scale_versus_rotation.py ScaleVersusRotation
 """
 
 import sys
@@ -26,7 +27,7 @@ from manim import (DOWN, LEFT, RIGHT, UP, Create, DashedVMobject, DecimalNumber,
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from common import kernels, layout, palette
 
-SIZE = palette.LABEL_WIDE
+SIZE = palette.LABEL_COLUMN
 MATH = SIZE + 8
 UNIT = 0.75
 EIGENVALUES = (2.0, 1.0)
@@ -80,7 +81,7 @@ class ScaleVersusRotation(layout.QuickScene):
 
         ghosts = VGroup(*[DashedVMobject(layout.kernel_ellipse(K0, UNIT, palette.GRAY, centre, width=4)[0],
                                          num_dashes=48) for centre in (LEFT_CENTRE, RIGHT_CENTRE)])
-        names = VGroup(Text("growth", font_size=SIZE, color=palette.SCALE_TEXT).move_to(LEFT_CENTRE + 2.6 * UP),
+        names = VGroup(Text("change of scale", font_size=SIZE, color=palette.SCALE_TEXT).move_to(LEFT_CENTRE + 2.6 * UP),
                        Text("change of shape", font_size=SIZE, color=palette.ROTATION_TEXT)
                        .move_to(RIGHT_CENTRE + 2.6 * UP))
 

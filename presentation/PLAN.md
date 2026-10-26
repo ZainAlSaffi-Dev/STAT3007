@@ -24,69 +24,71 @@ The draft that was pasted into the chat on 14 October is the early skeleton of `
 
 ## 3. The story in five acts
 
-The talk asks one question: what sets the grokking time? It answers in five acts. Each act opens on a dark slide with a question, and a small label at the top of every slide shows which act the audience is in.
+The talk asks one question: what sets the grokking time? Its answer is a **mixed clock**. On modular addition the shape of the kernel is the most informative statistic, but it is not enough on its own, and width and weight decay both set the time. Each results slide ends with a "For the clock" line that says what it adds to that answer. The story was rebuilt on 25 October 2026 from the first round of feedback (Jasper, Zain and a third reviewer).
 
 | Act | Question on the act slide | What the audience should leave with | Core time |
 |---|---|---|---|
-| 1. Grokking | Why does a network take so much longer to generalise than to fit? | Grokking is a long delay. The literature disagrees about what sets it. | 1:25 |
-| 2. The tangent kernel | What does it mean for a network to learn features? | The kernel is the network's similarity between inputs. It can grow or change shape, and a distance cannot tell the two apart. Theory says weight decay only rescales it. | 3:05 |
-| 3. The experiment | How can one experiment tell the clocks apart? | Each account predicts a different result, and 720 runs cross the three knobs. | 1:00 |
-| 4. Results | Which clock does the grokking time follow? | The distance is mostly growth. Rotation is tied to grokking at a fixed width but is not enough. Both width and weight decay set the time. Rotation is the best early predictor, and scale adds to it. | 3:30 |
-| 5. What we found | So what sets the grokking time? | Weight decay sets the time through the weight norm on both tasks, and width enters only on modular addition. | 1:05 |
+| 1. Grokking | Why does a network take so much longer to generalise than to fit? | Grokking is a long delay on a standard task, modular addition. | 1:05 |
+| 2. The tangent kernel | What does it mean for a network to learn features? | The kernel is a snapshot of the features a network learns with. It can grow or change shape, a distance cannot tell which, and three numbers can. | 2:15 |
+| 3. What sets the clock? | Which kind of kernel movement sets the grokking time? | Every published clock is scale-like. Theory says weight decay only rescales the kernel. Our hypothesis is that shape sets the clock, and 720 runs test it. | 1:50 |
+| 4. Results | Which clock does the grokking time follow? | Shape is the most tied to grokking at a fixed width but is no threshold. Both width and weight decay set the time. Shape predicts best, and scale adds to it. On MNIST weight decay alone sets the time. | 3:15 |
+| 5. What we found | So what sets the grokking time? | A mixed clock, with shape as its best single reading. | 1:00 |
 
-The times include 5 seconds for each act slide. The render log prints these totals every time the deck builds.
+The times include 5 seconds for each act slide and the 15 seconds of the title. The render log prints these totals every time the deck builds.
 
 ## 4. Slide by slide
 
-The talk has 21 slides and five act slides, for 10:00 in all, since the MNIST slide grew from 0:20 to 0:30 on 22 October 2026 when the sweep results went in. On 18 October 2026 the nine optional slides moved to the backup, behind the closing slide, so they stay ready for questions. The speaker notes of every slide hold its message, a draft of what to say, and the budget with the running total.
+The talk has 19 slides and five act slides, 24 in all, for a core of 9:40. Four handovers add about 20 seconds, so the talk should land near 10:00, the middle of the marked window of 9.5 to 10.5 minutes. The speaker notes of every slide hold its message and its script as dot points. `make_script.py` collects them into `script.md`.
 
 | # | Act | Slide title (the message) | Visual | Budget |
 |---|---|---|---|---|
-| 1 | Opening | Title: Scale or Shape? | Title art, schematic | 0:15 |
-| 2 | Grokking | A network can fit its training data long before it generalises | clip GrokkingTimeline | 0:35 |
-| 3 | Grokking | The task is addition on a clock with 23 hours | clip ModularAdditionTable | 0:25 |
-| 4 | Grokking | What sets the length of the delay is disputed | three cards | 0:20 |
-| 5 | The tangent kernel | The tangent kernel says how a step on one input moves the output on another | clip NTKFromScratch | 0:40 |
-| 6 | The tangent kernel | In the lazy regime the kernel stays fixed during training | clip LazyVersusRich | 0:25 |
-| 7 | The tangent kernel | A kernel can grow, or it can change shape | clip ScaleVersusRotation | 0:25 |
-| 8 | The tangent kernel | Three numbers describe how the kernel moved | three cards, one per statistic | 0:35 |
-| 9 | The tangent kernel | The distance mixes growth and rotation | clip IdentityLevelSets | 0:20 |
-| 10 | The tangent kernel | In theory, weight decay only rescales the kernel | clip KernelFlow | 0:25 |
-| 11 | The experiment | Each account predicts a different result | table | 0:30 |
-| 12 | The experiment | We trained 720 networks across laziness, width and weight decay | clip GridOfRuns | 0:25 |
-| 13 | Results | Baseline: the network memorises early, groks late, and its kernel mostly grows | clip BaselineKernel | 0:30 |
-| 14 | Results | Tier 1: at a fixed width, rotation is the statistic most tied to grokking | clip PlaceboTest | 0:45 |
-| 15 | Results | Reaching that rotation is not enough to grok | text | 0:20 |
-| 16 | Results | Tier 2: the grokking time depends on both width and weight decay | slide figure E5 | 0:40 |
-| 17 | Results | Tier 3: rotation is the best single predictor, and scale adds what rotation lacks | live bar chart from E10 | 0:40 |
-| 18 | Results | Tier 4: on MNIST the time is set by weight decay alone | slide figure E19 | 0:30 |
-| 19 | What we found | Limitations, including the three things MNIST changes at once | text | 0:15 |
-| 20 | What we found | Weight decay sets the time, through the weight norm | three cards | 0:30 |
-| 21 | What we found | Thank you, with the AI-use statement | text | 0:05 |
+| 1 | Opening | Title: Scale or Shape? | title art | 0:15 |
+| 2 | Grokking | act slide | | 0:05 |
+| 3 | Grokking | A network can fit its training data long before it generalises | clip GrokkingTimeline | 0:35 |
+| 4 | Grokking | The task is modular addition, a standard test bed for grokking | still ModularAdditionTable | 0:25 |
+| 5 | The tangent kernel | act slide | | 0:05 |
+| 6 | The tangent kernel | The tangent kernel shows which inputs the network treats alike | text and formula | 0:35 |
+| 7 | The tangent kernel | Grokking may be the move from a fixed kernel to one that learns features | still LazyVersusRich | 0:30 |
+| 8 | The tangent kernel | A kernel can grow or change shape, and a distance cannot tell which | clip ScaleVersusRotation | 0:35 |
+| 9 | The tangent kernel | Three numbers say how the kernel moved | three cards | 0:30 |
+| 10 | What sets the clock? | act slide | | 0:05 |
+| 11 | What sets the clock? | Every published clock is scale-like | three cards | 0:25 |
+| 12 | What sets the clock? | In theory, weight decay rescales and width slows the change of shape | still KernelFlow | 0:30 |
+| 13 | What sets the clock? | Our hypothesis: the shape of the kernel sets the grokking time | table, one row per click | 0:30 |
+| 14 | What sets the clock? | We trained 720 networks across laziness, width and weight decay | table | 0:20 |
+| 15 | Results | act slide | | 0:05 |
+| 16 | Results | Tier 1: at a fixed width, shape is the statistic most tied to grokking | figure E3 | 0:45 |
+| 17 | Results | No statistic is a fixed threshold, so shape is not the whole clock | figure E2 | 0:25 |
+| 18 | Results | Tier 2: the grokking time follows both width and weight decay | the fit table (E5 in the backup) | 0:45 |
+| 19 | Results | Tier 3: shape is the best single predictor, and scale adds what shape lacks | bar chart | 0:40 |
+| 20 | Results | Tier 4: on MNIST, weight decay alone sets the time | figure E19 and a setup table | 0:35 |
+| 21 | What we found | act slide | | 0:05 |
+| 22 | What we found | Limitations | text | 0:20 |
+| 23 | What we found | Grokking runs on a mixed clock, and shape is its best single reading | three cards | 0:30 |
+| 24 | What we found | Thank you | | 0:05 |
 
-The backup slides come after the closing slide and do not count toward the time or the slide numbers. First come the nine slides that were optional: the distance as the usual evidence, the arrows (clip KernelAsArrows), the pattern on the torus (clip KernelOnTheTorus), the three tests, the statistics at grokking (E2), the two clocks (clip TwoClocks), the decay edge (E4), width sets the rotation (E7) and the unseen $\alpha$ (E8). Then come the identity behind the split, the placebo test in numbers, the Tier 2 fit with its checks, Tier 3 on held-out cells and on an unseen $\alpha$ in numbers, how the prediction models were scored, the baseline beside Kumar et al., and the references.
+The backup slides come after the closing slide and do not count toward the time or the slide numbers. They start with the AI-use statement, the baseline (clip BaselineKernel), the kernel of one network (clip NTKFromScratch), the split of the distance on a plane (clip IdentityLevelSets) and the placebo test step by step (clip PlaceboTest). The older backup slides follow.
 
 ## 5. Getting to ten minutes
 
-The talk comes to 9:50. Five speakers hand over four times, which costs about 20 seconds, so the group may still want to save a little. These cuts were made on 18 October 2026.
+The changes of 25 October 2026 brought the core from 10:00 to 9:40, so that the handovers fit inside the window.
 
-1. The nine optional slides moved to the backup. Together they took 3:50.
-2. The identity starts in its split form, on one slide. This saved 0:10.
-3. The MNIST slide showed the setup and said the results were pending, which saved 0:10. That cut was undone on 22 October 2026, when the sweep results replaced the placeholder and the slide went to 0:30. The talk is now at 10:00, so the next cut in this list has to be made.
-4. The limitations slide keeps the three points that bear on the claims, and the other two are in its notes. This saved 0:10.
-5. Every deck clip plays three times faster, so each lasts 5 to 10 seconds. `SPEED` in `animations/common/layout.py` sets the factor.
+1. Slides 9 and 11 of the old deck merged into one slide on the distance, which saved 0:10.
+2. The baseline slide moved to the backup, which saved 0:30. Its two facts moved: the reproduction of Kumar et al. to the setup slide and the 90% scale share to the distance slide.
+3. The slide on the published accounts moved from Act 1 to Act 3, after the kernel is defined.
+4. Slides that lost text lost time: the tangent kernel 0:40 to 0:35, the three numbers 0:35 to 0:30, the published clocks 0:30 to 0:25 and the setup 0:25 to 0:20. Results kept their time.
 
-If the talk still runs long, merge slide 15 into slide 14, with its two main sentences as a fragment under the tightening ratios, which saves 0:10, and speak the act slides in passing. To bring a backup slide back, move it to its place in the talk and give it a `time` attribute.
+If a timed run-through is still long, cut in this order: merge slide 17 into slide 16 with E2 in the backup (0:15), fold slide 11 into the columns of slide 13 (0:20), then speak the act slides in passing. If it is short, give the time to Tier 2.
 
-A possible split for five speakers follows the acts. Each act slide goes to the speaker who opens that act. The group may prefer fewer speakers, which saves handover time.
+A possible split for five speakers:
 
 | Turn | Slides | Time |
 |---|---|---|
-| 1 | 1 to 4: the title and grokking | 1:40 |
-| 2 | 5 to 8: the kernel, lazy and rich, growth and shape, the three numbers | 2:10 |
-| 3 | 9 to 12: the identity, the theory, the predictions and the grid | 1:45 |
-| 4 | 13 to 16: the baseline, Tier 1 and Tier 2 | 2:20 |
-| 5 | 17 to 21: Tier 3, MNIST, the limitations and the conclusion | 1:55 |
+| 1 | 1 to 4: the title, grokking and the task | 1:20 |
+| 2 | 5 to 9: the kernel, lazy and rich, the distance, the three numbers | 2:15 |
+| 3 | 10 to 14: the published clocks, the theory, the hypothesis and the grid | 1:50 |
+| 4 | 15 to 18: Tier 1, its limits and Tier 2 | 2:00 |
+| 5 | 19 to 24: Tier 3, MNIST, the limitations and the conclusion | 2:15 |
 
 ## 6. How the deck explains the kernel
 
@@ -95,33 +97,35 @@ Act 2 carries most of the explaining, so it follows a fixed order and one pictur
 1. **Start from something familiar.** A gradient step on one input moves the output on another input. The size of that move is the tangent kernel. This needs no infinite width and no theory, only the chain rule.
 2. **Name the two regimes.** In the lazy regime the kernel stays fixed. In the rich regime it changes and the network learns features. The output scale $\alpha$ moves a network between them.
 3. **Show why a distance is not enough.** The usual evidence for feature learning is the distance $D_t$ between the kernel now and at the start. A kernel that only grows can travel the same distance as one that changes shape.
-4. **Give one number to each kind of movement.** Scale $S_t$ for growth, rotation $R_t$ for change of shape, and alignment $A_t$ for agreement with the labels.
+4. **Give one number to each kind of movement.** Scale $S_t$ for growth, shape $R_t$ for change of shape, and alignment $A_t$ for agreement with the labels.
 5. **Show the identity.** $D_t^2 = (S_t - 1)^2 + 2 S_t R_t$, so a large distance can be pure growth.
 6. **Bring in the theory.** In the kernel-flow equation of Lewkowycz and Gur-Ari, weight decay only rescales the kernel. A change of shape needs a term that shrinks with width.
 
-The kernel is drawn as an ellipse throughout: its axes are the eigenvectors and their lengths are the eigenvalues. Growth makes the ellipse bigger, a change of shape turns or stretches it, and alignment is how well its long axis lines up with the labels. The title slide introduces the same three pictures, so the audience has seen them before Act 2 starts.
+The kernel is drawn as an ellipse throughout: its axes are the eigenvectors and their lengths are the eigenvalues. Growth makes the ellipse bigger, a change of shape turns or stretches it, and alignment is how well its long axis lines up with the labels. The title slide introduces the same three pictures, so the audience has seen them before Act 2 starts. Since 25 October 2026 the deck calls $R_t$ "shape" in every slide, figure and clip.
 
-Colour carries meaning in every slide, figure and clip: scale is blue, rotation is orange and alignment is aqua. Accuracy curves are grey for training and ink for test, so they never read as a statistic. Width uses the violet of the report figures. The colours come from `report_v2/code/common.py`.
+Colour carries meaning in every slide, figure and clip: scale is blue, shape is orange and alignment is aqua. Accuracy curves are grey for training and ink for test, so they never read as a statistic. Width uses the violet of the report figures. The colours come from `report_v2/code/common.py`.
 
 ## 7. Animations
 
 The deck has thirteen animations, and every one of them renders. The filter in `filters/g2.lua` swaps each placeholder for its clip as soon as the clip exists, so a scene goes into the deck by being rendered. The rules for writing a scene are in `animations/CLAUDE.md`, and `animations/README.md` describes each scene. The clips were built on 16 October 2026 on the machine that holds the full sweep. On 18 October 2026 they were sped up three times and committed, so the lengths below are those of the committed clips.
 
-| Priority | Scene | Slide | Kind | Data | Length |
+| Scene | Slide | Shown as | Kind | Data | Change on 25 October 2026 |
 |---|---|---|---|---|---|
-| 1 | `GrokkingTimeline` | 2 | measured | baseline $\alpha = 1$, seed 0, and its events in `report_runs.csv` | 6.6 s |
-| 1 | `NTKFromScratch` | 5 | schematic, then measured | the weights of the baseline at step 0, kernel on all 529 pairs | 10.0 s |
-| 1 | `ScaleVersusRotation` | 7 | schematic | exact 2 by 2 kernels | 8.3 s |
-| 1 | `PlaceboTest` | 14 | measured | the 78 runs of width 100 that grok, with the 2,000 shuffles of E03 | 8.3 s |
-| 2 | `LazyVersusRich` | 6 | schematic, then measured | the baseline at $\alpha$ = 0.5, 1 and 2, seed 0 | 8.3 s |
-| 2 | `IdentityLevelSets` | 9 | identity, then measured | the baseline, seed 0 | 6.7 s |
-| 2 | `KernelFlow` | 10 | schematic | Eqs. S5 and S6 of Lewkowycz and Gur-Ari, checked in arXiv v2 | 6.6 s |
-| 2 | `ModularAdditionTable` | 3 | data | the split of data seed 42 | 5.0 s |
-| new | `GridOfRuns` | 12 | design | the settings and counts of `report_runs.csv` | 5.0 s |
-| new | `BaselineKernel` | 13 | measured | the five baseline seeds; replaces report figure E1 | 8.3 s |
-| 3 | `TwoClocks` | backup | fit and predictions | the main row of `E06.json` | 6.7 s |
-| 3 | `KernelAsArrows` | backup | schematic | arrows drawn for the picture | 6.6 s |
-| 3 | `KernelOnTheTorus` | backup | measured | the weights of the baseline, kernel on all 529 pairs | 10.0 s |
+| `GrokkingTimeline` | 3 | clip | measured | baseline $\alpha = 1$, seed 0, and its events in `report_runs.csv` | a "generalised" label, and each label in the colour of its curve |
+| `ModularAdditionTable` | 4 | still | data | the split of data seed 42 | shown as a still |
+| `LazyVersusRich` | 7 | still | schematic, then measured | the baseline at $\alpha$ = 0.5, 1 and 2, seed 0 | shown as a still |
+| `ScaleVersusRotation` | 8 | clip | schematic | exact 2 by 2 kernels | labels "change of scale" and "change of shape", at column size |
+| `KernelFlow` | 12 | still | schematic | Eqs. S5 and S6 of Lewkowycz and Gur-Ari, checked in arXiv v2 | redrawn as two panels: the scale part shrinks the kernel, and the shape part turns it at N = 100 and less at N = 1600 (our prediction) |
+| `BaselineKernel` | backup | clip | measured | the five baseline seeds | moved to the backup with its slide |
+| `NTKFromScratch` | backup | clip | schematic, then measured | the weights of the baseline at step 0 | moved to the backup |
+| `IdentityLevelSets` | backup | clip | identity, then measured | the baseline, seed 0 | "shape part"; moved to the backup |
+| `PlaceboTest` | backup | clip | measured | the 78 runs of width 100 that grok | replaced on slide 16 by the figure E3 |
+| `TwoClocks` | backup | clip | fit and predictions | the main row of `E06.json` | "shape clock" |
+| `KernelAsArrows` | backup | clip | schematic | arrows drawn for the picture | none |
+| `KernelOnTheTorus` | backup | clip | measured | the weights of the baseline | none |
+| `GridOfRuns` | none | | design | the settings and counts of `report_runs.csv` | dropped from the deck |
+
+Only two slides still play a clip, slides 3 and 8, where the motion carries the message. The attribute `still="true"` shows the last frame of a clip on the others.
 
 These points were settled while building the clips.
 
@@ -129,7 +133,7 @@ These points were settled while building the clips.
 - `animations/common/palette.py` now draws training accuracy in grey and test accuracy in ink, as the report does, and every Text uses Helvetica Neue, the deck's fallback font.
 - The seed 0 curves in `model_fitting/data/curves/` match `report_v2/code/data/checkpoints_slim.parquet` to within 4.8e-7. `animations/extract_deck_data.py` checks this every time it runs.
 - `TurnAndAim` and `AimOverTraining` stay out of the deck, because their identity needs the centred $R_t$. They still render.
-- Slide 12 plots the scale part against the rotation part on one scale, so that lines of equal $D_t$ are diagonals and the baseline path visibly stays close to the growth axis.
+- The clip `IdentityLevelSets`, now in the backup, plots the scale part against the shape part on one scale, so that lines of equal $D_t$ are diagonals and the baseline path visibly stays close to the growth axis.
 - `TwoClocks` draws two slices through the centre of the fit in place of three planes in 3D, which Manim's renderer could not show readably.
 - On the torus slide, now in the backup, the change of the report's uncentred kernel falls on the shared-input cross and rises most along the sum line and the difference line. The scene asserts this before it draws the lines.
 - No clip pauses in the middle. If a run-through shows that a clip outruns its speaker, end a Manim section there with `self.next_section()` and render with `--save_sections`. Each section is then its own clip, which the slide can name with the `clip` attribute.
@@ -140,16 +144,16 @@ The report figures were drawn for an A4 page, so their text is small on a projec
 
 | Figure | Slide | Source | State |
 |---|---|---|---|
-| E1 baseline | 18 | `report_v2/code/E01_baseline.py` | replaced by the clip `BaselineKernel` |
-| E2 statistics at grokking | 20 | `E02_thresholds.py` | done: one hue per statistic in place of the shading by weight decay, and the tightening ratio on each panel |
-| E4 time and outcome map | 24 | `E04_map.py` | done: no counts or phase letters, since every cell at $\alpha = 1$ has 0 or 5 seeds that grok |
-| E5 scaling | 22 | `E05_scaling.py` | done. The report dropped this figure on 17 October 2026 and suggested it for the seminar, so the speaker notes say how to read it |
-| E7 mechanism | 25 | `E07_mechanism.py` | done: the two maps stacked, without the number in each cell; the slide now has the figure and the text in two columns |
-| E8 prediction ladder | 27 | `E08_ladder.py` | done: the mean bars only, the models in plain words, and the labels above the plot. Redrawn on 18 October 2026 with the rungs of the report figure of 17 October: each statistic alone, the trees and the recurrent network |
-| E9 surface | none | `E09_surface.py` | dropped on 18 October 2026, since the report cut the figure and the claim that rotation and scale interact on 17 October |
-| Tier 3 subsets | 26 | `E10.json` through `_variables.yml` | done: the filter draws the bars |
-| GridDiagram | 16 | none | replaced by the clip `GridOfRuns` |
-| E19 MNIST | 28 | `mnist/sweep/runs.parquet` and `E19.json` | done 22 October 2026: panels (a) the time against weight decay and (b) the weight norm at grokking, without the report's grid map, which does not read on a projector. The placeholder `MnistResult` is gone |
+| E1 baseline | none | `report_v2/code/E01_baseline.py` | replaced by the clip `BaselineKernel`, now in the backup |
+| E2 statistics at grokking | 17 | `E02_thresholds.py` | one hue per statistic, "shape" for $R_t$, and the SD ratio of the placebo test on each panel; drawn for a column of 62% since 25 October 2026 |
+| E3 placebo boxes | 16 | `E03_placebo.py` and the committed checkpoints | new on 25 October 2026: for each statistic, a box at each run's own grokking step and a box at another run's step, with the SD ratio and $p$. The script recomputes the ratios and checks them against `E03.json` |
+| E4 time and outcome map | backup | `E04_map.py` | no counts or phase letters, since every cell at $\alpha = 1$ has 0 or 5 seeds that grok |
+| E5 scaling | backup | `E05_scaling.py` | since 25 October 2026: no fitted lines, a shaded fit range, and the two reference slopes named by clock |
+| E7 mechanism | backup | `E07_mechanism.py` | the two maps stacked, with "shape" for $R_t$ |
+| E8 prediction ladder | backup | `E08_ladder.py` | the mean bars only, the models in plain words |
+| E9 surface | none | `E09_surface.py` | dropped on 18 October 2026 with the claim that the two statistics interact |
+| Tier 3 subsets | 19 | `E10.json` through `_variables.yml` | the filter draws the bars, all at once since 25 October 2026 |
+| E19 MNIST | 20 | `mnist/sweep/runs.parquet` and `E19.json` | panels (a) the time against weight decay and (b) the weight norm at grokking |
 
 This plan first suggested a slide style inside the report scripts, so that both versions come from one place. The slide versions went into a separate script in `presentation/` instead, so that no file in `report_v2` changed. The cost is that the drawing code exists twice, and a change to a report figure has to be made in `make_figures.py` as well.
 
@@ -159,8 +163,8 @@ The report figures on the slides with one figure across the slide (E2 and E7) ha
 
 The limits in `report_v2/CLAUDE.md` apply to every slide and every speaker note. In short:
 
-- Rotation is the statistic most tied to the grokking step only at a fixed width. Across widths no statistic passes the placebo test at level 0.95.
-- Reaching the usual rotation does not make a network grok. Never say it does.
+- Shape is the statistic most tied to the grokking step only at a fixed width. Across widths no statistic passes the placebo test at level 0.95.
+- Reaching the usual shape change does not make a network grok. Never say it does.
 - The alignment barely changes between step 0 and grokking. Never call it a threshold or a clock.
 - The interval of $\gamma$ includes zero, so its sign is not claimed.
 - The Tier 2 exponents hold for the range in which every seed groks. Say so whenever $b$ is quoted.
@@ -171,7 +175,7 @@ On MNIST (Tier 4), the limits come from `report_v2/code/out/numbers/E19.json`.
 
 - The width exponent is zero and the decay exponent is minus one. Never say that width lengthens the time on MNIST.
 - The law $T = \ln(s/n_c)/(\eta\lambda)$ is from Liu, Michaud and Tegmark (2023), Section 2. Do not present it as ours.
-- Width sets the rotation and the rotation plays no part in the time. Do not say that rotation is absent on MNIST.
+- Width sets the shape change and the shape change plays no part in the time. Do not say that the shape change is absent on MNIST.
 - Width 100 does not follow the law and is left out of the fits. Do not say it never groks.
 - The reading that width enters only where the task forces the kernel to change shape is the group's own. Label it so, and cite Mohamadi et al. (2024) for the result it rests on.
 - The curvature learning-rate rule sets the memorisation step. State it rather than hide it. Whether the group accepts the rule is still open in the report.
@@ -183,11 +187,11 @@ Every citation uses an entry from `ref.bib`, which copies the verified entries o
 - **The date and the length of the slot.** The brief says week 13 and about ten minutes. Confirm both, and whether questions are inside the slot.
 - **Speakers.** Who presents which part, and how many of us speak.
 - **The title.** The report lists this as open: keep "Scale or Shape?" or change it to give the answer.
-- **"Rotation" or "shape".** The report keeps "rotation" for $R_t$ for now. The deck follows the report and says once that $R_t$ measures any change of shape. If the report switches, change the deck too.
+- **"Rotation" or "shape".** Settled on 25 October 2026 by Jasper. The deck and the report both call $R_t$ "shape".
 - **MNIST.** Settled on 22 October 2026. The sweep finished on 19 October, so slide 18 presents the results.
 - **Optional slides.** Which of the eleven survive.
 - **Laptop or room computer.** The HTML deck plays clips but needs our own laptop and, for the formulas, a network connection. The PDF works anywhere but shows clips as stills. Bring both.
-- **The AI-use statement.** The closing slide has a draft. It should match the statement in the report.
+- **The AI-use statement.** It moved from the closing slide to the first backup slide on 25 October 2026. It should match the statement in the report.
 - **One reference title.** The Lewkowycz and Gur-Ari entry in the verified bibliography escapes its formula, so the reference list printed `$l_2$` literally. The arXiv abstract page, checked on 16 October 2026, writes the formula as $L_2$ in math with a capital L. The deck's `ref.bib` now does the same. The copies in `report_v2/overleaf/ref.bib` and `docs/ref.bib` still escape it, and changing them is the group's call.
 
 ## 11. Schedule

@@ -44,6 +44,9 @@ presentation/
   _variables.yml     every number on the slides; written by make_numbers.py
   make_numbers.py    copies report_v2/overleaf/numbers.tex into _variables.yml
   make_figures.py    draws the slide versions of the report figures into assets/figures
+  make_script.py     collects the speaker notes into script.md and checks each slide's length
+  script.md          the dot-point script, written by make_script.py; do not edit by hand
+  questions.md       the answers to the questions we expect, appended to script.md
   export_pdf.py      writes the PDF for upload
   filters/g2.lua     act labels, clips, bar charts and the time budget
   theme/g2.scss      colours, fonts and the layout classes
@@ -58,7 +61,7 @@ presentation/
 Each level 2 heading is a slide, and its title states the message of the slide. Each level 1 heading with the class `act` opens an act, with the act's question in the paragraph below it.
 
 ```markdown
-## Rotation is tied to grokking at a fixed width {time="0:45"}
+## Shape is tied to grokking at a fixed width {time="0:45"}
 ```
 
 `time` is the budget of the slide, in minutes and seconds. Add the class `.optional` to mark a slide that can be cut, and `visibility="hidden"` to leave a slide out without deleting it. Put what to say in a `::: {.notes}` block. The filter adds the budget and the running total at the top of the notes.
@@ -86,16 +89,16 @@ An animation is a div that names its Manim scene and holds its storyboard:
 :::
 ```
 
-While no clip exists, the slide shows an amber box with the storyboard. Once the scene is rendered in `animations/`, the filter finds the clip in `animations/out/mp4/` and plays it on the slide, with the still from `animations/out/stills/` as its poster. A file in `assets/video/` or `assets/stills/` with the same name takes precedence. Add `clip="Name"` when the file name differs from the scene, and `loop="true"` for a clip that should loop. The rules for writing a scene are in `animations/CLAUDE.md`.
+While no clip exists, the slide shows an amber box with the storyboard. Once the scene is rendered in `animations/`, the filter finds the clip in `animations/out/mp4/` and plays it on the slide, with the still from `animations/out/stills/` as its poster. A file in `assets/video/` or `assets/stills/` with the same name takes precedence. Add `clip="Name"` when the file name differs from the scene, and `loop="true"` for a clip that should loop. Add `still="true"` to show the clip's last frame as a picture without playing it. The deck keeps playing clips only where the motion carries the slide. The rules for writing a scene are in `animations/CLAUDE.md`.
 
 A div with the class `figure-todo` and a `name` stands for a static figure still to make, in the same amber style.
 
 ### Figures
 
-The results slides show slide versions of the report figures E2, E4, E5, E7 and E8. `make_figures.py` draws them from the committed data and the saved numbers of `report_v2/code`, with the colours of `report_v2/code/common.py`. Each figure is 16 by 9 and its type matches the clips. Run it from the repository root with the root environment, which has the packages of `pyproject.toml`:
+The results slides show slide versions of the report figures E2, E4, E5, E7, E8 and E19, and the placebo boxes E3, which the report shows as a table. `make_figures.py` draws them from the committed data and the saved numbers of `report_v2/code`, with the colours of `report_v2/code/common.py`. Each figure is 16 by 9 and its type matches the clips. Run it from the repository root with the root environment, which has the packages of `pyproject.toml`:
 
 ```bash
-.venv/bin/python presentation/make_figures.py
+python presentation/make_figures.py
 ```
 
 It writes `assets/figures/E<k>_<name>.png` in a few seconds and trains nothing. The drawing code is a copy of the report scripts, so a change to a report figure has to be made in `make_figures.py` as well.
@@ -118,20 +121,36 @@ The class of each label picks the colour of its bar. `.stepwise` shows one bar p
 
 ### Colours and layout
 
-The three statistics have one colour each in every slide, figure and clip: scale is blue, rotation is orange and alignment is aqua.
+The three statistics have one colour each in every slide, figure and clip: scale is blue, shape is orange and alignment is aqua. The class names keep the older word "rotation" for the orange of $R_t$.
 
-- `[rotation $R_t$]{.g2-key .is-rotation}` puts a swatch of the colour before ink text. Use it in tables and result boxes.
+- `[shape $R_t$]{.g2-key .is-rotation}` puts a swatch of the colour before ink text. Use it in tables and result boxes.
 - `\Sc`, `\Rc` and `\Ac` are the coloured symbols for formulas.
 - `.c-scale`, `.c-rotation` and `.c-alignment` colour a word or two of text. They use darker steps of each colour so the text stays readable.
 - `.g2-cards` lays out two or three cards side by side. Give each card `.g2-card` and a colour class, `.is-scale`, `.is-rotation`, `.is-alignment` or `.is-ink`, and start it with `[Title]{.g2-card-title}`. Do not start a card with a `###` heading, because pandoc would turn the card into a section and reveal.js would count it as a slide.
 - `.g2-result` is a grey box for one result. `.g2-lead` is a large sentence that carries the slide. `.g2-small` and `.g2-source` are small print. `.g2-compact` makes a crowded column smaller.
-- `![](assets/figures/E4_map.png){.g2-fig}` places a figure. `[To agree as a group]{.g2-todo-chip}` is a small amber tag for something still open.
+- `![](assets/figures/E4_map.png){.g2-fig}` places a figure. `[agree this as a group]{.g2-todo-chip}` is a filled red tag that reads "TODO: agree this as a group"; the word TODO comes from the theme. The render log lists every chip with its slide. Clear every chip before the final export.
+- `.g2-takeaway` closes a results slide with one sentence on what the result means for the clock, under a small "For the clock" kicker. Every results slide ends with one, so the talk keeps one thread.
+- `.g2-steprows` around a table shows its rows one per click, as on the hypothesis slide.
+- `.g2-tier2` sizes the text and table of the Tier 2 slide.
+- `.g2-invariant` with `.g2-lead` is the line under the three cards of slide 9.
+
+The formulas use MathJax 2 with its SVG output, set in `theme/mathjax-svg.html`, so that braces and symbols stay smooth when reveal.js scales a slide.
 
 The colours are set in `theme/g2.scss`, and they match `report_v2/code/common.py` and `animations/common/palette.py`. Change them in all three places or not at all.
 
 ### Citations
 
 Cite with `[@key]` or `@key`, using the keys in `ref.bib`. The reference list is built on the last backup slide. Do not start a line with `@key.`, because pandoc reads that as a numbered example list. To add a source, check it as the root `CLAUDE.md` asks, copy its entry from `docs/ref.bib` or `report_v2/overleaf/ref.bib` if it is there, and say in a comment where it came from.
+
+## The script
+
+The speaker notes in `slides.qmd` are the script. Each note starts with `Turn N.` and then has the parts `Message:`, `Say:`, `Point at:` and `If asked:`, each a list of full sentences. Run
+
+```bash
+python presentation/make_script.py
+```
+
+to write `script.md`, grouped by turn, with every number filled in from `_variables.yml` and `questions.md` appended. It also prints a table with two checks for every slide. The first compares the words under `Say:` with the slide's budget at 150 words a minute. The second counts the words a viewer reads on the slide, leaving out formulas, tables, figure labels, clip storyboards and citations, against a cap of about 40. Change the notes in the deck, never `script.md` itself.
 
 ## On the day
 

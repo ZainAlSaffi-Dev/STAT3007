@@ -1,24 +1,24 @@
 """The distance mixes growth and rotation: lines of equal D_t in the plane of the two parts.
 
-Slide 12 of the deck. By report_v2 Equation eq:identity,
+A backup slide of the deck. By report_v2 Equation eq:identity,
 D_t^2 = (S_t - 1)^2 + 2 S_t R_t. So in the plane of the scale part (S_t - 1)^2
-across and the rotation part 2 S_t R_t up, drawn on one scale, every line of
+across and the shape part 2 S_t R_t up, drawn on one scale, every line of
 equal D_t is the diagonal x + y = D_t^2. The grey lines are exact.
 
 The first part is a schematic at D_t = 0.5, the distance of slide 8. Growth by
 1.5 times puts all of D_t^2 = 0.25 in the scale part. A change of shape at a
-fixed size puts all of it in the rotation part, with R_t = 0.125. The second
+fixed size puts all of it in the shape part, with R_t = 0.125. The second
 part zooms out to the measured path of the baseline run ntk_N100_a1_wd0_s0
 (alpha 1, width 100, eta lambda 0, seed 0) over its 307 checkpoints, read from
 its committed seed 0 curve. At its last step the scale part is 12.5 and the
-rotation part 0.67, so the path stays close to the growth axis. The scene
+shape part 0.67, so the path stays close to the growth axis. The scene
 asserts that the recorded D_sum of the run satisfies the identity at every
 checkpoint.
 
 Render from animations/:
 
-    uv run manim -qh slides/identity_level_sets.py IdentityLevelSets
-    uv run manim -qh -s slides/identity_level_sets.py IdentityLevelSets
+    python -m manim -qh slides/identity_level_sets.py IdentityLevelSets
+    python -m manim -qh -s slides/identity_level_sets.py IdentityLevelSets
 """
 
 import sys
@@ -86,7 +86,7 @@ class IdentityLevelSets(layout.QuickScene):
         x_name = VGroup(Text("scale part", font_size=SIZE, color=palette.INK),
                         MathTex("(S_t - 1)^2", font_size=MATH, color=palette.SCALE_TEXT)).arrange(RIGHT, buff=0.25)
         x_name.next_to(axes[0], DOWN, buff=0.85)
-        y_name = VGroup(Text("rotation part", font_size=SIZE, color=palette.INK),
+        y_name = VGroup(Text("shape part", font_size=SIZE, color=palette.INK),
                         MathTex("2 S_t R_t", font_size=MATH, color=palette.ROTATION_TEXT)).arrange(RIGHT, buff=0.25)
         y_name.next_to(axes[1], UP, buff=0.3).align_to(axes[1], LEFT)
 
@@ -102,7 +102,7 @@ class IdentityLevelSets(layout.QuickScene):
         level_key = VGroup(DashedLine(ORIGIN_LEFT, ORIGIN_LEFT + 0.6 * RIGHT, color=palette.GRAY, stroke_width=4,
                                       dash_length=0.1),
                            MathTex(r"D_t = 1,\ 2,\ 3", font_size=MATH, color=palette.GRAY)).arrange(RIGHT, buff=0.25)
-        keys = VGroup(key(palette.SCALE, "growth"), key(palette.ROTATION, "change of shape"),
+        keys = VGroup(key(palette.SCALE, "change of scale"), key(palette.ROTATION, "change of shape"),
                       key(palette.INK, "baseline run"), level_key).arrange(DOWN, aligned_edge=LEFT, buff=0.45)
         keys.move_to([3.6, 0.6, 0])
         small_label = MathTex(r"D_t = 0.5", font_size=MATH, color=palette.GRAY)
