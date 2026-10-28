@@ -27,7 +27,7 @@ Each slide gives its number in the browser, its budget and the running total. "S
 
 **Say**
 
-- But first, let's define what we mean by grokking.
+- But first, let's unpack the term grokking.
 
 ### Slide 3. A network can fit its training data long before it generalises (0:35, total 0:55)
 
@@ -40,7 +40,7 @@ Each slide gives its number in the browser, its budget and the running total. "S
 - Test accuracy, in black, stays near zero and rises later, and the step where it reaches 0.95 is the grokking step T.
 - Over five seeds, the median memorisation step is 2,983 while the median grokking step is 23,000.
 - That gap is grokking.
-- Being able to measure or predict grokking would make it easier to understand if and when a neural network is learning things
+- Being able to measure or predict the grokking step would make it easier to understand if and when a neural network is learning things
 and could be applied to allocate compute resources more effectively when training a network.
 
 **Point at**
