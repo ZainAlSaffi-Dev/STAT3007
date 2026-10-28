@@ -100,16 +100,7 @@ Say:
 
 # Grokking {.act time="0:05"}
 
-A network fits its training data early. Why does it take so much longer to work
-on data it has not seen?
-
-::: {.notes}
-Turn 1.
-
-Say:
-
-- What sets this delay is disputed, and we test the published answers.
-:::
+What does it mean for a network to grok?
 
 ## A network can fit its training data long before it generalises {time="0:35"}
 
@@ -126,19 +117,29 @@ Say:
    seed 0) from `report_v2/code/data`.
 :::
 :::
-::: {.column width="38%" .g2-compact}
-**Memorisation** is the first step at which training accuracy reaches 0.99.
+::: {.column width="38%"}
+::: {.g2-result}
+[Memorisation]{.g2-card-title}
 
-**The grokking step $T$** is the first step at which test accuracy reaches
-0.95.
+The first step at which training accuracy reaches 0.99.
+:::
 
-::: {.g2-small}
-We repeated every analysis at test accuracy 0.80 and 0.90.
+::: {.g2-result}
+[Grokking step $T$]{.g2-card-title}
+
+The first step at which test accuracy reaches 0.95.
+:::
+
+::: {.g2-result}
+[The gap]{.g2-card-title}
+
+Over five seeds the median memorisation step is
+{{< var NfiveAOneMemMedian >}} and the median grokking step is
+{{< var NfiveAOneGrokMedian >}}.
 :::
 
 ::: {.g2-source}
-Grokking was first reported on small algorithmic datasets
-[@powerGrokkingGeneralizationOverfitting2022].
+Grokking was first reported by @powerGrokkingGeneralizationOverfitting2022.
 :::
 :::
 ::::
@@ -167,29 +168,39 @@ If asked:
 - We report 0.95 and repeated every analysis at 0.80 and 0.90, and the signs of our scaling exponents hold at every level.
 :::
 
-## The task is modular addition, a standard test bed for grokking {time="0:25"}
+## The task is modular addition {time="0:25"}
 
 :::: {.columns}
-::: {.column width="52%" .g2-compact}
-- The input is a pair $(a, b)$ with $a, b \in \{0, \dots, 22\}$. The target
-  is $(a + b) \bmod 23$, so $(20 + 5) \bmod 23 = 2$.
-- Each run trains on 476 of the 529 pairs and tests on the other 53.
-- The network has one hidden layer of width $N$:
+::: {.column width="52%"}
+::: {.g2-result}
+[The task]{.g2-card-title}
+
+The input is a pair $(a, b)$ with $a, b \in \{0, \dots, 22\}$. The target is
+$(a + b) \bmod 23$, so $(20 + 5) \bmod 23 = 2$.
+:::
+
+::: {.g2-result}
+[The split]{.g2-card-title}
+
+Train 476 of the 529 pairs, tests on the other 53.
+:::
+
+::: {.g2-result}
+[The network]{.g2-card-title}
+
+The network has one hidden layer of width $N$. It is trained on the squared
+error by full-batch gradient descent.
 
 $$
-f(x;\theta) = N^{-1/2}\, W^{(2)} \phi\!\left(D^{-1/2} W^{(1)} x\right)
+f(x;\theta) = N^{-1/2}\, W^{(2)} \phi\!\left(D^{-1/2} W^{(1)} x\right), \qquad D = 46
 $$
-
-::: {.g2-small}
-$N^{-1/2}$ and $D^{-1/2}$ are the NTK parameterisation of
-@jacotNeuralTangentKernel2020.
 :::
 
 ::: {.g2-source}
-Modular addition is a common test bed for grokking
-[@gromovGrokkingModularArithmetic2023; @nandaProgressMeasuresGrokking2023;
-@mohamadiWhyYouGrok2024]. Our setup is the baseline of
-@kumarGrokkingTransitionLazy2024 [App. 8.3, arXiv v3].
+Modular addition is a common test bed
+[@gromovGrokkingModularArithmetic2023; @nandaProgressMeasuresGrokking2023], and
+our setup is the baseline of @kumarGrokkingTransitionLazy2024 [App. 8.3, arXiv
+v3].
 :::
 :::
 ::: {.column width="48%"}

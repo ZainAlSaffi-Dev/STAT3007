@@ -360,6 +360,21 @@ $presentation-title-slide-text-align: left;
 
 .reveal .g2-result p { margin: 0.2em 0; }
 
+// A result box can also carry a title, written [Title]{.g2-card-title}, so that
+// a stack of boxes reads as a short list of definitions.
+.reveal .g2-result .g2-card-title {
+  display: block;
+  margin: 0 0 0.35em 0;
+  font-size: 0.72em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: $g2-ink;
+}
+
+// A stack of result boxes in one column needs a gap between the boxes.
+.reveal .g2-result + .g2-result { margin-top: 0.7em; }
+
 // The closing line of a results slide: what the result means for the clock.
 // Write ::: {.g2-takeaway} with one sentence inside. The kicker comes from CSS,
 // so every results slide ends the same way and the talk keeps one thread.
