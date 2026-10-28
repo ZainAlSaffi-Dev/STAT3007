@@ -20,14 +20,14 @@ Each slide gives its number in the browser, its budget and the running total. "S
 
 **Say**
 
-- We are group G2, and our project is about grokking, where a network generalises long after it fits its training data.
-- We tracked the network's tangent kernel during training to find out what sets the length of that delay.
+- We are group G2, and our project is about grokking, a phenomenon where a network generalises long after it fits its training data.
+- We tracked the network's tangent kernel during training to see if we could use it to predict grokking.
 
 ### Act 2. Grokking (0:05, total 0:20)
 
 **Say**
 
-- What sets this delay is disputed, and we test the published answers.
+- But first, let's define what we mean by grokking.
 
 ### Slide 3. A network can fit its training data long before it generalises (0:35, total 0:55)
 
@@ -35,11 +35,13 @@ Each slide gives its number in the browser, its budget and the running total. "S
 
 **Say**
 
-- This is one of our baseline networks learning modular addition.
-- Training accuracy, in grey, reaches 0.99 early, and we call that step memorisation.
-- Test accuracy, in black, stays near zero and climbs much later, and the step where it reaches 0.95 is the grokking step T.
-- Over five seeds, the median memorisation step is 2,983 and the median grokking step is 23,000.
-- That gap is grokking, and the rest of the talk asks what sets its length.
+- This graph on screen shows one of our baseline networks learning modular addition.
+- Training accuracy, in grey, reaches 0.99 early, which we refer to as the memorisation step.
+- Test accuracy, in black, stays near zero and rises later, and the step where it reaches 0.95 is the grokking step T.
+- Over five seeds, the median memorisation step is 2,983 while the median grokking step is 23,000.
+- That gap is grokking.
+- Being able to measure or predict grokking would make it easier to understand if and when a neural network is learning things
+and could be applied to allocate compute resources more effectively when training a network.
 
 **Point at**
 
@@ -56,10 +58,10 @@ Each slide gives its number in the browser, its budget and the running total. "S
 
 **Say**
 
-- Our task is modular addition with modulus 23.
-- The network sees two numbers and must output their sum mod 23, so 20 plus 5 gives 2.
-- Each run trains on 476 of the 529 pairs and must fill in the other 53, the outlined cells.
-- This task is a standard test bed in the theory of grokking, and our setup is the baseline of Kumar and coauthors.
+- The task we chose is modular addition with modulus 23.
+- The network sees two numbers between 0 and 22 and must output their sum mod 23, so if the input was 20 and 5, the output should be 2.
+- Each run trains on 476 of the 529 pairs and must predict the other 53.
+- This task is a standard test bed in the theory of grokking, and our setup is the baseline of an existing paper.
 
 **If asked**
 
