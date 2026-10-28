@@ -400,31 +400,6 @@ $presentation-title-slide-text-align: left;
 
 .reveal .g2-takeaway p { margin: 0; }
 
-// The closing line of a results slide: what the result means for the clock.
-// Write ::: {.g2-takeaway} with one sentence inside. The kicker comes from CSS,
-// so every results slide ends the same way and the talk keeps one thread.
-.reveal .g2-takeaway {
-  border-top: 4px solid $g2-ink;
-  padding-top: 12px;
-  margin-top: 0.6em;
-  font-size: 0.78em;
-  font-weight: 600;
-  line-height: 1.3;
-}
-
-.reveal .g2-takeaway::before {
-  content: "For the clock";
-  display: block;
-  font-size: 0.68em;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: $g2-muted;
-  margin-bottom: 0.2em;
-}
-
-.reveal .g2-takeaway p { margin: 0; }
-
 // Tables.
 .reveal table {
   font-size: 0.62em;
