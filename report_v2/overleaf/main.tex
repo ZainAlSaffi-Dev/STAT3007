@@ -44,14 +44,14 @@
 % file outside this folder. The scripts of report_v2/code/ write the figures,
 % the tables and numbers.tex.
 %
-% Red text is for the group and must be deleted before submission:
-%   \TODO{...}        a task.
-%   \pending{v}{ID}   a planning value from a read-only check on data/. Item ID
-%                     of EXPERIMENTS_TODO.md recomputes it before it is final.
-%   \budget{...}      the page budget of a section.
-%   draftnote         a red block. The draft notes after the consent page hold
-%                     the criteria self-assessment, the changelog and the
-%                     reference checks.
+% Red text is for the group and must be deleted before submission. Only the
+% \TODO marks that need the group's own words are left: the contribution lines,
+% the acknowledgement, the AI-use text, the consent choice and the link to the
+% code. The page budgets, the draft notes and the criteria self-assessment were
+% removed on 4 November 2026. The changelog is now report_v2/REPORT_CHANGELOG.md
+% and the reference checks are the commented block at the end of this file. The
+% macros \pending, \budget, \placeholderfigure and draftnote are kept because
+% the commented-out Tier 4' section still uses them.
 \usepackage{booktabs}
 \usepackage{longtable}
 \usepackage{array}
@@ -87,26 +87,6 @@ Zac Kienzle (s4803349) $\cdot$ Samuel Rieger (s4904959)}
 \date{}
 \maketitle
 
-\begin{draftnote}
-\noindent\textbf{Notes for the group. Delete this block before submission.}
-\begin{itemize}
-  \item Each experiment section opens with its main finding. Every number
-    comes from the scripts in \file{report_v2/code/} through
-    \file{numbers.tex}. No red planning values are left, since the E14
-    cross-check was dropped on 17 October 2026.
-  \item The main text must end by page 12. References and appendices do not
-    count, and the appendices may take at most 5 pages. Each section shows its
-    page budget.
-  \item The draft notes after the consent page hold the criteria
-    self-assessment, the changelog of what was cut and why, and the reference
-    checks.
-  \item Blue text marks the edits of 20 October 2026 that add the MNIST
-    tier (\cref{sec:tier4mnist}) and change the sections around it. A blue
-    bracketed note marks each cut or move. Delete the blue markup after
-    review, and keep the text.
-\end{itemize}
-\end{draftnote}
-
 \begin{abstract}
   Grokking is delayed generalisation of a network, but what determines
   the delay is disputed. We decompose the movement of the neural tangent
@@ -126,12 +106,11 @@ Zac Kienzle (s4803349) $\cdot$ Samuel Rieger (s4904959)}
 
 % =====================================================================
 \section{Introduction}
-\budget{1.0 page}
 
 Grokking is the delayed generalisation that
 \citet{powerGrokkingGeneralizationOverfitting2022} found on small algorithmic
-datasets. A network fits its training data early, and its test accuracy rises
-significantly long afterwards. Modular addition learned by a two-layer perceptron
+datasets. A network fits its training data early, and its test accuracy rises long
+afterwards. Modular addition learned by a two-layer perceptron
 is a small instance of it. Full-batch gradient descent on the squared error
 groks there with no explicit regularisation
 \citep{gromovGrokkingModularArithmetic2023}. What sets the length of the delay
@@ -158,8 +137,12 @@ the kernel to change is that of \citet{lewkowyczTrainingDynamicsDeep2021}, in
 which the kernel only shrinks. None of these accounts measures whether the
 kernel changes shape.
 
-The shape matters for the lazy-to-rich account of grokking. A kernel that only grows keeps its eigenvectors, so a
-large distance does not by itself show that features were learned.
+Knowing when a network will grok would be useful in practice. The tangent
+kernel can be measured on any network trained by gradient descent, while the
+settings the published clocks need are not always known. An estimate of the
+time lets training stop once a network has generalised, which saves compute,
+and it says when during training a capability appears, which an audit of a
+model has to establish.
 
 We ask what sets the grokking time: the shape of the kernel, its scale, or the
 weight-decay rate. Our hypothesis is that the shape change sets it. We measure three
@@ -198,7 +181,6 @@ the kernel to change shape.
 
 % =====================================================================
 \section{Related Work}\label{sec:related}
-\budget{1.2 pages}
 
 \paragraph{Grokking.}
 \citet{powerGrokkingGeneralizationOverfitting2022} report grokking on small
@@ -258,11 +240,10 @@ derivative of the loss with respect to the output
 \citep[Eqs.~S5 and S6, arXiv v2]{lewkowyczTrainingDynamicsDeep2021}. The weight
 decay appears only in the first term, which rescales the kernel. Only $T_t$ can
 change its shape. At initialisation $T_0$ has expectation of order $1/N$ in the width
-$N$, a result that \citet{lewkowyczTrainingDynamicsDeep2021} take from Dyer and
-Gur-Ari (2020). In the infinite-width limit the kernel therefore only decays,
-with fixed eigenvectors \citep[Thms.~1 and 2]{lewkowyczTrainingDynamicsDeep2021}.
-\TODO{Dyer and Gur-Ari (2020) is named here only as Lewkowycz and Gur-Ari's
-source. Add it to ref.bib only after checking it on arXiv.}
+$N$, a result that \citet{lewkowyczTrainingDynamicsDeep2021} take from
+\citet{dyerAsymptoticsWideNetworks2020}. In the infinite-width limit the kernel
+therefore only decays, with fixed eigenvectors
+\citep[Thms.~1 and 2]{lewkowyczTrainingDynamicsDeep2021}.
 
 \paragraph{Predictions.}
 \Cref{tab:predictions} sets out what each account predicts for the three tests
@@ -311,7 +292,6 @@ learning.
 
 % =====================================================================
 \section{Methods}\label{sec:methods}
-\budget{1.8 pages}
 
 \subsection{Task, network and training}\label{sec:setup}
 
@@ -339,7 +319,9 @@ squared error averaged over the outputs and the training pairs. Training is
 full-batch gradient descent with weight decay,
 $\theta_{k+1}=(1-\eta\lambda)\theta_k-\eta\nabla L(\theta_k)$. For plain
 gradient descent this is the same as $L_2$ regularisation
-\citep{kimGrokkingWeightDecayClock2026}. \Cref{tab:hyper} (Appendix~\ref{app:settings}) lists every setting.
+\citep{kimGrokkingWeightDecayClock2026}. \Cref{tab:hyper} (Appendix~\ref{app:settings}) lists every setting. The code that trains the
+runs and rebuilds every figure, table and number is in \file{report_v2/code/}.
+\TODO{Replace with the link to the public repository once it exists.}
 
 \subsection{The grid}\label{sec:grid}
 
@@ -388,10 +370,6 @@ is a function of the other two,
 $D_t=\lvert S_t-1\rvert$. A large $D_t$ therefore does not show that the kernel
 changed shape.
 
-\TODO{Add a notation table here if the group wants one: $S_t$, $R_t$, $A_t$,
-$T$, $\tstar$, $a$, $b$, with the value of each at initialisation and how to read
-it. It costs about a quarter of a page.}
-
 \subsection{Event times}\label{sec:events}
 
 The memorisation step of a run is the first checkpoint at which its training
@@ -428,7 +406,6 @@ model
   + \sigma\varepsilon,\qquad \varepsilon\sim\mathcal{N}(0,1),
   \label{eq:aft}
 \end{equation}
-\TODO{i think this needs more explanation for our audience}
 by maximum likelihood. A censored run contributes the probability that its
 grokking step exceeds the budget
 \citep{kalbfleischStatisticalAnalysisFailure2002}. Both logarithms are centred at
@@ -439,11 +416,12 @@ misfit of the cells about the fitted plane.
 
 \paragraph{Prediction (Tier 3).} We read $S_t$, $\log R_t$ and $A_t$ at
 $\tstar=2\,430$, a saved step before any run reaches the grokking level, and
-ask how well they predict the grokking step. At $\tstar$, $R_t$ spans more than
-a decade across widths. We tried $R_t$ and $\log R_t$, along with other
-non-linear forms, and $\log R_t$ gave the best prediction of the forms of
-$R_t$. \TODO{Zain: confirm which forms were compared, and whether $\log S_t$
-was tried} The five seeds of a cell are close
+ask how well they predict the grokking step. At $\tstar$ the values of $R_t$
+cluster near zero. \EtenRawRSmall{} of the runs that grok have $R_t$ below
+0.01, and the largest is \EtenRawRMax. Taking the logarithm spreads them out
+and predicts better, so we use $\log R_t$. Kernel ridge on all three statistics
+reaches \EtenRawKrrSRARsq{} with $R_t$ and \EtenSRARsq{} with $\log R_t$.
+The five seeds of a cell are close
 copies, so whole groups of runs are always held out. Two tests are used. The
 first holds out one cell at a time, which tests interpolation. Kernel ridge
 regression with a Gaussian kernel is fitted on each subset of the statistics,
@@ -483,7 +461,6 @@ since no run reaches 0.95 (Appendix~\ref{app:mnist}).
 \section{Experiments}\label{sec:experiments}
 
 \subsection{Baseline: the reproduction of Kumar et al.}\label{sec:baseline}
-\budget{0.8 page}
 
 \textbf{Finding.} Our runs reproduce the baseline of
 \citet{kumarGrokkingTransitionLazy2024}. The network memorises within a few
@@ -494,7 +471,7 @@ time the kernel grows several-fold while $R_t$ stays below 0.09.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\linewidth]{figures/E1_baseline.pdf}
+  \includegraphics[width=0.92\linewidth]{figures/E1_baseline.pdf}
   \caption{Training at the baseline of \citet{kumarGrokkingTransitionLazy2024}
     ($N=100$, $\eta\lambda=0$) for three values of $\alpha$. Each line is the
     median over 5 seeds and the shading is their range. Darker lines are lazier
@@ -517,7 +494,6 @@ $(S_t-1)^2$ and a shape part $2S_tR_t$. At $\alpha=1$ the scale part is
 the growth of the kernel, which is why we measure $S_t$ and $R_t$ separately.
 
 \subsection{Tier 1: is there a threshold?}\label{sec:tier1}
-\budget{1.6 pages}
 
 \textbf{Finding.} At a fixed width, shape is the statistic most tied to the
 grokking step, but reaching that shape change does not make a network grok. The
@@ -526,7 +502,7 @@ widths, no statistic takes a fixed value at grokking.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\linewidth]{figures/E2_thresholds.pdf}
+  \includegraphics[width=0.85\linewidth]{figures/E2_thresholds.pdf}
   \caption{The kernel statistics at the grokking step of every run that groks.
     Top row: $N=100$, grouped by $\alpha$. Bottom row: $\alpha=1$, grouped by
     width. Colour is $\eta\lambda$, darker for larger, and bars are medians.
@@ -596,7 +572,6 @@ critical weight norm of \citet{khanhWeightNormSets2026}, can be given the same
 placebo check.
 
 \subsection{Tier 2: width or weight decay?}\label{sec:tier2}
-\budget{2.0 pages}
 
 \textbf{Finding.} The grokking time depends on both width and weight decay, so
 neither the shape clock nor the weight-decay clock of
@@ -624,14 +599,10 @@ $N=800$ and $N=1600$. At $10^{-3}$ and above no width groks. A wider network
 thus groks later at the same weight decay and stops grokking at a smaller one,
 so the weight decay that speeds grokking depends on the width.
 
-\TODO{The figure of the grokking time against weight decay at each width (E5,
-\file{figures/E5_scaling.pdf}) is commented out here, because
-\cref{tab:scaling} gives the same result and the figure is hard to read
-without an explanation. Consider it for the seminar, where we can explain how
-to read it.}
-
 % FIGURE E5 COMMENTED OUT on 17 October 2026 at the user's request (Jasper
-% Chong). To restore it, remove the leading '% ' from the lines below.
+% Chong). It gives the same result as Table 3 and is hard to read without an
+% explanation, so it stayed out of the report and was used in the seminar
+% instead. To restore it, remove the leading '% ' from the lines below.
 % \begin{figure}[H]
 %   \centering
 %   \includegraphics[width=0.72\linewidth]{figures/E5_scaling.pdf}
@@ -703,7 +674,6 @@ back to Tier 1. Width sets the shape change, weight decay is one of the settings
 set the scale, and the grokking time depends on both.
 
 \subsection{Tier 3: predicting the grokking time from the kernel}\label{sec:tier3}
-\budget{1.6 pages}
 
 \textbf{Finding.} Read before any run groks, shape is the best single predictor
 of the grokking time on held-out cells. Scale adds information that shape lacks, and alignment
@@ -789,7 +759,9 @@ $\log N$ alone reach \EeightWidthref{}, and given $\eta\lambda$ alone they reach
 \EeightDecayref{} (\EeightDecayrefLo{} to \EeightDecayrefHi{} over seeds). Each
 setting alone therefore ranks runs worse than the two together. This supports
 the mixed clock of \cref{sec:tier2}, in which the grokking time depends on both
-width and weight decay.
+width and weight decay. It also sets the limit of the use described in the
+Introduction: the statistics time a run from quantities that any network
+exposes, while a network whose settings are known is timed better from them.
 
 % FIGURE E9 AND THE PRODUCT COEFFICIENT COMMENTED OUT on 17 October 2026 at the
 % user's request (Jasper Chong). The finding of this section then said "The
@@ -822,7 +794,6 @@ width and weight decay.
 % section from the commented-out Tier 4' below: Tier 4 is an empirical
 % extension to a second task, while Tier 4' was a theory extension.
 \subsection{Tier 4: a second task, MNIST digits}\label{sec:tier4mnist}
-\budget{1.0 page}
 
 \textbf{Finding.} On MNIST the weight-decay clock of \cref{tab:predictions}
 holds exactly. The grokking time falls inversely proportional to weight decay
@@ -966,7 +937,6 @@ reading, the kernel must change shape first, at a rate that depends on width.
 
 % =====================================================================
 \section{Limitations}\label{sec:limitations}
-\budget{0.6 page}
 
 Every modular addition run uses the NTK parameterisation, one task and
 one architecture. A width effect measured here belongs to this
@@ -986,12 +956,13 @@ The MNIST runs differ in not only the task but the architecture and
 method for inducing grokking, with the most impactful of these being the
 uncentred predictor. Our comparison assumes that none of these changes
 which clock applies. With only two tasks to compare we cannot tell which of them,
-if any, is responsible for the different result. Tier 4 tests which clock
+if any, is responsible for the different result. Two small tasks can show that
+a clock fails, as the width exponent does on MNIST, and they cannot fix the
+exponents for other architectures, losses or scales. Tier 4 tests which clock
 sets the time once a delay exists, not whether a shape change can cause one.
 
 % =====================================================================
 \section{Conclusion}\label{sec:conclusion}
-\budget{0.3 page}
 
 We asked what sets the grokking time: the shape of the tangent kernel, its
 scale, or the weight-decay rate. On modular addition the answer is a mixed
@@ -1043,8 +1014,17 @@ result and every reference before submission.
 % =====================================================================
 \appendix
 
+\TODO{Check whether the appendices have a page limit. The copy of
+\file{project.pdf} in the repository gives none, and the marking sheet should be
+read again. If the limit is 5 pages, about half a page has to go: on the build
+of 4 November 2026 the appendices run from the lower half of page 13 to the
+lower part of page 18. The candidates, in order of least loss: the prose of
+Appendix~\ref{app:mnist}, parts of which repeat \cref{tab:mnist-settings}; the
+last paragraph of Appendix~\ref{app:levels} on seed-only intervals; and
+Appendix~\ref{app:kumar}, which would free three quarters of a page on its own
+and is the evidence for the reproduction.}
+
 \section{The identity for the variation}\label{app:identity}
-\budget{0.5 page (appendices: 5 pages in all)}
 
 Expanding the squared norm gives
 $\Fnorm{K_t-K_0}^2=\Fnorm{K_t}^2-2\langle K_t,K_0\rangle_F+\Fnorm{K_0}^2$.
@@ -1052,41 +1032,30 @@ Dividing by $\Fnorm{K_0}^2$ and using
 $\langle K_t,K_0\rangle_F=(1-R_t)\Fnorm{K_t}\Fnorm{K_0}$ from
 \eqref{eq:statistics} gives $D_t^2=S_t^2-2S_t(1-R_t)+1$. By the Cauchy-Schwarz
 inequality, $R_t=0$ exactly when $K_t=cK_0$ for some $c>0$, and then
-$D_t=\lvert S_t-1\rvert$. \TODO{Check against the golden report, Appendix A.1.}
+$D_t=\lvert S_t-1\rvert$.
 
 \section{The baseline against Kumar et al.}\label{app:kumar}
-\budget{0.75 page}
-
-\TODO{Decide whether the report needs this appendix for the reproduction.
-\Cref{sec:baseline} states the result, and this appendix holds the check
-setting by setting, the event steps and the full split of $D_t^2$. If the
-appendix goes, keep one sentence in \cref{sec:baseline} saying that our networks
-memorise several times sooner than theirs. CLAUDE.md (Rule 3) asks the report to
-state where our results and a source disagree.}
 
 \Cref{tab:kumar-settings} sets each setting of our baseline beside
-\citet[arXiv v3]{kumarGrokkingTransitionLazy2024}. We read their Appendices 8.1
-and 8.3, Section 3 and Figure 2. They do not state the parameterisation or the
-initialisation. \Cref{tab:kumar-events} sets our event steps beside the steps
-read by eye from their Figure 2, which shows one run for each $\alpha$. Their
-grokking at $\alpha=0.5$ and $\alpha=1$ falls close to ours. Their training
-accuracy rises much more slowly. At $\alpha=1$ it reaches 100\% near 20\,000
-epochs, while our runs reach 0.99 by about 3\,000 steps. The parameterisation
-and the initialisation they leave unstated may explain this gap. The
-reproduction therefore matches on the grokking time and on the order in
-$\alpha$, and does not match on the memorisation time. They also sweep
-$\alpha=1.5$, which our grid leaves out.
+\citet[arXiv v3]{kumarGrokkingTransitionLazy2024}, read from their Appendices
+8.1 and 8.3, Section 3 and Figure 2, and \cref{tab:kumar-events} sets our event
+steps beside the steps read by eye from their Figure 2. Their grokking at
+$\alpha=0.5$ and $\alpha=1$ falls close to ours. Their training accuracy rises
+much more slowly, reaching 100\% near 20\,000 epochs at $\alpha=1$, where our
+runs reach 0.99 by about 3\,000 steps. They do not state the parameterisation
+or the initialisation, which may explain this gap. The reproduction therefore
+matches on the grokking time and on the order in $\alpha$, and does not match
+on the memorisation time.
 
 \Cref{sec:baseline} gives the split of the variation at grokking for $\alpha=1$.
-The other events and values of $\alpha$ follow. At $\alpha=1$ the scale part $(S_t-1)^2$ is \NtwoAOneMem{} of
-$D_t^2$ at memorisation, \NtwoAOneGrok{} at grokking and \NtwoAOneFinal{} at the
-last step. At the last step $S_t$ is \NtwoAOneSfinal{}, while $R_t$ is only
-\NtwoAOneRfinal{}. The scale part is \NtwoAHalfGrok{} at grokking for
-$\alpha=0.5$. For $\alpha=2$ it is \NtwoATwoMem{} at memorisation and
-\NtwoATwoFinal{} at the last step.
+The scale part $(S_t-1)^2$ is \NtwoAOneMem{} of $D_t^2$ at memorisation and
+\NtwoAOneFinal{} at the last step, where $S_t$ is \NtwoAOneSfinal{} and $R_t$
+is only \NtwoAOneRfinal. At grokking it is \NtwoAHalfGrok{} for $\alpha=0.5$,
+and for $\alpha=2$ it is \NtwoATwoMem{} at memorisation and \NtwoATwoFinal{}
+at the last step.
 
 \begin{table}[H]
-  \centering\small
+  \centering\footnotesize
   \caption{The baseline setting by setting. ``Where'' is the place in
     \citet[arXiv v3]{kumarGrokkingTransitionLazy2024} that gives the setting.}
   \label{tab:kumar-settings}
@@ -1103,7 +1072,6 @@ $\alpha=0.5$. For $\alpha=2$ it is \NtwoATwoMem{} at memorisation and
 \end{table}
 
 \section{Outcomes over the whole grid}\label{app:grid}
-\budget{1.0 page}
 
 \Cref{tab:grid} gives the outcome of every cell. An entry gives the seeds that
 grok at level 0.95 out of 5. After a colon it gives the median grokking step in
@@ -1126,7 +1094,6 @@ at $\alpha=1$ and \EthirteenATwoAllGrok{} at $\alpha=2$.
 % history of main.tex before this date.
 
 \section{Settings of the prediction models}\label{app:fitting}
-\budget{1.0 page}
 
 All models use the 630 runs with $\eta\lambda\le10^{-3}$, with $S_t$,
 $\log R_t$ and $A_t$ read at $\tstar$. The grokking step of a censored run is
@@ -1163,7 +1130,6 @@ best weights are kept. Early stopping chose between \EfifteenGruEpochsMin{} and
 \EfifteenGruEpochsMax{} epochs. The seeds are 0 to 2.
 
 \section{Sensitivity to the grokking level}\label{app:levels}
-\budget{0.5 page}
 
 \Cref{tab:levels-thresholds} repeats the placebo test at the levels 0.80 and
 0.90, and \cref{tab:levels-scaling} repeats the main fit. At $N=100$ the order of
@@ -1202,7 +1168,7 @@ narrower: for $a$ it runs from \EsixMainASeedlo{} to \EsixMainASeedhi.
 \section{Settings of the modular addition runs}\label{app:settings}
 
 \begin{table}[H]
-  \centering\small
+  \centering\footnotesize
   \caption{Every setting of the runs. One combination of $(\alpha,N,\eta\lambda)$
     is a cell (\cref{sec:grid}), and each cell has 5 seeds.}
   \label{tab:hyper}
@@ -1233,7 +1199,6 @@ narrower: for $a$ it runs from \EsixMainASeedlo{} to \EsixMainASeedhi.
 % 3 Oct 2026 14:29 to 17:10 with 4 wide and 8 narrow workers.
 
 \section{Settings of the MNIST runs}\label{app:mnist}
-\budget{0.75 page}
 
 \Cref{tab:mnist-settings} gives every setting of the MNIST sweep beside
 the modular addition setting it replaces. \Cref{tab:mnist-rows} gives the
@@ -1254,9 +1219,8 @@ little delay to time; it reaches the level later than the wider networks at
 the same decay, with a lower and scattered norm, so it does not follow the
 law and is left out of the fits. We read this as a limit of capacity at
 1\,000 images. Without weight decay no run reaches the level within the
-budget. The three widths of the main range memorise
-within a few thousand steps of each other, and a network at $s=3$ already
-has test accuracy \EnineteenSthreeAccmem{} when it memorises. The norm
+budget. A network at $s=3$ already has test accuracy
+\EnineteenSthreeAccmem{} when it memorises. The norm
 follows pure decay, $\lVert\theta_T\rVert=\lVert\theta_0\rVert
 e^{-\eta\lambda T}$, to within \EnineteenPureGap{} of the initial norm, and
 the law of \cref{sec:tier4mnist} has correlation \EnineteenCorr{} with the
@@ -1280,7 +1244,7 @@ memorise.
 % 200,000 steps. Test accuracy at memorisation 0.870, 0.874, 0.884, 0.899.
 
 \begin{table}[H]
-  \centering\small
+  \centering\footnotesize
   \caption{The MNIST runs setting by setting, beside the modular addition
     setting of \cref{tab:hyper}. The learning-rate rule and the probe follow
     \file{mnist/README.md}.}
@@ -1307,6 +1271,7 @@ memorise.
 
 \begin{table}[H]
   \centering\footnotesize
+  \setlength{\tabcolsep}{4pt}
   \caption{Fits of \eqref{eq:aft} on MNIST at $N\in\{200,400,800\}$,
     with 95\% intervals from the bootstrap of \cref{tab:scaling}. The main
     row is the fit quoted in \cref{sec:tier4mnist}: $s=7$ with $\eta\lambda$
@@ -1340,564 +1305,65 @@ teaching resource by including one of the statement below.
 \end{center}
 \TODO{Keep one of the two statements.}
 
+\TODO{Before submission, confirm that the course report template is
+\file{proposal_template.tex}, which the preamble of this file follows word for
+word, and that the font size, the page size and every line marked ``Don't
+change this'' are unchanged.}
+
 % =====================================================================
-% Draft notes for the group. Delete everything from here to \end{document}
-% before submission.
-\newpage
-\normalsize
-\begin{draftnote}
-\section*{Draft notes: delete before submission}
+% REFERENCE CHECKS. Kept as a comment so the group can see how each entry of
+% ref.bib was verified, and so nothing of it prints. Every entry was checked on
+% 5 October 2026 against its arXiv abstract page, its DOI record on Crossref or
+% PubMed, and each section, theorem and equation number cited in the text was
+% checked in the PDF of the version the text names. Two later checks are in the
+% table below. The changelog of what was cut, moved and decided is now
+% report_v2/REPORT_CHANGELOG.md; the criteria self-assessment was deleted on
+% 4 November 2026 and is in the git history of this file.
+%
+% Settled on 4 November 2026:
+%   Dyer and Gur-Ari (2020). Checked against arXiv 1909.11304 (v1, 25 Sep 2019,
+%     the only version) and the ICLR 2020 programme. Now cited in Section 2.
+%   Kalbfleisch and Prentice (2002). The 2002 Wiley-Interscience printing is the
+%     second edition, ISBN 978-0-471-36357-6, so edition = 2 in ref.bib is right.
+% Still open for the group:
+%   Whether the first author of the two Khanh papers is Khanh or Truong. The bib
+%     follows arXiv, which parses the surname as Khanh.
+%
+% Every entry of \texttt{ref.bib} was checked on 5 October 2026 against its arXiv
+% abstract page, its DOI record on Crossref, or PubMed. Each section and equation
+% number cited in the text was checked in the PDF of the version named.
+%
+% {\small
+% \begin{longtable}{L{3.1cm}L{2.3cm}L{1.9cm}L{6.3cm}}
+%   \toprule
+%   Entry & Checked against & Status & Notes \\
+%   \midrule
+%   \endhead
+%   Power et al.\ 2022 & arXiv 2201.02177 & Matches & v1 only. \\
+%   Nanda et al.\ 2023 & arXiv 2301.05217 & Matches & v3 of 19 Oct 2023 gives the month. The v3 PDF was read on 12 Oct 2026 for the progress-measure sentence of \cref{sec:tier3}. Page 1 defines progress measures as ``metrics that precede and are causally linked to the phase transition, and which vary more smoothly'', after Barak et al.\ (2022). The report claims only the first and last conditions for $R_t$. \\
+%   Gromov 2023 & arXiv 2301.02679 & Matches & \\
+%   Jacot et al.\ 2020 & arXiv 1806.07572 & Matches & Year is v4 (Feb 2020); NeurIPS 2018. \\
+%   Chizat et al.\ 2020 & arXiv 1812.07956 & Matches & Year is v5 (Jan 2020); NeurIPS 2019. \\
+%   Kumar et al.\ 2024 & arXiv 2310.06110 & Matches & v3 of 11 Apr 2024. App.~8.1 and 8.3, Sec.~3 and Fig.~2 read in the v3 PDF on 11 Oct 2026 (Appendix~\ref{app:kumar}). \\
+%   Mohamadi et al.\ 2024 & arXiv 2407.12332 & Matches & ICML 2024. \\
+%   Mohamadi, Bae, Sutherland 2022 & arXiv 2206.12543 & Matches, entry type changed & The golden bib types it as an article with no journal. It is typed misc here. Published at ICML 2023. \\
+%   Lewkowycz, Gur-Ari 2021 & arXiv 2006.08643, PDFs of v1 and v2 & Matches & Year is v2 (Jan 2021); NeurIPS 2020. CLAUDE.md gives both 2020 and 2021. The kernel flow is Eq.~S5 and $T_t$ is Eq.~S6 in both v1 and v2. The proposal's draft note, which says they become S8 and S9 in v2, is wrong: S8 in v2 is the infinite-width solution. $E[T_0]=O(n^{-1})$ is credited to Dyer and Gur-Ari (2020), which is not in ref.bib. \\
+%   Fort et al.\ 2020 & arXiv 2010.15110 & Matches & NeurIPS 2020. \\
+%   Geiger et al.\ 2020 & Crossref and arXiv 1906.08034 & Matches & JSTAT 2020, 113301. \\
+%   Cortes et al.\ 2024 & arXiv 1203.0550 & Matches & Year is v3 (Apr 2024). The paper is JMLR 13 (2012), 795--828. \\
+%   Khanh et al.\ 2026 & arXiv 2606.13753 & Matches arXiv; name order flagged & arXiv lists ``Truong Xuan Khanh'' and parses the surname as Khanh, so ``Khanh et al.''\ matches arXiv. In Vietnamese order the family name is usually written first, which would make it ``Truong et al.''. The co-authors have the same question. The proposal's key is \texttt{truong2026norm}. The group should decide. \\
+%   Khanh 2026 & arXiv 2606.18465 & Matches arXiv; name order flagged & As above. \\
+%   Kim 2026 & arXiv 2607.23967 & Matches & Cor.~5 and Eq.~20 checked in the v1 PDF (page 8). The Scope paragraph cited in Section 2 and Tier 2 is on page 3 of v1. It lists grokking without explicit weight decay and the creation of new population-visible directions by feature learning among what the mechanism does not explain. \\
+%   Pracher et al.\ 2026 & arXiv 2609.26679 & Matches, fields added & The golden bib gives only the DOI. The eprint, month and class were added. v1 of 22 Sep 2026. \\
+%   Kalbfleisch, Prentice 2002 & Crossref, Open Library & Matches, edition changed & The golden bib gives edition 1. The 2002 Wiley printing is the second edition; the first appeared in 1980. Crossref lists the online version as edition 1, so this needs a check of the book itself. \\
+%   Davidson-Pilon 2019 & Crossref & Matches & JOSS 4(40), 1317. \\
+%   Harrell et al.\ 1982 (new) & PubMed 7069920, Crossref & Matches & JAMA 247(18), 2543--2546. Crossref lists only the first author; PubMed lists all five. \\
+%   Chen, Guestrin 2016 (new) & arXiv 1603.02754 & Matches & KDD 2016. \\
+%   Cho et al.\ 2014 (new) & arXiv 1406.1078 & Matches & EMNLP 2014. \\
+%   Liu, Michaud, Tegmark 2023 (new, 20 Oct 2026) & arXiv 2210.01117, PDF of v2 & Matches & v2 of 23 Mar 2023; ICLR 2023. The entry is the golden report's, without its abstract field. Section 2 (page 3) gives $w(t)\approx e^{-\gamma t}w_0$ and $t\approx\ln(w_0/w_c)/\gamma$ when weight decay is the only regulariser and the training loss is negligible after fitting; Figure 2(c) shows the time to 95\% test accuracy inversely proportional to the decay. Section 4 (page 5) gives the MNIST recipe: 1k training images, Kaiming uniform initial weights scaled by $\alpha>1$, a depth-3 width-200 ReLU MLP, AdamW, MSE on one-hot targets. Our runs use SGD without biases in place of AdamW. \\
+%   \bottomrule
+% \end{longtable}
+% }
 
-\subsection*{1. How the report meets each marking criterion}
-
-The marking rubric (screenshot of 17 October 2026; the text that the screenshot
-cuts off was supplied by Jasper Chong) has five criteria. Each is worth 4 of the
-20 marks of the report and is scored from 0 to 100\%. The four bands are very
-good (75 to 100\%), good (50 to 75\%), poor (25 to 50\%) and very poor (0 to
-25\%). The rubric regroups the five criteria of the task sheet
-(\file{project.pdf}). Presentation takes clarity and conciseness, correctness
-and reproducibility are now one criterion, and quality of work takes
-significance and novelty. Reference is new. The task sheet still sets the
-required content of the main text and its limit of 12 pages.
-
-The first column quotes the rubric, first its short text and then its very good
-band. The other columns give where the report stands on 17 October 2026, the
-band we expect, and what would raise it. The bands are our own estimate.
-
-{\small
-\begin{longtable}{L{3.7cm}L{3.9cm}L{1.4cm}L{4.6cm}}
-  \toprule
-  Criterion (4 marks each) & Where the report stands & Likely band & What would raise it \\
-  \midrule
-  \endhead
-  \textbf{Presentation.} ``Accurate language; organized, professional
-  formatting according to the provided template; clear notation and technical
-  statements.'' Very good: ``Free of spelling, grammar, and punctuation errors.
-  Content is well-organized and professionally formatted according to the
-  provided template. Notation and technical statements are clear. Writing is
-  concise and direct.'' (The screenshot cuts off the end of the short text.) &
-  The preamble of the template is unchanged. One research question, and three
-  statistics on one kernel (\cref{eq:statistics}). A cell is defined in
-  \cref{sec:grid}. Each experiment opens with its finding. The main text has
-  five figures and five tables, with one colour for each statistic in every
-  figure. The clear typos of the abstract and the Introduction were fixed on 17
-  October. & Good. & Write the Limitations as short prose; they are still a list
-  under a TODO. Check that the plain account of the accelerated failure time
-  model in \cref{sec:analysis} (added 25 October 2026) is enough for our
-  audience. Decide on the notation table. ``Rises
-  significantly'' in the first paragraph of the Introduction may read as
-  statistical significance. Check every figure at print size. Have a member who
-  did not write a section read it for spelling and for the writing rules of
-  CLAUDE.md. Remove all red markup. \\
-  \textbf{Completeness.} ``Covers the problem, significance, solution, main
-  findings, limitations of the study, and conclusion.'' Very good: ``Clearly and
-  adequately covers the problem, its significance, solution, main findings,
-  limitations of the study, and conclusion.'' & The problem and its significance
-  are in Sections 1 and 2, with \cref{tab:predictions}. The solution is in
-  Section 3, the findings in Section 4, the limitations in Section 5 and the
-  conclusion in Section 6. The contribution, AI use and consent sections exist.
-  & Good. & \Cref{sec:tier4mnist} (MNIST) and the Limitations were
-  filled in on 20 October 2026. Fill in the contribution lines,
-  the acknowledgement and the consent choice, and agree the AI-use text. \\
-  \textbf{Correctness and reproducibility.} ``Sufficient technical details are
-  provided. The work is reproducible and correct.'' Very good: ``Work is
-  technically correct and internally consistent. Methods, data, assumptions,
-  and relevant implementation details are sufficiently specified to reproduce
-  the results.'' & \Cref{tab:hyper} gives every setting, the split rule and the
-  compute. Appendix~\ref{app:fitting} gives every setting of the prediction
-  models. \file{report_v2/code/} rebuilds every figure, table and number with
-  \file{make_all.py} from a 9 MB extract with checksums, and every number in the
-  text is a macro. The checks of 12 October recomputed the kernel by autograd,
-  retrained the baseline run and reproduced 133 macros with independent code.
-  The fits are censored, their intervals resample cells, and the prediction
-  tests hold out whole cells or values of $\alpha$. & Good to very good. & Add one
-  check of the log-normal assumption, such as a probability plot of the residuals
-  of the main fit. Say in the report where the code is, and submit it as a zip.
-  Keep the gap in memorisation time against Kumar et al.\ stated
-  (Appendix~\ref{app:kumar}); if that appendix goes, move one sentence to
-  \cref{sec:baseline}. \\
-  \textbf{Reference.} ``Citations support claims originating outside the
-  project. References are professionally formatted, with no fake or
-  hallucinated sources.'' Very good: ``Claims originating outside the project
-  are supported by appropriate citations. References are genuine, accurate,
-  complete, professionally formatted, and clearly linked to the cited claims.''
-  & All 21 entries of \file{ref.bib} were checked against arXiv, Crossref or
-  PubMed (Section 3 of these notes). Every section, equation and page number
-  cited was checked in the version named in the text, and the text names that
-  version. & Good. & Dyer and Gur-Ari (2020) is named in \cref{sec:related}
-  without a citation. Check it on arXiv and cite it, or drop the clause. Settle
-  Khanh or Truong as the family name, and confirm the Kalbfleisch edition. The
-  years follow the arXiv versions, as in the golden report: Jacot et al.\ 2020
-  for a NeurIPS 2018 paper and Cortes et al.\ 2024 for a JMLR 2012 paper. A
-  marker may read these as wrong years. Adding the venue to these entries is a
-  decision for the group. \\
-  \textbf{Quality of work.} ``Significant and challenging project. Execution
-  demonstrates technical clarity, rigor, creativity, and coherence, with
-  well-motivated problems, well-justified decisions, and well-supported
-  claims.'' Very good: ``Project is significant and challenging. Execution
-  demonstrates strong technical clarity, rigor, creativity, and coherence.
-  Problems are well-motivated, decisions are well-justified, and claims are
-  well-supported. Methods, findings, and conclusions form a coherent whole.'' &
-  The question sets three recent accounts against each other, and
-  \cref{tab:predictions} gives what each one predicts. Each tier answers one
-  column of that table. The 720 runs cross laziness, width and weight decay. The
-  new parts are the split of the kernel's movement into scale and shape
-  (\cref{eq:identity}), the placebo test for threshold claims, the crossed grid,
-  and prediction from measurable quantities against a settings reference. Every
-  claim is held to the limits in \file{report_v2/CLAUDE.md}. The Conclusion
-  states the answer. & Good. & Say in one sentence why a practitioner would
-  measure $S_t$ and $R_t$, since the settings reference still predicts better
-  (\cref{fig:ladder}). State what a single small task can and cannot show. Search
-  the literature beyond the works cited before any claim of a first. The
-  MNIST tier of \cref{sec:tier4mnist} now answers the limit of one task. Decide
-  whether the group accepts the curvature learning-rate rule as part of that
-  setup (open decisions below). \\
-  \bottomrule
-\end{longtable}
-}
-
-Other requirements of the task sheet. The main text must end by page 12; on
-the build of 17 October 2026, with the red markup in, it ends on page 13, and
-the appendices run from page 14 to page 17. The group set the page limit aside
-for this round. The code goes to Blackboard as a separate zip, and each member
-submits a contribution statement.
-
-\subsection*{2. Changelog: decisions and what was cut}
-
-\paragraph{Decisions taken on 5 October 2026.}
-\begin{itemize}
-  \item All results come from \file{data/}: 720 runs, 5 seeds, 200\,000 steps,
-    $\alpha\in\{0.5,1,2\}$, six widths and eight weight decays. The golden report
-    used the grid-v0.1.0 databases (12 seeds, 100\,000 steps) instead.
-  \item The alignment $A_t$ is the centred alignment of the summed-logit kernel
-    on the test pairs (\file{A_sum} in \file{data/}). The golden report on
-    main uses the tangent kernel of all $p$ logits, after Baratin et al. The
-    statistics $S_t$, $R_t$ and $A_t$ now share one kernel, and the prediction
-    notebooks already use this $A_t$.
-  \item The main text uses one grokking level, 0.95. The levels 0.80 and 0.90 move
-    to Appendix~\ref{app:levels}.
-  \item The reproduction of \citet{kumarGrokkingTransitionLazy2024} keeps a short
-    section with one figure. The comparison setting by setting moves to
-    Appendix~\ref{app:kumar}.
-  \item Tier 4$'$ was first drafted as the rate-addition model. It was reopened
-    the same day as a decision between five options (A to E), because that
-    model rests on assumptions of our own.
-  \item Each section gained a red draft contribution block that states, as if
-    the preliminary findings hold, what is new and why it matters.
-  \item The word ``rotation'' is kept for now and will become ``shape'' later.
-    (Done on 25 October 2026; see below.)
-  \item In Tier 3 the model given the settings is a reference, since a general
-    network does not report its laziness or its effective regularisation.
-  \item The planning checks changed one claim. The alignment does not pass the
-    placebo test, so Tier 1 claims a threshold for rotation only.
-\end{itemize}
-
-\paragraph{Decisions taken on 11 October 2026 (Jasper Chong).}
-\begin{itemize}
-  \item Tier 4$'$ (Section 4.5, with its options A to E and its figure) is
-    commented out in \file{main.tex}, and items E11, E17 and E18 were not run.
-    To restore it, remove the leading comment sign from each line between the
-    markers TIER 4' COMMENTED OUT and END OF TIER 4', and restore contribution 5
-    of the Introduction.
-  \item (12 October 2026, Jasper Chong.) A new Section~\ref{sec:tier4mnist},
-    Tier 4, holds a TODO placeholder for an extension experiment on MNIST
-    digits. It is separate from the commented-out theory section Tier 4$'$.
-    The MNIST runs would be new training outside \file{data/}.
-  \item The spread in Tier 1 is the standard deviation, not the coefficient of
-    variation. To restore the CV, set \texttt{SPREAD = 'cv'} in
-    \file{report_v2/code/E03_placebo.py}; its JSON output keeps the CV values.
-  \item Every figure, table and number now comes from the scripts in
-    \file{report_v2/code/} through \file{numbers.tex}, \file{figures/} and
-    \file{tables/}. The red planning values are gone except those of E14.
-  \item The Tier 2 intervals resample whole cells and then seeds within cells.
-    This settles the open decision on the intervals. Seed-only intervals are in
-    \file{E06.json} for comparison.
-  \item E14 (then Appendix D, dropped on 17 October 2026) was not rerun. It needs the grid-v0.1.0
-    databases and the R scripts of branch \file{feat/grid}.
-  \item Kumar et al.\ App.~8.1 and 8.3, Sec.~3 and Fig.~2 (arXiv v3) were read
-    for Appendix~\ref{app:kumar}. The memorisation steps differ from their
-    figure; the grokking steps agree at $\alpha=0.5$ and $\alpha=1$.
-  \item Claims changed by the full runs were marked in red with ``Differs from
-    draft'' in the draft contribution blocks and the abstract. In short: the
-    rotation threshold at a fixed width is not sufficient; the interval of
-    $\gamma$ includes zero; weight decay is one of the settings that set the
-    scale; across widths no statistic passes only at level 0.95. These markers
-    were removed on 12 October 2026 (below).
-\end{itemize}
-
-\paragraph{Changes made on 12 October 2026.}
-\begin{itemize}
-  \item The red draft contribution blocks were folded into the prose and
-    deleted, together with the \texttt{draftcontrib} environment, the
-    \texttt{\textbackslash differs} macro and the commented block inside
-    Tier 4$'$. Their text is in the git history of \file{main.tex} before this
-    date. The abstract and the Conclusion were written from the final numbers.
-  \item The ``why it matters'' and ``what is new'' points that the numbers
-    support now sit in the Introduction (a paragraph after the contributions),
-    Related Work (the Predictions paragraph and Kim's scope), \cref{sec:baseline}
-    (the gate and the baseline split), \cref{sec:tier1} (the alignment
-    hypothesis and the critical norm), \cref{sec:tier2} (Kim's scope and the
-    width-dependent decay edge) and \cref{sec:tier3} (scoring, progress
-    measure).
-  \item Claims changed. (1) The Tier 2 claim and the Conclusion said that weight
-    decay acts through the scale. Weight decay explains \NnineSDecay{} of the
-    spread of $S_t$, about as much as $\alpha$ and width, so the text now says
-    that at a fixed width weight decay shrinks the scale. The story in
-    \file{report_v2/CLAUDE.md} still says weight decay sets the scale. (2) The
-    baseline claim ``rotates by a few per cent'' became ``$R_t$ stays below
-    0.09'', the bound on every baseline checkpoint. (3) The reconciling claim
-    of the Introduction block was dropped.
-  \item Claims added from the final numbers. Tier 1 now reports that $S_t$
-    pooled over all runs that grok tightens \EthreeAllSRatio-fold, with the
-    caveat that it keeps growing. Tier 3 now states in the prose that
-    \EtenBetweenLogT{} to \EtenBetweenLogR{} of the spread lies between cells,
-    so the statistics do not separate the seeds of a cell, and its claim is
-    limited to held-out cells.
-  \item The Introduction no longer carries a ``search the literature'' TODO.
-    No sentence claims a first. The search is listed under novelty in the
-    criteria table.
-  \item The criteria table was rewritten against the five criteria and the
-    required content of the task sheet.
-  \item The red TODO around the interval sentence of \cref{sec:analysis} was
-    removed, since the intervals resample cells (decision of 11 October).
-  \item Page limit. Built with the red markup hidden, the main text ended five
-    lines into page 13. Words that repeat other sections were cut: Kim's scope
-    in \cref{sec:tier2} (kept in Related Work), a closing sentence of
-    \cref{sec:baseline}, a scoring sentence of \cref{sec:tier3} (kept in
-    \cref{sec:analysis}), and parts of the Introduction and Conclusion.
-    The surface figure (E9, commented out on 17 October) went from 0.66 to 0.6
-    of the line width. Two lines still
-    spill onto page 13. The next cuts would be to write the Limitations as
-    prose, or to merge \cref{fig:mechanism} into \cref{fig:map}.
-  \item The code and the numbers were verified. The tangent kernel recomputed
-    by autograd from the saved weights of 8 runs matches $S_t$, $R_t$ and $A_t$
-    to a relative $3\times10^{-10}$. A minimal retraining of the baseline run
-    reproduces its accuracy curve exactly over 6\,000 steps. Independent code
-    reproduces 133 macros of \file{numbers.tex}; the only gaps are Monte Carlo
-    ones (a permutation $p$ and a bootstrap bound, both within their noise).
-    A clean rerun of \file{make_all.py} reproduces \file{numbers.tex}, every
-    table and every JSON output exactly.
-  \item One claim was corrected. The text said that at levels 0.80 and 0.90 the
-    scale and the alignment tighten across widths. At 0.90 the scale has
-    $p=$ \EsixteenNinetyAoneSP, so only the alignment does. \Cref{sec:tier1}
-    and \cref{app:levels} now say so.
-\end{itemize}
-
-\paragraph{Changes made on 17 October 2026 (Jasper Chong's notes).}
-\begin{itemize}
-  \item Tier 3$'$ is renamed Tier 3 everywhere in \file{report_v2/}: in this
-    file, \file{report_v2/CLAUDE.md}, \file{code/README.md} and
-    \file{code/models.py}. The commented-out theory section Tier 4$'$ keeps its
-    name.
-  \item Each experiment section opens with ``Finding.'' in place of ``Claim.''.
-  \item \Cref{sec:baseline} was cut to the result, the figure and the split of
-    $D_t^2$ at grokking for $\alpha=1$. The paragraph of event-step medians was
-    dropped, since \cref{tab:kumar-events} gives them. The gap in memorisation
-    time and the rest of the split moved to Appendix~\ref{app:kumar}. A TODO there
-    asks whether the report needs that appendix. The earlier text is in the git
-    history of \file{main.tex} before this date.
-  \item A cell is now defined in \cref{sec:grid}, and the captions of
-    \cref{tab:hyper} and \cref{fig:map} use the same wording.
-  \item Figure E5 (the grokking time against weight decay at each width) is
-    commented out of \cref{sec:tier2}, with a TODO to consider it for the
-    seminar. To restore it, remove the comment signs below the marker FIGURE E5
-    COMMENTED OUT.
-  \item Tier 3 was simplified. It now opens with the column of
-    \cref{tab:predictions} that it answers and runs two tests, held-out cells
-    (\cref{tab:subsets}) and an unseen $\alpha$ (\cref{fig:ladder}). Figure E8
-    was redrawn by \file{code/E08_ladder.py} with five bars: each statistic
-    alone, the trees on all three at $\tstar$ and the recurrent network on their
-    history. Its overlapping label and its cut-off axis label were fixed. The
-    linear model on all three, the model with interactions and kernel ridge are
-    no longer in the figure or the text, but \file{E08.json} keeps their scores.
-    The rerun reproduced \file{E08.json} exactly, and \file{numbers.tex} did not
-    change. \Cref{sec:analysis} and Appendix~\ref{app:fitting} were trimmed to
-    match.
-  \item Figure E9 (the surface over $S_t$ and $R_t$) and the product
-    coefficient $\gamma_{SR}$ are commented out of \cref{sec:tier3}. The claim
-    that the best models let rotation and scale interact was dropped from the
-    finding. The comment block below the marker FIGURE E9 AND THE PRODUCT
-    COEFFICIENT COMMENTED OUT holds the old text and says how to restore it.
-  \item Typos fixed without changing the meaning: ``phenomena'' to
-    ``phenomenon'', the stray ``by'' and the missing full stop of the abstract,
-    the missing article of the Introduction's second paragraph, contributions 2
-    and 3, ``sole'' to ``single'', the last sentence of the Introduction, the
-    gloss of ``weight-decay clock'' in \cref{sec:related}, and the sentence on
-    SDs in \cref{sec:analysis}.
-  \item The criteria table was rewritten against the marking rubric.
-  \item At Jasper Chong's request, Tier 3 does not test the weight decay as a
-    predictor, and the report now says why. We set $\eta\lambda$, while the
-    effective regularisation of a general network cannot be measured, and the
-    report looks for predictors that carry over to real models. The caption of
-    \cref{tab:predictions}, the Prediction paragraph of \cref{sec:analysis} and
-    the opening of \cref{sec:tier3} each say so. \file{code/E08_ladder.py} now
-    also fits the trees to $\log N$ alone and to $\eta\lambda$ alone. Both rank
-    runs worse than the two settings together, and \cref{sec:tier3}, its
-    finding and the Conclusion use this as support for the mixed clock. The
-    rerun reproduced every earlier value of \file{E08.json}. An earlier draft of
-    the same day put the weight-decay fits (kernel ridge on $\eta\lambda$ alone
-    and with the statistics, and the trees on $\eta\lambda$ with $\log R_t$ or
-    $S_t$) in a new Appendix D. That appendix and its code were removed as
-    confusing. They are not in the git history, so they would need to be
-    rewritten.
-  \item Appendix D, the cross-check from the second pipeline (E14), was dropped.
-    It held only a TODO that quoted the golden report. Its text is in the git
-    history of \file{main.tex} before this date.
-\end{itemize}
-
-\paragraph{Changes made on 20 October 2026 (Samuel Rieger).}
-\begin{itemize}
-  \item Tier 4 (\cref{sec:tier4mnist}) now holds the MNIST extension, built
-    from the sweep of 19 October 2026 in \file{mnist/sweep/} (560 runs, trained
-    by Zac Kienzle on the H100s). Its figure, table and numbers come from
-    \file{report_v2/code/E19_mnist.py}, which reads \file{mnist/sweep/} from
-    the repository. This is the one exception to the rule that every result
-    comes from \file{data/}; \file{report_v2/CLAUDE.md} records it.
-  \item New: \cref{sec:mnistsetup} (the second task, in Methods),
-    Appendix~\ref{app:mnist} (its settings and the check rows of its fit), a
-    contribution in the Introduction, a sentence on
-    \citet{liuOmnigrokGrokkingAlgorithmic2023} in Related Work, and that
-    paper in the weight-decay row of \cref{tab:predictions}.
-  \item Claims changed. The abstract, the end of the Introduction and the
-    Conclusion no longer say that rotation matters most or that each clock
-    describes one part of the time. They say that weight decay sets the time
-    through the weight norm on both tasks, and that width enters only on
-    modular addition, where the kernel must change shape before the task can
-    be solved. The second half of that is our reading, and the text says so.
-  \item To make room: the Limitations are prose; the paragraph on seed-only
-    intervals moved from \cref{sec:tier2} to Appendix~\ref{app:levels}; the
-    opening paragraph of \cref{sec:tier3} lost two sentences. Every change is
-    in blue with a bracketed note.
-  \item The MNIST events keep the report's definitions, except that the
-    grokking level is 0.80 and the budget is 500\,000 steps, since no MNIST run
-    reaches 0.95. \cref{sec:mnistsetup} says so.
-  \item Later on 20 October: the MNIST text was reworded to say how the delay
-    arises there, following \citet[Secs.~2, 4 and 5]{liuOmnigrokGrokkingAlgorithmic2023}:
-    the enlarged initial function is kept by the uncentred predictor and weight
-    decay must shrink it, whereas the centred predictor of \cref{sec:setup}
-    removes it. \cref{sec:mnistsetup} cites the group's pilot of 12 October
-    2026 (\file{mnist/exploration/results/mnist_pilot/}, one seed), in which
-    the centred predictor on MNIST showed no delay at any $\alpha$. Decide
-    whether a one-seed pilot may be cited in the main text.
-  \item Also later on 20 October, for the tutor's feedback on the proposal
-    (more datasets, stated assumptions, expected outcomes): the Introduction
-    says why a second task was added, the Predictions paragraph of
-    \cref{sec:related} states what each clock predicts for MNIST, the Tier 4
-    finding recalls those predictions, and the Limitations state the
-    assumption behind the comparison.
-  \item Last on 20 October, for the page limit: the MNIST text was cut to the
-    two points that matter, how the delay is induced on MNIST against modular
-    addition, and what that does to the Tier 1 and Tier 2 tests. The abstract,
-    contribution, Related Work, \cref{sec:mnistsetup}, \cref{sec:tier4mnist},
-    Limitations and Conclusion are shorter; Figure~\ref{fig:mnist} is
-    narrower. Nothing was dropped from the record: the check rows, width 100,
-    the no-decay runs, the alignment, the placebo ratios and the pilot are in
-    Appendix~\ref{app:mnist}. The entry for \citet{liuOmnigrokGrokkingAlgorithmic2023}
-    in \file{ref.bib} has a \texttt{shortauthor} field so that it cites as
-    ``Liu et al.''; the other three-author entries still cite in full, which
-    \texttt{maxcitenames=2} in the preamble would change for all of them.
-  \item Panel (c) of \cref{fig:mnist} is now the time and outcome map of
-    \cref{fig:map} at $s=7$, in place of rotation against width. Drawing it
-    showed that width 100 does reach the level in most runs with decay, so
-    the caption, the Limitations and Appendix~\ref{app:mnist} no longer say
-    that it never groks; they say it is later than the wider networks, with
-    little delay to time, and off the law.
-  \item A second cut of about 16 lines from the MNIST additions: the MNIST
-    predictions sentence in \cref{sec:related} became the clause ``on either
-    task'' before \cref{tab:predictions}; the pure-decay check, the placebo
-    reason, the $s=3$ accuracy, the check-row sentence and the note on Tier 3
-    moved from \cref{sec:tier4mnist} to Appendix~\ref{app:mnist};
-    \cref{sec:mnistsetup}, the Limitations paragraph and the Conclusion lost a
-    clause each. The two-route contrast, the finding and the width-100 caveat
-    are unchanged.
-  \item The Limitations and the Conclusion were re-marked so that only the
-    MNIST additions are blue. Limitations paragraph 1 is the group's bullet
-    list as prose, word for word, with ``modular addition'' added; the
-    proposal items are back in that paragraph. The Conclusion keeps the
-    original sentences, with ``On modular addition'' before ``rotation
-    matters most'', the MNIST sentences in place of ``Each published clock
-    therefore describes one part of it'', ``on two tasks'' after ``the
-    crossed grid'', and the frozen-kernel test added to the next step.
-  \item The abstract was rewritten at about half its length, with the group's
-    permission: one sentence per result, no numbers, the MNIST result in two
-    sentences, and the commented-out line removed.
-  \item To save space, \cref{tab:hyper} moved from \cref{sec:setup} to a new
-    Appendix~\ref{app:settings} just before the MNIST appendix, and
-    \cref{fig:map} and \cref{fig:ladder} were narrowed from 0.72 to 0.56 of
-    the line width. Nothing in the table or the figures changed.
-\end{itemize}
-
-\paragraph{Changes made on 25 October 2026 (Jasper Chong's decisions).}
-\begin{itemize}
-  \item $R_t$ is now called ``shape'', or ``shape change'' where ``shape''
-    alone reads badly, in place of ``rotation''. The symbol $R_t$ stays.
-    Jasper Chong took this decision on 25 October 2026 once the group agreed,
-    and it replaces the rule of 5 October that the word ``rotation'' stays for
-    now. The abstract, every section, the captions, \cref{tab:predictions}
-    (``Shape clock''), \cref{tab:scaling}, the title of
-    \cref{sec:statistics} and the commented-out blocks were changed, and the
-    red TODO about the rename at the top of this file was removed. The
-    sentence that $R_t$ is the kernel distance of
-    \citet{fortDeepLearningKernel2020} stays. The quotes of earlier text in
-    this changelog and in the comment above the E9 figure keep the word
-    ``rotation''.
-  \item \file{code/common.py} now labels $R_t$ as ``shape $R_t$''. Figures E1,
-    E2, E7 and E9 were redrawn by rerunning their scripts on the extract in
-    \file{code/data/}, and copied to \file{figures/} as \file{make_all.py}
-    does. Their JSON outputs did not change. The panel titles of E2 now say
-    ``SD ratio'' in place of ``placebo ratio''. E9 is still commented out.
-  \item The ``tightening ratio'' of Tier 1 is renamed the ``SD ratio'' in
-    \cref{sec:analysis}, in the caption and the column head of
-    \cref{tab:thresholds}, and in the caption of \cref{fig:thresholds}. It is
-    the same quantity: the median placebo SD over 2\,000 permutations divided
-    by the SD at the true grokking steps. No number changed. The macros of
-    \file{numbers.tex} and the field \texttt{tightening} in \file{E03.json} keep
-    their names.
-  \item The Prediction paragraph of \cref{sec:analysis} now says why Tier 3
-    uses $\log R_t$. Zain Al-Saffi wrote to the group that $R_t$ and $\log R_t$
-    were both tried, with other non-linear forms, and that $\log R_t$
-    predicted best of the forms of $R_t$. The paragraph also says that $R_t$ at
-    $\tstar$ spans more than a decade across widths: over the runs with
-    $\eta\lambda\le10^{-3}$, its median falls from 0.031 at $N=50$ to 0.00037
-    at $N=1600$. A red TODO asks Zain to confirm which forms were compared and
-    whether $\log S_t$ was tried.
-  \item The Introduction now ends with the main finding, the mixed clock, and
-    the Conclusion was rewritten around it. On modular addition shape is the
-    most informative statistic, but it is not enough on its own and it is not
-    a fixed threshold. The time depends on both width and weight decay, so
-    neither the shape clock nor the weight-decay clock holds alone. On MNIST
-    weight decay alone sets the time. The closing claim that weight decay sets
-    the time through the weight norm on both tasks is kept. The reading that
-    width enters only where the task forces the kernel to change shape is now
-    labelled as ours in the abstract, the Introduction, \cref{sec:tier4mnist}
-    and the Conclusion.
-  \item To make room, the Introduction paragraph that listed the cited works
-    a second time was cut, since its third paragraph lists them. What it said
-    the report adds is in the contributions and the Conclusion. Its text is in
-    the git history of \file{main.tex} before this date.
-  \item The TODO after \eqref{eq:aft}, which asked for more explanation, was
-    answered with two sentences on how to read the model, and removed.
-  \item \cref{sec:mnistsetup} was reworded in shorter sentences with the same
-    content, and a broken sentence of \cref{sec:tier4mnist} (``the kernel
-    shrinks too where at grokking'') was mended.
-  \item Page check. Built with the red markup hidden, the Conclusion ends on
-    page 12, with the Contribution heading after it. The appendices run from a
-    third of the way down page 13 to most of the way down page 18, so they take
-    about 5.5 pages. With the red markup in, the Conclusion is on page 13 and
-    the appendices run from page 14 to page 19. Each of these facts is the same
-    as before the changes of this day, so the appendices were already about half
-    a page over their limit of 5 pages.
-\end{itemize}
-
-\paragraph{Cut from the golden report.} Each item can be restored from the
-golden report's source, \file{docs/report_golden.tex} (added in commit 7da1996),
-and its figure files in \file{docs/figures/}.
-\begin{itemize}
-  \item Section 3.4, Spectral measures: effective rank, trace ratios and the
-    target power along eigenvectors. Section 4.3: the cumulative target power
-    figure (\file{docs/figures/spectrum.tex}).
-  \item Section 3.5, Event times: the Kaplan-Meier estimate with Greenwood's
-    interval, the phase labels, the additive model of Aalen and the relative risk
-    model with time-dependent covariates. Section 4.3: the table of that model.
-    Appendix B, Model checks: the probability plot and the cumulative regression
-    functions (\file{docs/figures/probability.tex}, \texttt{aalen.tex}).
-  \item Section 3.6, Choice of levels: optimal designs, the censored information
-    matrix, the broken line and the sequential design. Section 4.2.2: the scan,
-    the design table, the broken-line figure, the survival figure and the
-    accelerated failure time table of the weight-decay arm
-    (\file{docs/figures/phases.tex}, \texttt{broken.tex},
-    \texttt{survival.tex}). A short summary stood in Appendix D until it was
-    dropped on 17 October 2026.
-  \item Section 4.2.1: the $\alpha$ sweep with $\alpha=1.5$ and 12 seeds
-    (\file{docs/figures/alpha_sweep.pdf}).
-  \item Section 3.2: the first-logit kernel as a second output.
-  \item Related Work: the paragraph on kernel alignment and spectral bias, silent
-    alignment, the early and late dichotomy, Omnigrok, and provable grokking in
-    ridge regression.
-  \item The pipeline itself: branch \file{feat/grid}, folder \file{grid/}
-    (Snakemake workflow, DuckDB databases, R scripts).
-\end{itemize}
-
-\paragraph{Planned in the proposal and not run.} The clamped-norm arm with
-$\rho\in[1,2]$, the arm over three primes and three training fractions, the
-cross-entropy arm, the statistic $y^\top K^{-1}y$, and events defined by loss
-thresholds. The proposal is \file{docs/G2_proposal.tex}.
-
-\paragraph{Superseded analyses.} \file{repoduced-code/tier1_v2.ipynb} and
-\file{tier2_width_decay.ipynb} use the old data, with
-one split shared by every seed, the trace kernel and test accuracy 1.0. Their
-methods are ported, and their numbers are not used.
-
-\paragraph{Open decisions for the group.}
-\begin{itemize}
-  \item Keep the title, or change it to give the answer.
-  \item Keep \cref{fig:mechanism} as its own figure, or merge it into
-    \cref{fig:map}.
-  \item Whether to add the notation table.
-  \item Which theory direction, if any, Tier 4$'$ takes (options A to E in the
-    commented-out Section 4.5 of \file{main.tex}).
-  \item Confirm the softer Tier 2 headline of 12 October 2026 (``at a fixed
-    width, weight decay shrinks the scale''), and update the story in
-    \file{report_v2/CLAUDE.md} to match.
-  \item Whether the report needs Appendix~\ref{app:kumar} for the reproduction
-    (17 October 2026).
-  \item Whether to use figure E5 (the grokking time against weight decay at each
-    width) in the seminar (17 October 2026).
-  \item Whether the group accepts the curvature learning-rate rule of the
-    MNIST runs (\cref{sec:mnistsetup}) as part of the setup. Every strong
-    MNIST cell uses it. The only fixed-rate grokking in the exploration was
-    weak, at $s=3$ (20 October 2026).
-\end{itemize}
-
-\paragraph{Settled decisions.}
-\begin{itemize}
-  \item Whether to keep the reading that width enters only where the task
-    forces the kernel to change shape (open since 20 October 2026). Settled
-    by Jasper Chong on 25 October 2026: keep it, labelled as the group's own
-    reading, which rests on \citet{mohamadiWhyYouGrok2024}. The abstract, the
-    Introduction, \cref{sec:tier4mnist} and the Conclusion label it so.
-  \item Whether to rename ``rotation'' to ``shape'' (a red TODO since 5
-    October 2026). Settled by Jasper Chong on 25 October 2026 once the group
-    agreed: $R_t$ is called ``shape''.
-\end{itemize}
-
-\subsection*{3. Reference checks}
-
-Every entry of \texttt{ref.bib} was checked on 5 October 2026 against its arXiv
-abstract page, its DOI record on Crossref, or PubMed. Each section and equation
-number cited in the text was checked in the PDF of the version named.
-
-{\small
-\begin{longtable}{L{3.1cm}L{2.3cm}L{1.9cm}L{6.3cm}}
-  \toprule
-  Entry & Checked against & Status & Notes \\
-  \midrule
-  \endhead
-  Power et al.\ 2022 & arXiv 2201.02177 & Matches & v1 only. \\
-  Nanda et al.\ 2023 & arXiv 2301.05217 & Matches & v3 of 19 Oct 2023 gives the month. The v3 PDF was read on 12 Oct 2026 for the progress-measure sentence of \cref{sec:tier3}. Page 1 defines progress measures as ``metrics that precede and are causally linked to the phase transition, and which vary more smoothly'', after Barak et al.\ (2022). The report claims only the first and last conditions for $R_t$. \\
-  Gromov 2023 & arXiv 2301.02679 & Matches & \\
-  Jacot et al.\ 2020 & arXiv 1806.07572 & Matches & Year is v4 (Feb 2020); NeurIPS 2018. \\
-  Chizat et al.\ 2020 & arXiv 1812.07956 & Matches & Year is v5 (Jan 2020); NeurIPS 2019. \\
-  Kumar et al.\ 2024 & arXiv 2310.06110 & Matches & v3 of 11 Apr 2024. App.~8.1 and 8.3, Sec.~3 and Fig.~2 read in the v3 PDF on 11 Oct 2026 (Appendix~\ref{app:kumar}). \\
-  Mohamadi et al.\ 2024 & arXiv 2407.12332 & Matches & ICML 2024. \\
-  Mohamadi, Bae, Sutherland 2022 & arXiv 2206.12543 & Matches, entry type changed & The golden bib types it as an article with no journal. It is typed misc here. Published at ICML 2023. \\
-  Lewkowycz, Gur-Ari 2021 & arXiv 2006.08643, PDFs of v1 and v2 & Matches & Year is v2 (Jan 2021); NeurIPS 2020. CLAUDE.md gives both 2020 and 2021. The kernel flow is Eq.~S5 and $T_t$ is Eq.~S6 in both v1 and v2. The proposal's draft note, which says they become S8 and S9 in v2, is wrong: S8 in v2 is the infinite-width solution. $E[T_0]=O(n^{-1})$ is credited to Dyer and Gur-Ari (2020), which is not in ref.bib. \\
-  Fort et al.\ 2020 & arXiv 2010.15110 & Matches & NeurIPS 2020. \\
-  Geiger et al.\ 2020 & Crossref and arXiv 1906.08034 & Matches & JSTAT 2020, 113301. \\
-  Cortes et al.\ 2024 & arXiv 1203.0550 & Matches & Year is v3 (Apr 2024). The paper is JMLR 13 (2012), 795--828. \\
-  Khanh et al.\ 2026 & arXiv 2606.13753 & Matches arXiv; name order flagged & arXiv lists ``Truong Xuan Khanh'' and parses the surname as Khanh, so ``Khanh et al.''\ matches arXiv. In Vietnamese order the family name is usually written first, which would make it ``Truong et al.''. The co-authors have the same question. The proposal's key is \texttt{truong2026norm}. The group should decide. \\
-  Khanh 2026 & arXiv 2606.18465 & Matches arXiv; name order flagged & As above. \\
-  Kim 2026 & arXiv 2607.23967 & Matches & Cor.~5 and Eq.~20 checked in the v1 PDF (page 8). The Scope paragraph cited in Section 2 and Tier 2 is on page 3 of v1. It lists grokking without explicit weight decay and the creation of new population-visible directions by feature learning among what the mechanism does not explain. \\
-  Pracher et al.\ 2026 & arXiv 2609.26679 & Matches, fields added & The golden bib gives only the DOI. The eprint, month and class were added. v1 of 22 Sep 2026. \\
-  Kalbfleisch, Prentice 2002 & Crossref, Open Library & Matches, edition changed & The golden bib gives edition 1. The 2002 Wiley printing is the second edition; the first appeared in 1980. Crossref lists the online version as edition 1, so this needs a check of the book itself. \\
-  Davidson-Pilon 2019 & Crossref & Matches & JOSS 4(40), 1317. \\
-  Harrell et al.\ 1982 (new) & PubMed 7069920, Crossref & Matches & JAMA 247(18), 2543--2546. Crossref lists only the first author; PubMed lists all five. \\
-  Chen, Guestrin 2016 (new) & arXiv 1603.02754 & Matches & KDD 2016. \\
-  Cho et al.\ 2014 (new) & arXiv 1406.1078 & Matches & EMNLP 2014. \\
-  Liu, Michaud, Tegmark 2023 (new, 20 Oct 2026) & arXiv 2210.01117, PDF of v2 & Matches & v2 of 23 Mar 2023; ICLR 2023. The entry is the golden report's, without its abstract field. Section 2 (page 3) gives $w(t)\approx e^{-\gamma t}w_0$ and $t\approx\ln(w_0/w_c)/\gamma$ when weight decay is the only regulariser and the training loss is negligible after fitting; Figure 2(c) shows the time to 95\% test accuracy inversely proportional to the decay. Section 4 (page 5) gives the MNIST recipe: 1k training images, Kaiming uniform initial weights scaled by $\alpha>1$, a depth-3 width-200 ReLU MLP, AdamW, MSE on one-hot targets. Our runs use SGD without biases in place of AdamW. \\
-  \bottomrule
-\end{longtable}
-}
-\end{draftnote}
 
 \end{document}

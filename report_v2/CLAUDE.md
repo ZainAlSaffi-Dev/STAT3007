@@ -34,7 +34,7 @@ Every edit should serve this argument. If a change does not help a reader follow
 
 ## Decisions that differ from the golden report
 
-These were taken by Jasper Chong on 5 October 2026. They are recorded in the changelog in the red draft notes at the end of `main.tex`.
+These were taken by Jasper Chong on 5 October 2026. They are recorded in `report_v2/REPORT_CHANGELOG.md`, which held them in the red draft notes at the end of `main.tex` until 4 November 2026.
 
 - All results come from `data/`. That is the sweep of 3 October 2026 with 720 runs, 5 seeds and 200,000 steps. The golden report used the grid-v0.1.0 databases on branch `feat/grid` (12 seeds, 100,000 steps). They appeared in Appendix D as a cross-check until that appendix was dropped on 17 October 2026.
 - The report uses three statistics on one kernel. The kernel is the tangent kernel of the sum of the logits divided by √p, on the 53 test pairs of each run.
@@ -134,19 +134,19 @@ The build must finish with no errors, undefined citations or undefined reference
 
 **Page limits.**
 - The main text must end by page 12. References and appendices do not count toward that.
-- The appendices may take at most 5 pages.
-- Each section shows its budget with `\budget{...}`. On 5 October 2026 the main text ended on page 11 with placeholders alone, and on page 15 once the red draft contribution blocks and the Tier 4' options were added. Those red blocks are temporary, so judge the budget by the text that will stay.
-- If an edit pushes past a budget, cut words before you cut content, and tell the user.
+- The appendices may take at most 5 pages. Jasper Chong said on 4 November 2026 that this comes from the marking sheet, and the copy of `project.pdf` in the repository gives no appendix limit, so a red TODO at the head of the appendices asks for the marking sheet to be read again before anything is cut.
+- The per-section `\budget{...}` lines were removed on 4 November 2026, when the report was prepared for submission. Judge the limits from a build instead. On that day the Conclusion ended on page 12, the appendices ran from page 13 to page 18, about 5.3 pages, and the whole document was 20 pages. The appendices are still over, and a red TODO at the head of them says what to cut.
+- If an edit pushes past a limit, cut words before you cut content, and tell the user. Most of the slack is in float packing: every table uses `[H]`, so a table that does not fit leaves the rest of its page blank.
 
-**Red markup for the group.** All of it is deleted before submission, and not before.
+**Red markup for the group.** All of it is deleted before submission, and not before. On 4 November 2026 everything went except four `\TODO` marks that need the group's own words, which are the contribution lines, the acknowledgement, the AI-use text and the consent choice, and one that asks for the link to the public code repository.
 
 | Macro | Meaning |
 |---|---|
 | `\TODO{...}` | A task. |
 | `\pending{value}{ID}` | A planning value from a read-only check. Item ID in `EXPERIMENTS_TODO.md` recomputes it. |
-| `\budget{...}` | The page budget of a section. |
+| `\budget{...}` | The page budget of a section. No longer used; the macro is kept for the commented-out Tier 4'. |
 | `\placeholderfigure[height]{...}` | A red box that stands in for a figure. The text names its E item. |
-| `draftnote` environment | A red block. The notes after the consent page use it. |
+| `draftnote` environment | A red block. The notes after the consent page used it until 4 November 2026. The macro is kept for the commented-out Tier 4'. |
 | `draftcontrib{where}` environment | Removed on 12 October 2026. The red draft blocks of what each section adds were checked against the full runs, folded into the prose, and deleted, together with the `\differs` macro. The changelog in `main.tex` lists the claims that changed. Do not add the blocks back. |
 | `\file{...}` | A file path that can break across lines. |
 
@@ -157,10 +157,10 @@ The build must finish with no errors, undefined citations or undefined reference
 - If the value changes enough to alter a claim, change the claim, tell the user, and add a line to the changelog. Never adjust a number to fit the text.
 - Once `overleaf/numbers.tex` exists, use its macros in place of typed numbers.
 
-**Keep the draft notes current.**
-- When you cut, move or decide something, add it to the changelog with a pointer for restoring it.
-- When you add a reference, add a row to the reference-check table.
-- When an open decision is settled, move it out of the open list and say who settled it.
+**Keep the record current.** The changelog is `report_v2/REPORT_CHANGELOG.md`. The reference checks are a commented block at the end of `main.tex`. Both moved out of the red draft notes on 4 November 2026, and the criteria self-assessment that stood beside them was deleted; it is in the git history of `main.tex`.
+- When you cut, move or decide something, add it to `REPORT_CHANGELOG.md` with a pointer for restoring it.
+- When you add a reference, add a row to the commented reference-check table in `main.tex`.
+- When an open decision is settled, move it out of the open list of `REPORT_CHANGELOG.md` and say who settled it.
 
 **Writing.** Rule 2 of the root `CLAUDE.md` applies to every sentence, caption, table cell and figure label. Before you finish, run these from `report_v2/overleaf/`:
 
@@ -211,10 +211,10 @@ The first grep should print nothing. `--` is allowed only inside page ranges suc
 ## Before you finish
 
 1. `tectonic main.tex` builds cleanly from `report_v2/overleaf/`, and the log files are removed.
-2. The main text ends by page 12, and the appendices fit in 5 pages.
+2. The main text ends by page 12, and the appendices fit in 5 pages. On 4 November 2026 the appendices were about 5.3 pages, and a red TODO at the head of the appendices records what to cut.
 3. The two greps above show nothing new.
 4. Every new citation is in `ref.bib` and in the reference-check table.
-5. The changelog, the open decisions and `EXPERIMENTS_TODO.md` match what you changed.
+5. `REPORT_CHANGELOG.md`, its open decisions and `EXPERIMENTS_TODO.md` match what you changed.
 6. You have told the user about any claim that changed.
 
 Do not commit, push or merge unless the user asks. Ask before you change the narrative, a decision listed above, or anything outside `report_v2/`.
