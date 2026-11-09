@@ -375,6 +375,25 @@ fits its page limits.
   than page 1 because three red lines before Table 1 push it over a page break
   and cost most of a page of whitespace.
 
+## Changes made on 9 November 2026 (Jasper Chong)
+
+- The code folder can now be submitted as a zip on its own. `E19_mnist.py` used
+  to read the MNIST sweep tables from `mnist/sweep/` at the top of the
+  repository, so a zip of `code/` alone failed at E19. `extract.py` now copies
+  `runs.parquet`, `report_kernel.parquet` and `manifest.json` from there into
+  `code/data/` with the prefix `mnist_`, and their hashes are in
+  `code/data/SHA256SUMS.json`. E19 reads those copies. No number changed. To go
+  back, point `E19_mnist.py` at `REPO / 'mnist' / 'sweep'` again.
+- `make_numbers.py` now also writes `code/out/numbers.tex`, and it creates the
+  Overleaf folder if that folder is missing. Before this, an unzipped copy of
+  `code/` failed at that step because `../overleaf/` did not exist.
+- A rebuild of a copy of `code/` alone gave the same JSON numbers, the same
+  `numbers.tex`, and the same figures and tables by hash. The MNIST figure was
+  the one exception: it differs slightly in its fonts under matplotlib 3.10.8,
+  and it was committed with 3.11.2.
+- `code/README.md` was rewritten in plainer prose. Its content is the same,
+  apart from the new data location and the run time.
+
 ## Cut from the golden report
 
 Each item can be restored from the golden report's source,

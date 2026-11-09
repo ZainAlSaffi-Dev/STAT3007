@@ -7,7 +7,9 @@ not in git; set STAT3007_DATA to read it from elsewhere. The report needs only a
 - report_kernel.parquet: S, R, D and A at the 48 saved steps (copied as it is);
 - manifest.json: the design, the fixed settings and the versions (copied as it is);
 - sweep_timing.json: the elapsed wall time and the workers of the sweep, read from logs/sweep.log;
-- checkpoints_slim.parquet: nine columns of checkpoints.parquet, for all 307 checkpoints of each run.
+- checkpoints_slim.parquet: nine columns of checkpoints.parquet, for all 307 checkpoints of each run;
+- mnist_runs.parquet, mnist_report_kernel.parquet and mnist_manifest.json: the MNIST sweep tables that
+  E19 reads, copied from mnist/sweep/ in the repository so that this folder needs nothing outside it.
 
 The script checks the extract before it writes the hash list: 720 runs, all with status ok, 307
 checkpoints each on one shared grid, and events in report_runs.csv that match the first checkpoint
@@ -26,10 +28,12 @@ import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 
-from common import BUDGET, FULL_DATA, LEVELS, SLIM
+from common import BUDGET, FULL_DATA, LEVELS, REPO, SLIM
 
 COLUMNS = ['run_id', 'step', 'train_acc', 'test_acc', 'train_loss', 'test_loss', 'S_sum', 'R_sum', 'A_sum']
 COPIED = ['report_runs.csv', 'report_kernel.parquet', 'manifest.json']
+MNIST_SWEEP = REPO / 'mnist' / 'sweep'
+MNIST_COPIED = ['runs.parquet', 'report_kernel.parquet', 'manifest.json']
 
 
 def sha256(path):
@@ -85,6 +89,8 @@ def main():
     ckpt.to_parquet(SLIM / 'checkpoints_slim.parquet', compression='zstd', index=False)
     for name in COPIED:
         shutil.copyfile(FULL_DATA / name, SLIM / name)
+    for name in MNIST_COPIED:
+        shutil.copyfile(MNIST_SWEEP / name, SLIM / f'mnist_{name}')
     (SLIM / 'sweep_timing.json').write_text(json.dumps(sweep_timing(FULL_DATA / 'logs' / 'sweep.log'), indent=1) + '\n')
 
     files = sorted(p.name for p in SLIM.iterdir() if p.name != 'SHA256SUMS.json')

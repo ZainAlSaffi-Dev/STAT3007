@@ -6,8 +6,8 @@ weight decay eta lambda in {0, 1e-6, 3e-6, 6e-6, 1e-5, 2e-5, 4e-5}, 5 seeds, 500
 setup follows Liu, Michaud and Tegmark (2023), Omnigrok, Section 4: 1,000 training images, a
 three-layer ReLU network of width 200, MSE on one-hot targets, and the initial weights multiplied
 by s. Our network has no biases, so its tangent kernel has a closed form, and it trains by SGD
-without momentum under a curvature learning-rate rule (mnist/README.md). The sweep tables are
-committed in git, so this script reads them from the repository rather than from code/data.
+without momentum under a curvature learning-rate rule (mnist/README.md). extract.py copies the
+sweep tables into code/data with the prefix mnist_, and this script reads them from there.
 
 Events follow the report: memorisation at training accuracy 0.99 and grokking at a test level,
 counted from step 0, censored at the budget of 500,000. MNIST does not reach 0.95 within the
@@ -44,7 +44,6 @@ SEED = 0
 N_BOOT = 1_000
 N_PERM = 2_000
 SEEDS = {'bootstrap': SEED, 'n_boot': N_BOOT, 'permutations': SEED, 'n_permutations': N_PERM}
-SWEEP = C.REPO / 'mnist' / 'sweep'
 BUDGET = 500_000
 LEVEL = 'acc80'
 SCALES = [3.0, 5.0, 7.0, 9.0]
@@ -67,9 +66,9 @@ NAMES = {'x': 'a', 'y': 'b', 'xy': 'gamma', 'Intercept': 'c'}
 
 
 def load():
-    runs = pd.read_parquet(SWEEP / 'runs.parquet')
+    runs = pd.read_parquet(C.SLIM / 'mnist_runs.parquet')
     assert len(runs) == 560 and (runs.status == 'ok').all()
-    kernel = pd.read_parquet(SWEEP / 'report_kernel.parquet').sort_values(['run_id', 'step'])
+    kernel = pd.read_parquet(C.SLIM / 'mnist_report_kernel.parquet').sort_values(['run_id', 'step'])
     s0 = kernel[kernel.step == 0]
     assert np.allclose(s0.S_t, 1.0) and np.allclose(s0.R_t, 0.0), 'S and R must be 1 and 0 at step 0'
     runs = runs.sort_values(['init_scale', 'width', 'eta_kappa', 'seed']).reset_index(drop=True)
@@ -294,7 +293,7 @@ def main():
 
     # Compute.
     import json
-    manifest = json.loads((SWEEP / 'manifest.json').read_text())
+    manifest = json.loads((C.SLIM / 'mnist_manifest.json').read_text())
     out['compute'] = {'summed_hours': manifest['total_seconds'] / 3600, 'gpu': 'NVIDIA H100',
                       'written': manifest['written'], 'torch': manifest['versions']['torch']}
 

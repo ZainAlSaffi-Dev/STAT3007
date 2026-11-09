@@ -12,7 +12,7 @@ The scripts in `report_v2/code/` were built and run on 11 October 2026 with `mak
 - **Not run:** E11, E17 and E18. Tier 4' is commented out in `main.tex` at the user's request.
 - **Not run:** E14. It needs the grid-v0.1.0 databases and the R scripts of branch `feat/grid`. Its appendix was dropped on 17 Oct 2026.
 - **Changed by the user on 11 October 2026:** Tier 1 (E2, E3 and E16) measures the spread by the standard deviation, not the CV. The CV planning values in E3 are kept for the record, but they are superseded.
-- **Added on 20 October 2026:** E19, the MNIST tier (§4.5, Fig. 6 and Appendix F), built by `E19_mnist.py` from the MNIST sweep of 19 October 2026 in `mnist/sweep/`. It is the one item that does not read `data/`.
+- **Added on 20 October 2026:** E19, the MNIST tier (§4.5, Fig. 6 and Appendix F), built by `E19_mnist.py` from the MNIST sweep of 19 October 2026 in `mnist/sweep/`. It is the one item whose data are not in `data/` of the repository. Since 9 November 2026, `extract.py` copies its tables into `code/data/` with the prefix `mnist_`, and E19 reads those copies.
 - **Changed on 25 October 2026:** R is now called "shape" (Jasper Chong's decision), and the tightening ratio is now the SD ratio. `common.py` labels R as "shape $R_t$". E1, E2, E7 and E9 were redrawn by rerunning `E01_baseline.py`, `E02_thresholds.py`, `E07_mechanism.py` and `E09_surface.py` on the extract in `code/data/`, and their PDFs were copied to `overleaf/figures/`. Their JSON outputs are byte for byte the same as before. E2's panel titles now say "SD ratio". No other script was rerun.
 
 ## Ground rules
@@ -214,7 +214,7 @@ Status words: **carry over** means the number exists and only needs a clean scri
 ### E19. The second task: MNIST digits (§4.5, Fig. 6, Appendix F)
 - **Question.** Do the answers of Tiers 1 and 2 hold on a second task?
 - **Setup.** The MNIST sweep of 19 October 2026 (`mnist/sweep/`): s ∈ {3, 5, 7, 9}, N ∈ {100, 200, 400, 800}, ηλ ∈ {0, 1e-6, 3e-6, 6e-6, 1e-5, 2e-5, 4e-5}, seeds 0 to 4, 500,000 steps, 560 runs. Level 0.80, counted from step 0, censored at the budget.
-- **Data.** `mnist/sweep/runs.parquet` (events, statistics at the events, weight norms) and `mnist/sweep/report_kernel.parquet` (S, R, D and A at every checkpoint, on a fixed draw of 1,000 test images). Both are in git.
+- **Data.** `mnist/sweep/runs.parquet` (events, statistics at the events, weight norms) and `mnist/sweep/report_kernel.parquet` (S, R, D and A at every checkpoint, on a fixed draw of 1,000 test images). Both are in git. `code/data/` holds copies of both, with the prefix `mnist_`.
 - **Method.** The fit of E6 on the main range s = 7, N ∈ {200, 400, 800}, ηλ ∈ {3e-6, 6e-6, 1e-5}, with check rows at s = 5, s = 9, decays to 4e-5, level 0.85 and memorisation. The weight norm at grokking in units of the default initialisation norm, its spread, and the law T = ln(s / n_c) / (ηλ) of Liu et al. (2023), Section 2. The placebo test of E3 on S, R and A at N = 200, at s = 7 across widths, and over all runs that grok. Medians of R, S and A at grokking by width.
 - **Output.** `E19_mnist.pdf` (three panels), the macros `\Enineteen...` in `numbers.tex`, and `E19.json`. **Status:** done 20 Oct 2026 (`E19_mnist.py`). Width exponent 0.00, decay exponent −1.00, σ 0.03 at every scale; n_c about 2.1 with a spread of about 3 percent; R at grokking falls about twenty-fold with width while T does not move.
 

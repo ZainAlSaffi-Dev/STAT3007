@@ -1,0 +1,10 @@
+{
+ "checkpoints_slim.parquet": "ccf0eecbfa9c24f1dc8c829c5069e70de5f3761ef3938b051b79ca7eefed2732",
+ "manifest.json": "331b0119c5958ccf842fbe49d34c3eef51e28f0cd4b716fa9ecc252b4846cb75",
+ "mnist_manifest.json": "abc91882876d4f54743388e2fb755796265ba2e4bb08e73f5df12031617f9ba8",
+ "mnist_report_kernel.parquet": "1a00d0bf4b5966a8e813694ac96a965e2205c71deba2752c516241033af1da27",
+ "mnist_runs.parquet": "15ce03a277e51eb47a7a5c9452b6553fc8512e98289d8a38e5cf6892f46c3130",
+ "report_kernel.parquet": "6abf033f0a0bd805b3eaf3e3d73db77fa9a3584ea1c8838463b0f3885cad5a76",
+ "report_runs.csv": "ccdc7dae950a77fc173f781b3748d855a1864cdc1a32ce58850cfcf4c5ef97f0",
+ "sweep_timing.json": "a4d60588cf29a8f68a6af551d1b32738621791c6f6b1e6c8a85e64313f80e8c4"
+}
